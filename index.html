@@ -20,21 +20,32 @@
 
     <div class="relative z-10 flex-grow flex flex-col">
         
+        <!-- Header -->
         <header class="bg-white/95 backdrop-blur-md shadow-sm sticky top-0 z-50 border-b border-slate-200">
             <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
                 <div class="flex items-center cursor-pointer transition-transform hover:scale-105" @click="view = 'menu'; window.scrollTo({ top: 0, behavior: 'smooth' });">
-                    <img src="https://cdn1.healthians.com/img/healthians-logo.svg" alt="Healthians Logo" class="h-10 md:h-12 object-contain">
+                    <div x-data="{ logoErr: false }">
+                        <template x-if="!logoErr">
+                            <img src="https://cdn1.healthians.com/img/healthians-logo.svg" alt="Healthians Logo" @error="logoErr = true" class="h-10 md:h-12 object-contain">
+                        </template>
+                        <template x-if="logoErr">
+                            <div class="flex items-center space-x-2">
+                                <span class="text-2xl font-black text-teal-900 tracking-tight">Swasthya<span class="text-emerald-600">Care</span></span>
+                            </div>
+                        </template>
+                    </div>
                 </div>
                 <div class="flex items-center">
                     <span class="text-[10px] md:text-xs font-extrabold text-slate-500 uppercase tracking-wider mr-3 hidden sm:inline-block">Accredited By</span>
                     <div class="flex items-center space-x-2 md:space-x-3">
-                        <img src="https://cdn1.healthians.com/img/lab_images/nabl.jpg" alt="NABL Accredited" class="h-10 md:h-14 w-auto object-contain drop-shadow-sm bg-white p-1 rounded border border-slate-200">
-                        <img src="https://helma-mumbai.healthians.com/stationery/mailer-assets/68fb2c63f2840.png" alt="CAP Accredited" class="h-10 md:h-14 w-auto object-contain drop-shadow-sm bg-white p-1 rounded border border-slate-200">
+                        <img src="https://cdn1.healthians.com/img/lab_images/nabl.jpg" alt="NABL Accredited" onerror="this.replaceWith(Object.assign(document.createElement('span'), {className:'text-[10px] font-bold bg-slate-100 px-2 py-1 rounded border', textContent:'NABL'}))" class="h-10 md:h-14 w-auto object-contain drop-shadow-sm bg-white p-1 rounded border border-slate-200">
+                        <img src="https://helma-mumbai.healthians.com/stationery/mailer-assets/68fb2c63f2840.png" alt="CAP Accredited" onerror="this.replaceWith(Object.assign(document.createElement('span'), {className:'text-[10px] font-bold bg-slate-100 px-2 py-1 rounded border', textContent:'CAP'}))" class="h-10 md:h-14 w-auto object-contain drop-shadow-sm bg-white p-1 rounded border border-slate-200">
                     </div>
                 </div>
             </div>
         </header>
 
+        <!-- Floating Cart Checkout Button -->
         <template x-if="view === 'menu' && cart.length > 0">
             <div class="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-40">
                 <button @click="view = 'checkout'; window.scrollTo({ top: 0, behavior: 'smooth' });" class="flex items-center space-x-3 bg-teal-900 text-white px-6 py-3 rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.3)] border-2 border-yellow-400 hover:bg-teal-800 hover:scale-105 transition-all">
@@ -52,8 +63,29 @@
                 
                 <!-- Hero Heading & Search -->
                 <div class="text-center mb-12">
-                    <div class="flex justify-center mb-4 cursor-pointer" @click="adminClicks++; if(adminClicks === 3) { adminModalOpen = true; adminPasswordInput = ''; adminAuthError = false; adminClicks = 0; }">
-                        <img src="https://i.ibb.co/T5w8drb/tmp-6c91eb22-fc8e-420d-beee-e9d1f6dd2b09.png" alt="Swasthya Care" class="h-40 sm:h-48 md:h-56 lg:h-64 object-contain drop-shadow-sm select-none">
+                    <div class="flex justify-center mb-4 cursor-pointer select-none" @click="adminClicks++; if(adminClicks === 3) { adminModalOpen = true; adminPasswordInput = ''; adminAuthError = false; adminClicks = 0; }" x-data="{ heroLogoErr: false }">
+                        <template x-if="!heroLogoErr">
+                            <img src="https://i.ibb.co/T5w8drb/tmp-6c91eb22-fc8e-420d-beee-e9d1f6dd2b09.png" alt="Swasthya Care" @error="heroLogoErr = true" class="h-40 sm:h-48 md:h-56 lg:h-64 object-contain drop-shadow-sm select-none">
+                        </template>
+                        <template x-if="heroLogoErr">
+                            <div class="flex flex-col items-center justify-center py-6 px-8 bg-teal-900 text-white rounded-3xl shadow-xl border-4 border-yellow-400">
+                                <span class="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-white">Swasthya<span class="text-yellow-400">Care</span></span>
+                                <span class="text-[10px] font-bold tracking-widest text-teal-200 uppercase mt-2">Test Today. A Healthier Tomorrow.</span>
+                            </div>
+                        </template>
+                    </div>
+                    <p class="text-lg md:text-xl text-slate-600 max-w-2xl mx-auto font-medium mt-6">
+                        Invest in your well-being with our comprehensive, AI-curated health checkup plans.
+                    </p>
+                    <div class="mt-8 max-w-xl mx-auto relative">
+                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                            <svg class="h-5 w-5 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        </div>
+                        <input type="text" x-model="testSearchQuery" placeholder="Search blood test (e.g. Lipid, Thyroid, CBC, Glucose, ESR)..." class="w-full pl-11 pr-4 py-3 bg-white border border-teal-200 rounded-full shadow-sm focus:ring-2 focus:ring-teal-500 outline-none text-slate-700 font-medium">
+                        <template x-if="testSearchQuery">
+                            <button @click="testSearchQuery = ''" class="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-slate-600 font-bold">Clear</button>
+                        </template>
+                    </div>
                 </div>
 
                 <!-- Navigation Tabs -->
@@ -64,13 +96,18 @@
                     <button @click="activeCategoryTab = 'bundles'" :class="activeCategoryTab === 'bundles' ? 'bg-teal-900 text-yellow-400 border-2 border-yellow-400 shadow-md scale-105' : 'bg-white text-slate-700 border border-slate-200 hover:bg-teal-50'" class="px-5 py-3 rounded-2xl font-bold text-sm transition-all shadow-sm">🧍 Wellness Bundles</button>
                 </div>
 
-                <!-- Packages Grid -->
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                     <template x-for="pkg in filteredPackages" :key="pkg.id">
                         <div class="bg-white rounded-2xl shadow-sm border border-slate-100 flex flex-col h-full overflow-hidden group hover:shadow-xl hover:border-teal-300 relative transition-all">
                             
-                            <div class="relative h-40 overflow-hidden bg-slate-100">
-                                <img :src="pkg.image" :alt="pkg.name" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                            <div class="relative h-40 overflow-hidden bg-slate-100" x-data="{ imgFail: false }">
+                                <template x-if="!imgFail">
+                                    <img :src="pkg.image" :alt="pkg.name" @error="imgFail = true" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                                </template>
+                                <template x-if="imgFail">
+                                    <div class="w-full h-full bg-teal-900 text-yellow-400 flex flex-col items-center justify-center p-3 text-center font-extrabold text-sm" x-text="pkg.name"></div>
+                                </template>
+
                                 <div class="absolute top-3 right-3 flex flex-col items-end gap-1">
                                     <template x-if="pkg.gender !== 'All'">
                                         <span class="text-[10px] uppercase font-extrabold px-2.5 py-1 rounded-full shadow" :class="pkg.gender === 'Female' ? 'bg-pink-600 text-white' : 'bg-blue-600 text-white'" x-text="pkg.gender + ' Only'"></span>
@@ -136,16 +173,23 @@
                     </template>
                 </div>
 
-                <!-- Award & Trusted Sections -->
                 <div class="mt-16 mb-8 bg-white rounded-3xl shadow-sm border border-slate-100 p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-8">
-                    <div class="w-full md:w-5/12 flex justify-start">
-                        <img src="https://cdn3.healthians.com/img/unit-no1.svg" alt="Times Health Excellence Survey 2024" class="w-full max-w-sm object-contain drop-shadow-sm">
+                    <div class="w-full md:w-5/12 flex justify-start" x-data="{ awardErr: false }">
+                        <template x-if="!awardErr">
+                            <img src="https://cdn3.healthians.com/img/unit-no1.svg" alt="Times Health Excellence Survey 2024" @error="awardErr = true" class="w-full max-w-sm object-contain drop-shadow-sm">
+                        </template>
+                        <template x-if="awardErr">
+                            <div class="bg-amber-100 text-amber-900 p-4 rounded-2xl font-bold text-sm text-center border border-amber-300">
+                                🏆 Times Health Excellence Survey Winner
+                            </div>
+                        </template>
                     </div>
                     <div class="w-full md:w-7/12 bg-slate-50 p-6 rounded-2xl border border-slate-200 text-slate-700 text-sm md:text-base font-medium leading-relaxed">
                         With a presence in <strong class="text-teal-900">250+ cities</strong>, Healthians offers quick, affordable, and hassle-free at-home testing services, backed by a trusted network of <strong class="text-teal-900">NABL and CAP</strong> accredited labs.
                     </div>
                 </div>
 
+                <!-- Trusted Diagnostics Nationwide Banner below award and above contact -->
                 <div class="mb-12 bg-teal-50 rounded-3xl p-6 md:p-8 border border-teal-200 text-center shadow-sm">
                     <h3 class="text-xl font-extrabold text-teal-950 mb-2">Trusted Diagnostics Nationwide</h3>
                     <p class="text-xs md:text-sm text-teal-800 max-w-2xl mx-auto font-medium">
@@ -169,7 +213,6 @@
                     </div>
 
                     <form @submit.prevent="submitBooking" class="p-6 md:p-8 space-y-8">
-                        <!-- Primary Patient Details -->
                         <div>
                             <h3 class="text-xl font-bold text-slate-800 mb-4 flex items-center"><svg class="w-5 h-5 mr-2 text-teal-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg> Primary Patient Details & Address</h3>
                             
@@ -202,7 +245,6 @@
                                     <input required type="tel" x-model="primaryBooking.contact" class="w-full p-2.5 bg-slate-50 border border-teal-200 rounded-lg outline-none" placeholder="10-digit mobile">
                                 </div>
 
-                                <!-- Primary Test Assignment -->
                                 <div class="md:col-span-2 bg-teal-50/70 p-4 rounded-xl border border-teal-200 space-y-3">
                                     <label class="block text-xs font-bold text-teal-950 uppercase">Assign Tests for Primary Patient (<span x-text="primaryBooking.name || 'Primary'"></span>):</label>
                                     <div class="flex flex-wrap gap-2">
@@ -215,7 +257,6 @@
                                     </div>
                                 </div>
 
-                                <!-- Address Fields -->
                                 <div class="md:col-span-2 border-t border-slate-200 pt-4 mt-2">
                                     <div class="flex flex-col md:flex-row md:items-center justify-between mb-4">
                                         <label class="block text-sm font-bold text-teal-900">Home Address for Sample Collection *</label>
@@ -234,7 +275,6 @@
                                     </div>
                                 </div>
 
-                                <!-- Date & Slot -->
                                 <div class="md:col-span-2 bg-teal-50/50 p-4 rounded-xl border border-teal-100">
                                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                                         <div>
@@ -327,6 +367,7 @@
             </div>
         </template>
 
+        <!-- Admin View -->
         <template x-if="view === 'admin'">
             <div class="max-w-7xl mx-auto px-4 py-12">
                 <div class="flex justify-between items-center mb-8">
@@ -412,7 +453,6 @@
         </div>
     </template>
 
-    <!-- AI Chatbot Assistant -->
     <div class="fixed bottom-6 right-6 z-50">
         <template x-if="!chatOpen">
             <button @click="chatOpen = true" class="bg-teal-700 text-white p-4 rounded-full shadow-2xl hover:bg-teal-800 transition-transform hover:scale-110 flex items-center justify-center border-2 border-teal-600">
