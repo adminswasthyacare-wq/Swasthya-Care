@@ -13,6 +13,7 @@
 </head>
 <body class="min-h-screen bg-slate-50 font-sans text-slate-800 selection:bg-teal-200 flex flex-col" x-data="swasthyaApp()">
     
+    <!-- Background decorative blur elements -->
     <div class="fixed inset-0 overflow-hidden pointer-events-none z-0">
         <div class="absolute top-0 right-0 w-1/3 h-1/3 bg-teal-100 rounded-bl-full opacity-50 blur-3xl mix-blend-multiply"></div>
         <div class="absolute bottom-0 left-0 w-1/2 h-1/2 bg-yellow-100 rounded-tr-full opacity-40 blur-3xl mix-blend-multiply"></div>
@@ -24,22 +25,16 @@
         <header class="bg-white/95 backdrop-blur-md shadow-sm sticky top-0 z-50 border-b border-slate-200">
             <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
                 <div class="flex items-center cursor-pointer transition-transform hover:scale-105" @click="view = 'menu'; window.scrollTo({ top: 0, behavior: 'smooth' });">
-                    <div x-data="{ logoErr: false }">
-                        <template x-if="!logoErr">
-                            <img src="https://cdn1.healthians.com/img/healthians-logo.svg" alt="Healthians Logo" @error="logoErr = true" class="h-10 md:h-12 object-contain">
-                        </template>
-                        <template x-if="logoErr">
-                            <div class="flex items-center space-x-2">
-                                <span class="text-2xl font-black text-teal-900 tracking-tight">Swasthya<span class="text-emerald-600">Care</span></span>
-                            </div>
-                        </template>
+                    <div class="flex items-center space-x-2">
+                        <div class="w-10 h-10 rounded-xl bg-teal-900 text-yellow-400 flex items-center justify-center font-black text-xl shadow">SC</div>
+                        <span class="text-2xl font-black text-teal-950 tracking-tight">Swasthya<span class="text-emerald-600">Care</span></span>
                     </div>
                 </div>
                 <div class="flex items-center">
                     <span class="text-[10px] md:text-xs font-extrabold text-slate-500 uppercase tracking-wider mr-3 hidden sm:inline-block">Accredited By</span>
                     <div class="flex items-center space-x-2 md:space-x-3">
-                        <img src="https://cdn1.healthians.com/img/lab_images/nabl.jpg" alt="NABL Accredited" onerror="this.replaceWith(Object.assign(document.createElement('span'), {className:'text-[10px] font-bold bg-slate-100 px-2 py-1 rounded border', textContent:'NABL'}))" class="h-10 md:h-14 w-auto object-contain drop-shadow-sm bg-white p-1 rounded border border-slate-200">
-                        <img src="https://helma-mumbai.healthians.com/stationery/mailer-assets/68fb2c63f2840.png" alt="CAP Accredited" onerror="this.replaceWith(Object.assign(document.createElement('span'), {className:'text-[10px] font-bold bg-slate-100 px-2 py-1 rounded border', textContent:'CAP'}))" class="h-10 md:h-14 w-auto object-contain drop-shadow-sm bg-white p-1 rounded border border-slate-200">
+                        <span class="text-[10px] font-bold bg-slate-100 px-2 py-1 rounded border border-slate-200 text-slate-700">NABL</span>
+                        <span class="text-[10px] font-bold bg-slate-100 px-2 py-1 rounded border border-slate-200 text-slate-700">CAP</span>
                     </div>
                 </div>
             </div>
@@ -58,21 +53,17 @@
             </div>
         </template>
 
+        <!-- Menu View -->
         <template x-if="view === 'menu'">
             <div class="max-w-7xl mx-auto px-4 py-10 sm:px-6 lg:px-8">
                 
                 <!-- Hero Heading & Search -->
                 <div class="text-center mb-12">
-                    <div class="flex justify-center mb-4 cursor-pointer select-none" @click="adminClicks++; if(adminClicks === 3) { adminModalOpen = true; adminPasswordInput = ''; adminAuthError = false; adminClicks = 0; }" x-data="{ heroLogoErr: false }">
-                        <template x-if="!heroLogoErr">
-                            <img src="https://i.ibb.co/T5w8drb/tmp-6c91eb22-fc8e-420d-beee-e9d1f6dd2b09.png" alt="Swasthya Care" @error="heroLogoErr = true" class="h-40 sm:h-48 md:h-56 lg:h-64 object-contain drop-shadow-sm select-none">
-                        </template>
-                        <template x-if="heroLogoErr">
-                            <div class="flex flex-col items-center justify-center py-6 px-8 bg-teal-900 text-white rounded-3xl shadow-xl border-4 border-yellow-400">
-                                <span class="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-white">Swasthya<span class="text-yellow-400">Care</span></span>
-                                <span class="text-[10px] font-bold tracking-widest text-teal-200 uppercase mt-2">Test Today. A Healthier Tomorrow.</span>
-                            </div>
-                        </template>
+                    <div class="flex justify-center mb-4 cursor-pointer select-none" @click="adminClicks++; if(adminClicks === 3) { adminModalOpen = true; adminPasswordInput = ''; adminAuthError = false; adminClicks = 0; }">
+                        <div class="flex flex-col items-center justify-center py-6 px-10 bg-teal-900 text-white rounded-3xl shadow-xl border-4 border-yellow-400">
+                            <span class="text-3xl sm:text-4xl md:text-5xl font-black tracking-tight text-white">Swasthya<span class="text-yellow-400">Care</span></span>
+                            <span class="text-[10px] font-bold tracking-widest text-teal-200 uppercase mt-2">Test Today. A Healthier Tomorrow.</span>
+                        </div>
                     </div>
                     <p class="text-lg md:text-xl text-slate-600 max-w-2xl mx-auto font-medium mt-6">
                         Invest in your well-being with our comprehensive, AI-curated health checkup plans.
@@ -96,27 +87,21 @@
                     <button @click="activeCategoryTab = 'bundles'" :class="activeCategoryTab === 'bundles' ? 'bg-teal-900 text-yellow-400 border-2 border-yellow-400 shadow-md scale-105' : 'bg-white text-slate-700 border border-slate-200 hover:bg-teal-50'" class="px-5 py-3 rounded-2xl font-bold text-sm transition-all shadow-sm">🧍 Wellness Bundles</button>
                 </div>
 
+                <!-- Package Cards Grid -->
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                     <template x-for="pkg in filteredPackages" :key="pkg.id">
                         <div class="bg-white rounded-2xl shadow-sm border border-slate-100 flex flex-col h-full overflow-hidden group hover:shadow-xl hover:border-teal-300 relative transition-all">
                             
-                            <div class="relative h-40 overflow-hidden bg-slate-100" x-data="{ imgFail: false }">
-                                <template x-if="!imgFail">
-                                    <img :src="pkg.image" :alt="pkg.name" @error="imgFail = true" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
-                                </template>
-                                <template x-if="imgFail">
-                                    <div class="w-full h-full bg-teal-900 text-yellow-400 flex flex-col items-center justify-center p-3 text-center font-extrabold text-sm" x-text="pkg.name"></div>
-                                </template>
-
+                            <div class="relative h-40 overflow-hidden bg-teal-900 flex items-center justify-center p-4">
+                                <div class="text-center text-yellow-400 font-extrabold text-lg" x-text="pkg.name"></div>
                                 <div class="absolute top-3 right-3 flex flex-col items-end gap-1">
                                     <template x-if="pkg.gender !== 'All'">
                                         <span class="text-[10px] uppercase font-extrabold px-2.5 py-1 rounded-full shadow" :class="pkg.gender === 'Female' ? 'bg-pink-600 text-white' : 'bg-blue-600 text-white'" x-text="pkg.gender + ' Only'"></span>
                                     </template>
                                 </div>
                                 <div class="absolute bottom-3 left-3 bg-white/95 backdrop-blur-sm px-2.5 py-1 rounded-lg text-xs font-bold text-teal-900 shadow" x-text="getTestCount(pkg) + ' Tests'"></div>
-                                <button @click="selectedPackageModal = pkg" class="absolute bottom-3 right-3 bg-teal-900/95 hover:bg-teal-950 backdrop-blur-sm px-2.5 py-1 rounded-lg text-xs font-bold text-yellow-400 shadow transition-transform hover:scale-105 cursor-pointer flex items-center space-x-1">
+                                <button @click="selectedPackageModal = pkg" class="absolute bottom-3 right-3 bg-teal-950/95 hover:bg-teal-900 backdrop-blur-sm px-2.5 py-1 rounded-lg text-xs font-bold text-yellow-400 shadow transition-transform hover:scale-105 cursor-pointer flex items-center space-x-1">
                                     <span x-text="getParamCount(pkg) + ' Parameters'"></span>
-                                    <svg class="w-3 h-3 ml-0.5 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                                 </button>
                             </div>
 
@@ -131,17 +116,15 @@
                                                 <span x-text="getMemberCount(pkg.id) + (getMemberCount(pkg.id) > 1 ? ' Members' : ' Member')"></span>
                                                 <svg class="w-4 h-4 text-teal-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                                             </button>
-                                            <template x-if="getMemberCount(pkg.id) >= 4">
-                                                <div class="flex items-center space-x-1 bg-teal-50 border border-teal-200 p-1 rounded-xl">
-                                                    <button type="button" @click="setMembers(pkg.id, Math.max(4, getMemberCount(pkg.id) - 1))" class="bg-white hover:bg-teal-100 text-teal-900 p-1.5 rounded-lg border border-teal-200 text-xs font-bold"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"></path></svg></button>
-                                                    <button type="button" @click="setMembers(pkg.id, Math.min(9, getMemberCount(pkg.id) + 1))" class="bg-teal-900 hover:bg-teal-800 text-yellow-400 p-1.5 rounded-lg text-xs font-bold"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg></button>
-                                                </div>
-                                            </template>
+                                            <div class="flex items-center space-x-1 bg-teal-50 border border-teal-200 p-1 rounded-xl">
+                                                <button type="button" @click="setMembers(pkg.id, Math.max(1, getMemberCount(pkg.id) - 1))" class="bg-white hover:bg-teal-100 text-teal-900 p-1.5 rounded-lg border border-teal-200 text-xs font-bold">-</button>
+                                                <button type="button" @click="setMembers(pkg.id, Math.min(15, getMemberCount(pkg.id) + 1))" class="bg-teal-900 hover:bg-teal-800 text-yellow-400 p-1.5 rounded-lg text-xs font-bold">+</button>
+                                            </div>
                                         </div>
 
-                                        <template x-if="openMemberDropdown === pkg.id && getMemberCount(pkg.id) <= 4">
-                                            <div class="absolute bottom-full mb-2 left-0 right-0 bg-white rounded-2xl shadow-2xl border border-slate-200 p-2 z-30 space-y-1">
-                                                <template x-for="num in [1,2,3,4]">
+                                        <template x-if="openMemberDropdown === pkg.id">
+                                            <div class="absolute bottom-full mb-2 left-0 right-0 bg-white rounded-2xl shadow-2xl border border-slate-200 p-2 z-30 max-h-48 overflow-y-auto space-y-1">
+                                                <template x-for="num in [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15]">
                                                     <div @click="setMembers(pkg.id, num); openMemberDropdown = null;" class="flex items-center justify-between p-2.5 rounded-xl cursor-pointer hover:bg-slate-50" :class="getMemberCount(pkg.id) === num ? 'bg-teal-50 border border-teal-300' : ''">
                                                         <span class="text-xs font-bold text-slate-800" x-text="num + (num > 1 ? ' Members' : ' Member')"></span>
                                                         <span class="text-xs font-extrabold text-teal-800" x-text="'₹' + getPricing(pkg, num).price"></span>
@@ -173,23 +156,16 @@
                     </template>
                 </div>
 
+                <!-- Award Section & Trusted Diagnostics Banner -->
                 <div class="mt-16 mb-8 bg-white rounded-3xl shadow-sm border border-slate-100 p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-8">
-                    <div class="w-full md:w-5/12 flex justify-start" x-data="{ awardErr: false }">
-                        <template x-if="!awardErr">
-                            <img src="https://cdn3.healthians.com/img/unit-no1.svg" alt="Times Health Excellence Survey 2024" @error="awardErr = true" class="w-full max-w-sm object-contain drop-shadow-sm">
-                        </template>
-                        <template x-if="awardErr">
-                            <div class="bg-amber-100 text-amber-900 p-4 rounded-2xl font-bold text-sm text-center border border-amber-300">
-                                🏆 Times Health Excellence Survey Winner
-                            </div>
-                        </template>
+                    <div class="w-full md:w-5/12 bg-amber-50 text-amber-900 p-6 rounded-2xl font-bold text-sm text-center border border-amber-300">
+                        🏆 Times Health Excellence Survey Winner 2024
                     </div>
                     <div class="w-full md:w-7/12 bg-slate-50 p-6 rounded-2xl border border-slate-200 text-slate-700 text-sm md:text-base font-medium leading-relaxed">
                         With a presence in <strong class="text-teal-900">250+ cities</strong>, Healthians offers quick, affordable, and hassle-free at-home testing services, backed by a trusted network of <strong class="text-teal-900">NABL and CAP</strong> accredited labs.
                     </div>
                 </div>
 
-                <!-- Trusted Diagnostics Nationwide Banner below award and above contact -->
                 <div class="mb-12 bg-teal-50 rounded-3xl p-6 md:p-8 border border-teal-200 text-center shadow-sm">
                     <h3 class="text-xl font-extrabold text-teal-950 mb-2">Trusted Diagnostics Nationwide</h3>
                     <p class="text-xs md:text-sm text-teal-800 max-w-2xl mx-auto font-medium">
@@ -199,6 +175,7 @@
             </div>
         </template>
 
+        <!-- Checkout View -->
         <template x-if="view === 'checkout'">
             <div class="max-w-4xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
                 <button @click="view = 'menu'" class="flex items-center text-teal-700 hover:text-teal-900 font-semibold mb-8">
@@ -214,7 +191,7 @@
 
                     <form @submit.prevent="submitBooking" class="p-6 md:p-8 space-y-8">
                         <div>
-                            <h3 class="text-xl font-bold text-slate-800 mb-4 flex items-center"><svg class="w-5 h-5 mr-2 text-teal-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg> Primary Patient Details & Address</h3>
+                            <h3 class="text-xl font-bold text-slate-800 mb-4 flex items-center">Primary Patient Details & Address</h3>
                             
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
@@ -296,8 +273,8 @@
                         <!-- Family Members Section -->
                         <div>
                             <div class="flex items-center justify-between mb-6">
-                                <h3 class="text-xl font-bold text-slate-800 flex items-center"><svg class="w-5 h-5 mr-2 text-teal-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg> Family Members & Test Assignment</h3>
-                                <button type="button" @click="addFamilyMember()" class="flex items-center text-sm font-bold text-teal-700 bg-teal-50 hover:bg-teal-100 px-3 py-2 rounded-lg border border-teal-200"><svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg> Add Family Member</button>
+                                <h3 class="text-xl font-bold text-slate-800">Family Members & Test Assignment</h3>
+                                <button type="button" @click="addFamilyMember()" class="flex items-center text-sm font-bold text-teal-700 bg-teal-50 hover:bg-teal-100 px-3 py-2 rounded-lg border border-teal-200">+ Add Family Member</button>
                             </div>
 
                             <template x-if="requiredFamilySlots > 0 && familyMembers.length < requiredFamilySlots">
@@ -307,7 +284,7 @@
                             <div class="space-y-6">
                                 <template x-for="(m, idx) in familyMembers" :key="m.id">
                                     <div class="relative bg-white border border-teal-100 rounded-xl p-5 shadow-sm space-y-4">
-                                        <button type="button" @click="removeFamilyMember(m.id)" class="absolute top-4 right-4 text-red-400 hover:text-red-600"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
+                                        <button type="button" @click="removeFamilyMember(m.id)" class="absolute top-4 right-4 text-red-400 hover:text-red-600 font-bold">✕</button>
                                         <h4 class="font-bold text-teal-800" x-text="'Family Member ' + (idx + 1)"></h4>
                                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div><label class="block text-xs font-semibold text-slate-700 mb-1">Name *</label><input required type="text" x-model="m.name" class="w-full p-2 border border-teal-200 rounded-md outline-none text-sm" placeholder="Member Name"></div>
@@ -317,12 +294,12 @@
                                             </div>
                                         </div>
                                         <div class="bg-teal-50/50 p-3 rounded-lg border border-teal-100 space-y-2">
-                                            <label class="block text-xs font-bold text-teal-900">Assign Tests for this Member:</label>
+                                            <label class="block text-xs font-bold text-teal-900">Assign Tests for this Member (Only selected tests show here):</label>
                                             <div class="flex flex-wrap gap-2">
                                                 <template x-for="id in cart" :key="id">
                                                     <button type="button" @click="toggleAssignment(m.id, id)" class="px-3 py-1.5 rounded-lg text-xs font-bold border transition-all flex items-center space-x-1.5" :class="isAssigned(m.id, id) ? 'bg-teal-900 text-yellow-400 border-teal-900' : 'bg-white text-slate-700 border-slate-200'">
                                                         <span x-text="getPackageName(id)"></span>
-                                                        <template x-if="isAssigned(m.id, id)"><svg class="w-3 h-3 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg></template>
+                                                        <template x-if="isAssigned(m.id, id)"><span class="text-yellow-400">✓</span></template>
                                                     </button>
                                                 </template>
                                             </div>
@@ -335,7 +312,7 @@
                         <!-- Pre-Confirmation Bill -->
                         <div class="bg-slate-50 rounded-2xl p-5 border border-slate-200 shadow-sm">
                             <div class="flex justify-between items-center cursor-pointer" @click="showPriceBreakup = !showPriceBreakup">
-                                <div class="flex items-center space-x-2"><svg class="w-5 h-5 text-teal-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg><h4 class="font-extrabold text-sm text-teal-950">Pre-Confirmation Bill & Price Breakdown</h4></div>
+                                <div class="flex items-center space-x-2"><h4 class="font-extrabold text-sm text-teal-950">Pre-Confirmation Bill & Price Breakdown</h4></div>
                                 <div class="flex items-center space-x-2"><span class="text-xs font-bold text-teal-800" x-text="'Total: ₹' + calculateTotal()"></span></div>
                             </div>
                             <template x-if="showPriceBreakup">
@@ -351,16 +328,17 @@
                         <!-- Submit Box -->
                         <div class="bg-teal-900 rounded-xl p-6 flex flex-col md:flex-row justify-between items-center text-white">
                             <div><p class="text-teal-200 font-medium">Total Amount Payable</p><p class="text-3xl font-extrabold text-yellow-400" x-text="'₹' + calculateTotal()"></p></div>
-                            <button type="submit" :disabled="cart.length === 0 || familyMembers.length < requiredFamilySlots" class="w-full md:w-auto bg-yellow-400 hover:bg-yellow-500 disabled:opacity-50 text-teal-950 font-bold text-lg py-3 px-8 rounded-full shadow-lg">Confirm Booking</button>
+                            <button type="submit" :disabled="!isFormValid()" class="w-full md:w-auto bg-yellow-400 hover:bg-yellow-500 disabled:opacity-50 text-teal-950 font-bold text-lg py-3 px-8 rounded-full shadow-lg">Confirm Booking</button>
                         </div>
                     </form>
                 </div>
             </div>
         </template>
 
+        <!-- Success View -->
         <template x-if="view === 'success'">
             <div class="max-w-2xl mx-auto px-4 py-20 text-center">
-                <div class="inline-flex items-center justify-center w-24 h-24 bg-teal-100 rounded-full mb-8 shadow-inner"><svg class="w-12 h-12 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg></div>
+                <div class="inline-flex items-center justify-center w-24 h-24 bg-teal-100 rounded-full mb-8 text-teal-600 font-black text-3xl">✓</div>
                 <h2 class="text-4xl font-extrabold text-teal-950 mb-4">Booking Confirmed!</h2>
                 <p class="text-lg text-slate-600 mb-8" x-text="'Thank you, ' + primaryBooking.name + '. Your home collection has been scheduled.'"></p>
                 <button @click="view = 'menu'; cart = []; familyMembers = [];" class="bg-teal-900 text-white px-8 py-3 rounded-full font-bold shadow-md">Return to Home</button>
@@ -373,13 +351,12 @@
                 <div class="flex justify-between items-center mb-8">
                     <h2 class="text-3xl font-extrabold text-teal-950">Lab Admin Dashboard & Google Sheets Sync</h2>
                     <div class="flex space-x-3">
-                        <button @click="copyBookings()" class="bg-emerald-700 hover:bg-emerald-800 text-white px-4 py-2.5 rounded-xl font-bold text-xs flex items-center"><svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg> Copy Data for Google Sheets</button>
+                        <button @click="copyBookings()" class="bg-emerald-700 hover:bg-emerald-800 text-white px-4 py-2.5 rounded-xl font-bold text-xs flex items-center">Copy Data for Google Sheets</button>
                         <a :href="googleSheetUrl" target="_blank" class="bg-teal-800 text-yellow-400 px-4 py-2.5 rounded-xl font-bold text-xs flex items-center">Open Google Sheets</a>
                         <button @click="view = 'menu'" class="bg-slate-200 px-4 py-2.5 rounded-xl font-bold text-xs">Exit Admin</button>
                     </div>
                 </div>
 
-                <!-- Bookings Table -->
                 <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
                     <div class="p-6 border-b bg-slate-50"><h3 class="font-extrabold text-teal-950 text-lg">Patient Bookings</h3></div>
                     <div class="overflow-x-auto">
@@ -412,7 +389,7 @@
             <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl">
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="font-extrabold text-lg text-teal-950">Lab Admin Login</h3>
-                    <button @click="adminModalOpen = false"><svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+                    <button @click="adminModalOpen = false" class="text-slate-400 font-bold">✕</button>
                 </div>
                 <template x-if="!showOtpModal">
                     <form @submit.prevent="if(adminPasswordInput === adminPassword) { adminModalOpen = false; view = 'admin'; } else { adminAuthError = true; }">
@@ -453,17 +430,16 @@
         </div>
     </template>
 
+    <!-- AI Chatbot Assistant -->
     <div class="fixed bottom-6 right-6 z-50">
         <template x-if="!chatOpen">
-            <button @click="chatOpen = true" class="bg-teal-700 text-white p-4 rounded-full shadow-2xl hover:bg-teal-800 transition-transform hover:scale-110 flex items-center justify-center border-2 border-teal-600">
-                <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"></path></svg>
-            </button>
+            <button @click="chatOpen = true" class="bg-teal-700 text-white p-4 rounded-full shadow-2xl hover:bg-teal-800 transition-transform hover:scale-110 flex items-center justify-center border-2 border-teal-600">💬</button>
         </template>
         <template x-if="chatOpen">
             <div class="bg-white w-80 md:w-96 rounded-2xl shadow-2xl border border-slate-200 flex flex-col h-[500px]">
                 <div class="bg-teal-900 text-white p-4 flex justify-between items-center">
                     <h3 class="font-bold text-yellow-400">Swasthya AI</h3>
-                    <button @click="chatOpen = false"><svg class="w-5 h-5 text-teal-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+                    <button @click="chatOpen = false" class="text-teal-200 font-bold">✕</button>
                 </div>
                 <div class="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50">
                     <template x-for="msg in messages">
@@ -539,29 +515,37 @@
                 },
 
                 getMemberCount(id) { return this.packageMembers[id] || 1; },
-                setMembers(id, count) { this.packageMembers[id] = count; },
+                setMembers(id, count) { 
+                    this.packageMembers[id] = count; 
+                    if (count >= 4) {
+                        this.celebratingPkgId = id;
+                        setTimeout(() => this.celebratingPkgId = null, 1500);
+                    }
+                },
 
                 getPricing(pkg, count) {
                     const basePrice = pkg.price;
                     const baseMrp = pkg.mrp || Math.round(basePrice * 2.5);
-                    if (count === 1) return { price: basePrice, mrp: baseMrp };
-                    let total = 0;
-                    for (let i = 1; i <= count; i++) {
-                        if (i === 1) total += basePrice;
-                        else if (i === 2) total += Math.round(basePrice * (1 - 0.1495));
-                        else if (i === 3) total += Math.round(basePrice * (1 - 0.0723));
-                        else total += Math.round(basePrice * (1 - 0.0486));
+                    if (pkg.dealType === 'Wellness Bundle') {
+                        let perPerson = basePrice;
+                        if (count === 1) perPerson = basePrice;
+                        else if (count === 2) perPerson = 520; // 14.95% discount approx 520
+                        else if (count === 3) perPerson = 480; // 7.25% discount approx 480
+                        else if (count >= 4) perPerson = 455; // 4.85% discount approx 455 per person up to 15 members
+                        return { price: perPerson * count, mrp: baseMrp * count };
                     }
-                    return { price: total, mrp: baseMrp * count };
+                    return { price: basePrice * count, mrp: baseMrp * count };
                 },
 
                 getEncouragingBanner(pkg) {
                     const c = this.getMemberCount(pkg.id);
-                    if (c === 1) return "💡 Add 1 more family member → Save ~15%!";
-                    if (c === 2) return "🎉 Family savings unlocked! + Add 1 more!";
-                    if (c === 3) return "🌟 Almost maximum value! + Add 1 more!";
-                    return "✨ Maximum Family Tier Active! Best Value!";
+                    if (c === 1) return "💡 Add 1 more family member → Pay ₹520/person!";
+                    if (c === 2) return "🎉 Family savings unlocked! + Add 1 more → Pay ₹480/person!";
+                    if (c === 3) return "🌟 Almost maximum value! + Add 1 more → Pay ₹455/person!";
+                    return "✨ Maximum Family Tier Active! Best Value: ₹455/person up to 15 members!";
                 },
+
+                celebratingPkgId: null,
 
                 toggleCart(id) {
                     if (this.cart.includes(id)) {
@@ -630,6 +614,23 @@
                     return sum;
                 },
 
+                isFormValid() {
+                    if (this.cart.length === 0) return false;
+                    if (!this.primaryBooking.name || !this.primaryBooking.age || !this.primaryBooking.gender || !this.primaryBooking.contact || !this.primaryBooking.houseNo || !this.primaryBooking.street || !this.primaryBooking.city || !this.primaryBooking.state || !this.primaryBooking.pincode || !this.primaryBooking.preferredDate || !this.primaryBooking.preferredTime) return false;
+                    if (this.familyMembers.length < this.requiredFamilySlots) return false;
+                    for (let i = 0; i < this.requiredFamilySlots; i++) {
+                        const m = this.familyMembers[i];
+                        if (!m || !m.name || !m.age || !m.gender) return false;
+                    }
+                    // check all slots assigned
+                    if ((this.patientAssignments['primary'] || []).length === 0) return false;
+                    for (let i = 0; i < this.requiredFamilySlots; i++) {
+                        const m = this.familyMembers[i];
+                        if ((this.patientAssignments[m.id] || []).length === 0) return false;
+                    }
+                    return true;
+                },
+
                 getMinDate() {
                     const now = new Date();
                     if (now.getHours() >= 17) {
@@ -687,6 +688,7 @@
                 },
 
                 submitBooking() {
+                    if (!this.isFormValid()) return;
                     const booking = {
                         primaryBooking: this.primaryBooking,
                         cart: this.cart,
