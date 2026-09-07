@@ -625,7 +625,7 @@
                 chatOpen: false,
                 inputValue: '',
                 isAILoading: false,
-                messages: [{ role: 'model', text: 'Hi! I am your Swasthya Care AI Health Assistant. How can I help you choose a health package or test today?' }],
+                messages: [{ role: 'model', text: 'Hi! I am your **Swasthya Care AI** Health Assistant. How can I help you choose a health package or test today?' }],
                 testSearchQuery: '',
                 activeCategoryTab: 'all',
                 selectedPackageModal: null,
@@ -651,16 +651,30 @@
                     { id: 2, name: "Arthritis Panel Basic", tests: 6, parameters: 38, mrp: 1950, price: 650, gender: "All", dealType: "Lab Atoms", image: "https://images.unsplash.com/photo-1584515979956-d9f6e5d09982?auto=format&fit=crop&w=600&q=80", color: "text-rose-600 bg-rose-50", includes: "ASO Titre, CRP, ESR, Rheumatoid Factor, Uric Acid, Complete Blood Count" },
                     { id: 3, name: "Swasthya Mitra ADVANCE", tests: 9, parameters: 62, mrp: 2400, price: 750, gender: "All", dealType: "Wellness Bundle", image: "https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?auto=format&fit=crop&w=600&q=80", color: "text-blue-600 bg-blue-50", includes: "BGF, ESR, CBC, HbA1c, Iron Studies, KFT, Lipid Profile, LFT, Thyroid Profile" },
                     { id: 4, name: "PreOperative Panel", tests: 12, parameters: 75, mrp: 2500, price: 750, gender: "All", dealType: "Organ Health", image: "https://images.unsplash.com/photo-1516549655169-df83a0774514?auto=format&fit=crop&w=600&q=80", color: "text-purple-600 bg-purple-50", includes: "Anti HCV, BUN, Creatinine, ESR, HBV, HIV, RBS, RPR, TSH, Blood Group, CBC, PT INR" },
-                    { id: 5, name: "Swasthya Mitra PREMIUM", tests: 11, parameters: 80, mrp: 3200, price: 975, gender: "All", dealType: "Wellness Bundle", image: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=600&q=80", color: "text-amber-600 bg-amber-50", includes: "BGF, ESR, Vitamin B12, Vitamin D, CBC, HbA1c, Iron Studies, KFT, Lipid, LFT, Thyroid" },
+                    { id: 5, name: "Gym Health - Male", tests: 14, parameters: 92, mrp: 3800, price: 1250, gender: "Male", dealType: "Wellness Bundle", image: "https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=600&q=80", color: "text-cyan-600 bg-cyan-50", includes: "Testosterone, IgE, B12, D, CBC, HbA1c, Iron, KFT, Lipid Adv, LFT, Thyroid, Urine" },
                     { id: 6, name: "Swasthya COMPLETE", tests: 17, parameters: 110, mrp: 4200, price: 1450, gender: "All", dealType: "Wellness Bundle", image: "https://images.unsplash.com/photo-1579154204601-01588f351e67?auto=format&fit=crop&w=600&q=80", color: "text-teal-700 bg-teal-100", includes: "Amylase, Apolipoproteins, BGF, ESR, HBV, HsCRP, B12, D, CBC, HbA1c, Iron, KFT, Lipid, LFT, Thyroid, Urine" }
                 ],
                 
                 parseMarkdown(text) {
                     if (!text) return '';
-                    return text
+                    let html = text
                         .replace(/\*\*(.*?)\*\*/g, '<strong class="font-bold text-teal-950">$1</strong>')
                         .replace(/\*(.*?)\*/g, '<em>$1</em>')
                         .replace(/\n/g, '<br>');
+                    
+                    // Add interactive Add to Cart action if package recommendation tag is present
+                    if (html.includes('[ADD:')) {
+                        html = html.replace(/\[ADD:(\d+)\]/g, (match, p1) => {
+                            return `<button onclick="window.dispatchEvent(new CustomEvent('add-pkg', {detail: ${p1}}))" class="mt-2 w-full py-2 bg-yellow-400 hover:bg-yellow-500 text-teal-950 font-bold text-xs rounded-xl shadow transition-all">🛒 Add Package to Cart</button>`;
+                        });
+                    }
+                    return html;
+                },
+
+                init() {
+                    window.addEventListener('add-pkg', (e) => {
+                        this.toggleCart(Number(e.detail));
+                    });
                 },
 
                 get filteredPackages() {
@@ -826,18 +840,18 @@
                     setTimeout(() => {
                         const query = text.toLowerCase();
                         let reply = "";
-                        if (query.includes('sugar') || query.includes('diabetes') || query.includes('glucose') || query.includes('hba1c')) {
-                            reply = "For diabetes screening, I recommend our **Swasthya Mitra ADVANCE** (₹750) or **PREMIUM** (₹975) package which includes Fasting Blood Glucose and HbA1c testing.";
-                        } else if (query.includes('joint') || query.includes('pain') || query.includes('arthritis') || query.includes('bone')) {
-                            reply = "For joint and bone health, our **Arthritis Panel Basic** (₹650) is ideal, covering ASO, CRP, ESR, and Rheumatoid Factor.";
-                        } else if (query.includes('thyroid') || query.includes('weight')) {
-                            reply = "For complete metabolic and hormonal screening, check out our **Swasthya Mitra BASIC** (₹610) which includes a full Thyroid Profile (T3, T4, TSH).";
-                        } else if (query.includes('full body') || query.includes('complete') || query.includes('comprehensive')) {
-                            reply = "Our top-tier **Swasthya COMPLETE** package (₹1450, 17 tests, 110 parameters) provides ultimate full-body diagnostic coverage.";
+                        if (query.includes('reproduction') || query.includes('reproductive') || query.includes('testosterone') || query.includes('male') || query.includes('hormone')) {
+                            reply = "For male reproductive health, hormones, and fitness screening, I highly recommend our **Gym Health - Male** package (₹1250) which includes Total Testosterone and comprehensive organ panels. [ADD:5]";
+                        } else if (query.includes('sugar') || query.includes('diabetes') || query.includes('glucose') || query.includes('hba1c')) {
+                            reply = "For diabetes and blood sugar screening, our **Swasthya Mitra ADVANCE** (₹750) includes Fasting Blood Glucose and HbA1c testing. [ADD:3]";
+                        } else if (query.includes('stomach') || query.includes('pain') || query.includes('digestion') || query.includes('liver')) {
+                            reply = "For stomach, liver, and digestive organ health, our **Swasthya COMPLETE** package (₹1450) provides full-spectrum screening including LFT and KFT. [ADD:6]";
+                        } else if (query.includes('joint') || query.includes('arthritis') || query.includes('bone')) {
+                            reply = "For joint and bone health, our **Arthritis Panel Basic** (₹650) is ideal, covering ASO, CRP, ESR, and Uric Acid. [ADD:2]";
                         } else if (query.includes('hi') || query.includes('hello') || query.includes('hey')) {
-                            reply = "Hello! I am your **Swasthya Care AI** assistant. How can I help you find the right health test or package today?";
+                            reply = "Hello! I am your **Swasthya Care AI** assistant. Please tell me your symptoms or what test you are looking for so I can suggest the exact package.";
                         } else {
-                            reply = `I understand you are asking about "${text}". For this, our **Swasthya Mitra BASIC** package (₹610 for 7 tests & 45 parameters) or **ADVANCE** package provides excellent diagnostic coverage.`;
+                            reply = `I understand you are asking about "${text}". For comprehensive diagnostic coverage, our flagship **Swasthya Mitra BASIC** package (₹610 for 7 tests) is a wonderful starting point. [ADD:1]`;
                         }
                         this.messages.push({ role: 'model', text: reply });
                         this.isAILoading = false;
