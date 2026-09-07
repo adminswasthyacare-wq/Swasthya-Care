@@ -9,6 +9,7 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
+        [x-cloak] { display: none !important; }
     </style>
 </head>
 <body class="min-h-screen bg-slate-50 font-sans text-slate-800 selection:bg-teal-200 flex flex-col" x-data="swasthyaApp()">
@@ -23,21 +24,26 @@
         <header class="bg-white/95 backdrop-blur-md shadow-sm sticky top-0 z-50 border-b border-slate-200">
             <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
                 <div class="flex items-center cursor-pointer transition-transform hover:scale-105" @click="view = 'menu'; window.scrollTo({ top: 0, behavior: 'smooth' });">
-                    <img src="https://cdn1.healthians.com/img/healthians-logo.svg" alt="Healthians Logo" class="h-10 md:h-12 object-contain">
+                    <div class="flex items-center space-x-2">
+                        <div class="w-10 h-10 rounded-xl bg-teal-900 flex items-center justify-center text-yellow-400 font-extrabold text-xl shadow">SC</div>
+                        <span class="text-2xl font-extrabold tracking-tight text-teal-950">
+                            Swasthya<span class="text-teal-600">Care</span>
+                        </span>
+                    </div>
                 </div>
                 <div class="flex items-center">
                     <span class="text-[10px] md:text-xs font-extrabold text-slate-500 uppercase tracking-wider mr-3 hidden sm:inline-block">Accredited By</span>
                     <div class="flex items-center space-x-2 md:space-x-3">
-                        <img src="https://cdn1.healthians.com/img/lab_images/nabl.jpg" alt="NABL Accredited" class="h-10 md:h-14 w-auto object-contain drop-shadow-sm bg-white p-1 rounded border border-slate-200">
-                        <img src="https://helma-mumbai.healthians.com/stationery/mailer-assets/68fb2c63f2840.png" alt="CAP Accredited" class="h-10 md:h-14 w-auto object-contain drop-shadow-sm bg-white p-1 rounded border border-slate-200">
+                        <div class="bg-white px-3 py-1 rounded border border-slate-200 text-xs font-extrabold text-teal-900 shadow-sm">NABL</div>
+                        <div class="bg-white px-3 py-1 rounded border border-slate-200 text-xs font-extrabold text-teal-900 shadow-sm">CAP</div>
                     </div>
                 </div>
             </div>
         </header>
 
         <template x-if="view === 'menu' && cart.length > 0">
-            <div class="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-40">
-                <button @click="view = 'checkout'; window.scrollTo({ top: 0, behavior: 'smooth' });" class="flex items-center space-x-3 bg-teal-900 text-white px-6 py-3 rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.3)] border-2 border-yellow-400 hover:bg-teal-800 hover:scale-105 transition-all">
+            <div class="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-40 animate-bounce">
+                <button @click="view = 'checkout'; window.scrollTo({ top: 0, behavior: 'smooth' });" class="flex items-center space-x-3 bg-teal-900 text-white px-6 py-3 rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.3)] border-2 border-yellow-400 hover:bg-teal-800 transition-all">
                     <div class="relative flex items-center justify-center">
                         <svg class="w-5 h-5 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
                         <span class="absolute -top-3 -right-3 bg-yellow-400 text-teal-950 text-[10px] font-extrabold rounded-full w-5 h-5 flex items-center justify-center border-2 border-teal-900" x-text="cart.length"></span>
@@ -52,8 +58,14 @@
                 
                 <!-- Hero Heading & Search -->
                 <div class="text-center mb-12">
-                    <div class="flex justify-center mb-4 cursor-pointer" @click="adminClicks++; if(adminClicks === 3) { adminModalOpen = true; adminPasswordInput = ''; adminAuthError = false; adminClicks = 0; }">
-                        <img src="https://i.ibb.co/T5w8drb/tmp-6c91eb22-fc8e-420d-beee-e9d1f6dd2b09.png" alt="Swasthya Care" class="h-40 sm:h-48 md:h-56 lg:h-64 object-contain drop-shadow-sm select-none">
+                    <div class="flex justify-center mb-4 cursor-pointer select-none" @click="adminClicks++; if(adminClicks === 3) { adminModalOpen = true; adminPasswordInput = ''; adminAuthError = false; adminClicks = 0; }">
+                        <div class="bg-gradient-to-r from-teal-900 to-teal-800 text-white p-6 rounded-3xl shadow-lg border-2 border-yellow-400 inline-flex items-center space-x-4">
+                            <div class="w-14 h-14 bg-yellow-400 rounded-2xl flex items-center justify-center text-teal-950 text-3xl font-black shadow-inner">SC</div>
+                            <div class="text-left">
+                                <h1 class="text-3xl md:text-4xl font-black tracking-tight text-yellow-400">Swasthya Care</h1>
+                                <p class="text-xs font-bold tracking-widest text-teal-200 uppercase">Test Today. A Healthier Tomorrow.</p>
+                            </div>
+                        </div>
                     </div>
                     <p class="text-lg md:text-xl text-slate-600 max-w-2xl mx-auto font-medium mt-6">
                         Invest in your well-being with our comprehensive, AI-curated health checkup plans.
@@ -69,36 +81,36 @@
                     </div>
                 </div>
 
-                <!-- Navigation Tabs -->
+                <!-- Navigation Tabs with Smooth Transitions -->
                 <div class="mb-10 flex flex-wrap items-center justify-center gap-3">
-                    <button @click="activeCategoryTab = 'all'" :class="activeCategoryTab === 'all' ? 'bg-teal-900 text-yellow-400 border-2 border-yellow-400 shadow-md scale-105' : 'bg-white text-slate-700 border border-slate-200 hover:bg-teal-50'" class="px-5 py-3 rounded-2xl font-bold text-sm transition-all shadow-sm">🔬 All Lab Tests</button>
-                    <button @click="activeCategoryTab = 'atoms'" :class="activeCategoryTab === 'atoms' ? 'bg-teal-900 text-yellow-400 border-2 border-yellow-400 shadow-md scale-105' : 'bg-white text-slate-700 border border-slate-200 hover:bg-teal-50'" class="px-5 py-3 rounded-2xl font-bold text-sm transition-all shadow-sm">🧬 Lab Atoms</button>
-                    <button @click="activeCategoryTab = 'health'" :class="activeCategoryTab === 'health' ? 'bg-teal-900 text-yellow-400 border-2 border-yellow-400 shadow-md scale-105' : 'bg-white text-slate-700 border border-slate-200 hover:bg-teal-50'" class="px-5 py-3 rounded-2xl font-bold text-sm transition-all shadow-sm">❤️ Organ Health</button>
-                    <button @click="activeCategoryTab = 'bundles'" :class="activeCategoryTab === 'bundles' ? 'bg-teal-900 text-yellow-400 border-2 border-yellow-400 shadow-md scale-105' : 'bg-white text-slate-700 border border-slate-200 hover:bg-teal-50'" class="px-5 py-3 rounded-2xl font-bold text-sm transition-all shadow-sm">🧍 Wellness Bundles</button>
+                    <button @click="activeCategoryTab = 'all'" :class="activeCategoryTab === 'all' ? 'bg-teal-900 text-yellow-400 border-2 border-yellow-400 shadow-md scale-105' : 'bg-white text-slate-700 border border-slate-200 hover:bg-teal-50'" class="px-5 py-3 rounded-2xl font-bold text-sm transition-all duration-300 shadow-sm">🔬 All Lab Tests</button>
+                    <button @click="activeCategoryTab = 'atoms'" :class="activeCategoryTab === 'atoms' ? 'bg-teal-900 text-yellow-400 border-2 border-yellow-400 shadow-md scale-105' : 'bg-white text-slate-700 border border-slate-200 hover:bg-teal-50'" class="px-5 py-3 rounded-2xl font-bold text-sm transition-all duration-300 shadow-sm">🧬 Lab Atoms</button>
+                    <button @click="activeCategoryTab = 'health'" :class="activeCategoryTab === 'health' ? 'bg-teal-900 text-yellow-400 border-2 border-yellow-400 shadow-md scale-105' : 'bg-white text-slate-700 border border-slate-200 hover:bg-teal-50'" class="px-5 py-3 rounded-2xl font-bold text-sm transition-all duration-300 shadow-sm">❤️ Organ Health</button>
+                    <button @click="activeCategoryTab = 'bundles'" :class="activeCategoryTab === 'bundles' ? 'bg-teal-900 text-yellow-400 border-2 border-yellow-400 shadow-md scale-105' : 'bg-white text-slate-700 border border-slate-200 hover:bg-teal-50'" class="px-5 py-3 rounded-2xl font-bold text-sm transition-all duration-300 shadow-sm">🧍 Wellness Bundles</button>
                 </div>
 
                 <!-- Packages Grid -->
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                     <template x-for="pkg in filteredPackages" :key="pkg.id">
-                        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 flex flex-col h-full overflow-hidden group hover:shadow-xl hover:border-teal-300 relative transition-all">
+                        <div class="bg-white rounded-2xl shadow-sm border border-slate-100 flex flex-col h-full overflow-hidden group hover:shadow-xl hover:border-teal-300 relative transition-all duration-300">
                             
                             <div class="relative h-40 overflow-hidden bg-slate-100">
-                                <img :src="pkg.image" :alt="pkg.name" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                                <img :src="pkg.image" :alt="pkg.name" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" onerror="this.src='https://placehold.co/600x400/0f3b57/ffffff?text=Swasthya+Care'">
                                 <div class="absolute top-3 right-3 flex flex-col items-end gap-1">
                                     <template x-if="pkg.gender !== 'All'">
                                         <span class="text-[10px] uppercase font-extrabold px-2.5 py-1 rounded-full shadow" :class="pkg.gender === 'Female' ? 'bg-pink-600 text-white' : 'bg-blue-600 text-white'" x-text="pkg.gender + ' Only'"></span>
                                     </template>
                                 </div>
-                                <div class="absolute bottom-3 left-3 bg-white/95 backdrop-blur-sm px-2.5 py-1 rounded-lg text-xs font-bold text-teal-900 shadow" x-text="getTestCount(pkg) + ' Tests'"></div>
+                                <div class="absolute bottom-3 left-3 bg-white/95 backdrop-blur-sm px-2.5 py-1 rounded-lg text-xs font-bold text-teal-900 shadow" x-text="pkg.tests + ' Tests'"></div>
                                 <button @click="selectedPackageModal = pkg" class="absolute bottom-3 right-3 bg-teal-900/95 hover:bg-teal-950 backdrop-blur-sm px-2.5 py-1 rounded-lg text-xs font-bold text-yellow-400 shadow transition-transform hover:scale-105 cursor-pointer flex items-center space-x-1">
-                                    <span x-text="getParamCount(pkg) + ' Parameters'"></span>
+                                    <span x-text="pkg.parameters + ' Parameters'"></span>
                                     <svg class="w-3 h-3 ml-0.5 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                                 </button>
                             </div>
 
                             <div class="p-6 flex flex-col flex-grow">
                                 <h3 class="text-lg font-bold text-slate-800 leading-tight mb-2" x-text="pkg.name"></h3>
-                                <p class="text-xs text-slate-500 mb-4 flex-grow leading-relaxed" x-text="getPackageCategories(pkg)"></p>
+                                <p class="text-xs text-slate-500 mb-4 flex-grow leading-relaxed" x-text="pkg.includes"></p>
                                 
                                 <template x-if="pkg.dealType === 'Wellness Bundle'">
                                     <div class="mb-4 relative">
@@ -109,8 +121,8 @@
                                             </button>
                                             <template x-if="getMemberCount(pkg.id) >= 4">
                                                 <div class="flex items-center space-x-1 bg-teal-50 border border-teal-200 p-1 rounded-xl">
-                                                    <button type="button" @click="setMembers(pkg.id, Math.max(4, getMemberCount(pkg.id) - 1))" class="bg-white hover:bg-teal-100 text-teal-900 p-1.5 rounded-lg border border-teal-200 text-xs font-bold"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"></path></svg></button>
-                                                    <button type="button" @click="setMembers(pkg.id, Math.min(9, getMemberCount(pkg.id) + 1))" class="bg-teal-900 hover:bg-teal-800 text-yellow-400 p-1.5 rounded-lg text-xs font-bold"><svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg></button>
+                                                    <button type="button" @click="setMembers(pkg.id, Math.max(4, getMemberCount(pkg.id) - 1))" class="bg-white hover:bg-teal-100 text-teal-900 p-1.5 rounded-lg border border-teal-200 text-xs font-bold">-</button>
+                                                    <button type="button" @click="setMembers(pkg.id, Math.min(9, getMemberCount(pkg.id) + 1))" class="bg-teal-900 hover:bg-teal-800 text-yellow-400 p-1.5 rounded-lg text-xs font-bold">+</button>
                                                 </div>
                                             </template>
                                         </div>
@@ -149,10 +161,16 @@
                     </template>
                 </div>
 
-                <!-- Award & Trusted Sections -->
+                <!-- Award & Trusted Sections (Award first, Trusted Diagnostics below) -->
                 <div class="mt-16 mb-8 bg-white rounded-3xl shadow-sm border border-slate-100 p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-8">
                     <div class="w-full md:w-5/12 flex justify-start">
-                        <img src="https://cdn3.healthians.com/img/unit-no1.svg" alt="Times Health Excellence Survey 2024" class="w-full max-w-sm object-contain drop-shadow-sm">
+                        <div class="bg-teal-50 border border-teal-200 p-4 rounded-2xl flex items-center space-x-3">
+                            <div class="bg-teal-900 text-yellow-400 p-3 rounded-xl font-black text-2xl">🏆</div>
+                            <div>
+                                <h4 class="font-extrabold text-teal-950 text-base">Times Health Survey Winner</h4>
+                                <p class="text-xs text-slate-600">Rated No.1 Diagnostic Service Provider</p>
+                            </div>
+                        </div>
                     </div>
                     <div class="w-full md:w-7/12 bg-slate-50 p-6 rounded-2xl border border-slate-200 text-slate-700 text-sm md:text-base font-medium leading-relaxed">
                         With a presence in <strong class="text-teal-900">250+ cities</strong>, Healthians offers quick, affordable, and hassle-free at-home testing services, backed by a trusted network of <strong class="text-teal-900">NABL and CAP</strong> accredited labs.
@@ -182,9 +200,8 @@
                     </div>
 
                     <form @submit.prevent="submitBooking" class="p-6 md:p-8 space-y-8">
-                        <!-- Primary Patient Details -->
                         <div>
-                            <h3 class="text-xl font-bold text-slate-800 mb-4 flex items-center"><svg class="w-5 h-5 mr-2 text-teal-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path></svg> Primary Patient Details & Address</h3>
+                            <h3 class="text-xl font-bold text-slate-800 mb-4 flex items-center">Primary Patient Details & Address</h3>
                             
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div>
@@ -222,7 +239,7 @@
                                         <template x-for="id in cart" :key="id">
                                             <button type="button" @click="toggleAssignment('primary', id)" class="px-3 py-1.5 rounded-lg text-xs font-bold border transition-all flex items-center space-x-1.5" :class="isAssigned('primary', id) ? 'bg-teal-900 text-yellow-400 border-teal-900' : 'bg-white text-slate-700 border-slate-200'">
                                                 <span x-text="getPackageName(id)"></span>
-                                                <template x-if="isAssigned('primary', id)"><svg class="w-3 h-3 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg></template>
+                                                <template x-if="isAssigned('primary', id)"><span class="text-yellow-400">✓</span></template>
                                             </button>
                                         </template>
                                     </div>
@@ -269,8 +286,8 @@
                         <!-- Family Members Section -->
                         <div>
                             <div class="flex items-center justify-between mb-6">
-                                <h3 class="text-xl font-bold text-slate-800 flex items-center"><svg class="w-5 h-5 mr-2 text-teal-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg> Family Members & Test Assignment</h3>
-                                <button type="button" @click="addFamilyMember()" class="flex items-center text-sm font-bold text-teal-700 bg-teal-50 hover:bg-teal-100 px-3 py-2 rounded-lg border border-teal-200"><svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg> Add Family Member</button>
+                                <h3 class="text-xl font-bold text-slate-800">Additional Family Members & Test Assignment</h3>
+                                <button type="button" @click="addFamilyMember()" class="flex items-center text-sm font-bold text-teal-700 bg-teal-50 hover:bg-teal-100 px-3 py-2 rounded-lg border border-teal-200">+ Add Family Member</button>
                             </div>
 
                             <template x-if="requiredFamilySlots > 0 && familyMembers.length < requiredFamilySlots">
@@ -280,7 +297,7 @@
                             <div class="space-y-6">
                                 <template x-for="(m, idx) in familyMembers" :key="m.id">
                                     <div class="relative bg-white border border-teal-100 rounded-xl p-5 shadow-sm space-y-4">
-                                        <button type="button" @click="removeFamilyMember(m.id)" class="absolute top-4 right-4 text-red-400 hover:text-red-600"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg></button>
+                                        <button type="button" @click="removeFamilyMember(m.id)" class="absolute top-4 right-4 text-red-400 hover:text-red-600 font-bold">✕</button>
                                         <h4 class="font-bold text-teal-800" x-text="'Family Member ' + (idx + 1)"></h4>
                                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                             <div><label class="block text-xs font-semibold text-slate-700 mb-1">Name *</label><input required type="text" x-model="m.name" class="w-full p-2 border border-teal-200 rounded-md outline-none text-sm" placeholder="Member Name"></div>
@@ -295,7 +312,7 @@
                                                 <template x-for="id in cart" :key="id">
                                                     <button type="button" @click="toggleAssignment(m.id, id)" class="px-3 py-1.5 rounded-lg text-xs font-bold border transition-all flex items-center space-x-1.5" :class="isAssigned(m.id, id) ? 'bg-teal-900 text-yellow-400 border-teal-900' : 'bg-white text-slate-700 border-slate-200'">
                                                         <span x-text="getPackageName(id)"></span>
-                                                        <template x-if="isAssigned(m.id, id)"><svg class="w-3 h-3 text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg></template>
+                                                        <template x-if="isAssigned(m.id, id)"><span class="text-yellow-400">✓</span></template>
                                                     </button>
                                                 </template>
                                             </div>
@@ -308,7 +325,7 @@
                         <!-- Pre-Confirmation Bill -->
                         <div class="bg-slate-50 rounded-2xl p-5 border border-slate-200 shadow-sm">
                             <div class="flex justify-between items-center cursor-pointer" @click="showPriceBreakup = !showPriceBreakup">
-                                <div class="flex items-center space-x-2"><svg class="w-5 h-5 text-teal-700" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg><h4 class="font-extrabold text-sm text-teal-950">Pre-Confirmation Bill & Price Breakdown</h4></div>
+                                <div class="flex items-center space-x-2"><h4 class="font-extrabold text-sm text-teal-950">Pre-Confirmation Bill & Price Breakdown</h4></div>
                                 <div class="flex items-center space-x-2"><span class="text-xs font-bold text-teal-800" x-text="'Total: ₹' + calculateTotal()"></span></div>
                             </div>
                             <template x-if="showPriceBreakup">
@@ -333,9 +350,12 @@
 
         <template x-if="view === 'success'">
             <div class="max-w-2xl mx-auto px-4 py-20 text-center">
-                <div class="inline-flex items-center justify-center w-24 h-24 bg-teal-100 rounded-full mb-8 shadow-inner"><svg class="w-12 h-12 text-teal-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg></div>
+                <div class="inline-flex items-center justify-center w-24 h-24 bg-teal-100 rounded-full mb-8 shadow-inner"><span class="text-4xl text-teal-600">✓</span></div>
                 <h2 class="text-4xl font-extrabold text-teal-950 mb-4">Booking Confirmed!</h2>
                 <p class="text-lg text-slate-600 mb-8" x-text="'Thank you, ' + primaryBooking.name + '. Your home collection has been scheduled.'"></p>
+                <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 text-xs font-bold text-amber-800 mb-6">
+                    ⚠️ Note: Final appointment date and time will be officially confirmed after successful payment verification.
+                </div>
                 <button @click="view = 'menu'; cart = []; familyMembers = [];" class="bg-teal-900 text-white px-8 py-3 rounded-full font-bold shadow-md">Return to Home</button>
             </div>
         </template>
@@ -345,15 +365,14 @@
                 <div class="flex justify-between items-center mb-8">
                     <h2 class="text-3xl font-extrabold text-teal-950">Lab Admin Dashboard & Google Sheets Sync</h2>
                     <div class="flex space-x-3">
-                        <button @click="copyBookings()" class="bg-emerald-700 hover:bg-emerald-800 text-white px-4 py-2.5 rounded-xl font-bold text-xs flex items-center"><svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg> Copy Data for Google Sheets</button>
+                        <button @click="copyBookings()" class="bg-emerald-700 hover:bg-emerald-800 text-white px-4 py-2.5 rounded-xl font-bold text-xs flex items-center">Copy Data for Google Sheets</button>
                         <a :href="googleSheetUrl" target="_blank" class="bg-teal-800 text-yellow-400 px-4 py-2.5 rounded-xl font-bold text-xs flex items-center">Open Google Sheets</a>
                         <button @click="view = 'menu'" class="bg-slate-200 px-4 py-2.5 rounded-xl font-bold text-xs">Exit Admin</button>
                     </div>
                 </div>
 
-                <!-- Bookings Table -->
                 <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
-                    <div class="p-6 border-b bg-slate-50"><h3 class="font-extrabold text-teal-950 text-lg">Patient Bookings</h3></div>
+                    <div class="p-6 border-b bg-slate-50"><h3 class="font-extrabold text-teal-950 text-lg">Patient Bookings Log</h3></div>
                     <div class="overflow-x-auto">
                         <table class="w-full text-left text-sm">
                             <thead class="bg-teal-900 text-white">
@@ -378,13 +397,13 @@
 
     </div>
 
-    <!-- Admin Login Modal -->
+    <!-- Admin Login & Email OTP Modal -->
     <template x-if="adminModalOpen">
         <div class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
             <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl">
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="font-extrabold text-lg text-teal-950">Lab Admin Login</h3>
-                    <button @click="adminModalOpen = false"><svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+                    <button @click="adminModalOpen = false"><span class="font-bold">✕</span></button>
                 </div>
                 <template x-if="!showOtpModal">
                     <form @submit.prevent="if(adminPasswordInput === adminPassword) { adminModalOpen = false; view = 'admin'; } else { adminAuthError = true; }">
@@ -394,7 +413,7 @@
                             <template x-if="adminAuthError"><p class="text-xs text-red-600 font-bold mt-1">Incorrect password.</p></template>
                         </div>
                         <div class="flex items-center justify-between mb-4">
-                            <button type="button" @click="showOtpModal = true; resetEmail = ''; otpSent = false; otpMessage = '';" class="text-xs text-teal-700 font-bold hover:underline">Reset Password via Email OTP</button>
+                            <button type="button" @click="showOtpModal = true; resetEmail = ''; otpSent = false; otpMessage = '';" class="text-xs text-teal-700 font-bold hover:underline">Reset Password via Email OTP (admin.swasthyacare@gmail.com)</button>
                         </div>
                         <div class="flex justify-end space-x-2">
                             <button type="button" @click="adminModalOpen = false" class="px-4 py-2 bg-slate-100 rounded-xl text-xs font-bold">Cancel</button>
@@ -425,7 +444,6 @@
         </div>
     </template>
 
-    <!-- AI Chatbot Assistant -->
     <div class="fixed bottom-6 right-6 z-50">
         <template x-if="!chatOpen">
             <button @click="chatOpen = true" class="bg-teal-700 text-white p-4 rounded-full shadow-2xl hover:bg-teal-800 transition-transform hover:scale-110 flex items-center justify-center border-2 border-teal-600">
@@ -436,12 +454,19 @@
             <div class="bg-white w-80 md:w-96 rounded-2xl shadow-2xl border border-slate-200 flex flex-col h-[500px]">
                 <div class="bg-teal-900 text-white p-4 flex justify-between items-center">
                     <h3 class="font-bold text-yellow-400">Swasthya AI</h3>
-                    <button @click="chatOpen = false"><svg class="w-5 h-5 text-teal-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+                    <button @click="chatOpen = false"><span class="font-bold text-teal-200">✕</span></button>
                 </div>
                 <div class="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50">
                     <template x-for="msg in messages">
                         <div class="flex" :class="msg.role === 'user' ? 'justify-end' : 'justify-start'">
-                            <div class="max-w-[85%] rounded-2xl p-3 text-sm shadow-sm" :class="msg.role === 'user' ? 'bg-teal-600 text-white' : 'bg-white border border-slate-200 text-slate-700'" x-text="msg.text"></div>
+                            <div class="max-w-[85%] rounded-2xl p-3 text-sm shadow-sm" :class="msg.role === 'user' ? 'bg-teal-600 text-white' : 'bg-white border border-slate-200 text-slate-700'">
+                                <template x-if="msg.role === 'user'">
+                                    <span x-text="msg.text"></span>
+                                </template>
+                                <template x-if="msg.role !== 'user'">
+                                    <div x-html="parseMessage(msg.text)"></div>
+                                </template>
+                            </div>
                         </div>
                     </template>
                 </div>
@@ -453,7 +478,41 @@
         </template>
     </div>
 
+    <!-- Package Parameters Modal -->
+    <template x-if="selectedPackageModal">
+        <div class="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+            <div class="bg-white rounded-3xl max-w-2xl w-full p-6 md:p-8 shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto flex flex-col">
+                <div class="flex justify-between items-start mb-6 border-b pb-4">
+                    <div>
+                        <span class="text-xs uppercase font-extrabold tracking-wider text-teal-700 bg-teal-50 px-2.5 py-1 rounded-full" x-text="selectedPackageModal.tests + ' Tests Included • ' + selectedPackageModal.parameters + ' Parameters'"></span>
+                        <h3 class="text-2xl font-extrabold text-teal-950 mt-2" x-text="selectedPackageModal.name"></h3>
+                    </div>
+                    <button @click="selectedPackageModal = null" class="text-slate-400 hover:text-slate-600 bg-slate-100 p-2 rounded-full font-bold">✕</button>
+                </div>
+                <div class="flex-1 space-y-4">
+                    <template x-for="cat in selectedPackageModal.detailedParameters">
+                        <div class="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                            <h5 class="font-extrabold text-teal-900 text-sm mb-2 uppercase" x-text="cat.category"></h5>
+                            <ul class="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                                <template x-for="item in cat.items">
+                                    <li class="text-xs text-slate-600 flex items-center">
+                                        <span class="w-1.5 h-1.5 bg-teal-600 rounded-full mr-2"></span>
+                                        <span x-text="item"></span>
+                                    </li>
+                                </template>
+                            </ul>
+                        </div>
+                    </template>
+                </div>
+                <div class="mt-6 border-t pt-4 flex justify-end">
+                    <button @click="selectedPackageModal = null" class="bg-slate-900 text-white px-6 py-2.5 rounded-xl font-bold text-xs">Close Details</button>
+                </div>
+            </div>
+        </div>
+    </template>
+
     <script>
+        window.alpineApp = null;
         function swasthyaApp() {
             return {
                 view: 'menu',
@@ -493,14 +552,28 @@
                     "14:00 PM - 15:00 PM", "14:30 PM - 15:30 PM", "15:00 PM - 16:00 PM", "15:30 PM - 16:30 PM", "16:00 PM - 17:00 PM"
                 ],
                 packages: [
-                    { id: 1, name: "Swasthya Mitra BASIC", tests: 7, parameters: 45, mrp: 1800, price: 610, gender: "All", dealType: "Wellness Bundle", image: "https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&w=600&q=80", color: "text-teal-600 bg-teal-50", includes: "Lipid Profile, Liver Function Test, Kidney Function Test, CBC, Thyroid Profile, BGF, ESR" },
-                    { id: 2, name: "Arthritis Panel Basic", tests: 6, parameters: 38, mrp: 1950, price: 650, gender: "All", dealType: "Lab Atoms", image: "https://images.unsplash.com/photo-1584515979956-d9f6e5d09982?auto=format&fit=crop&w=600&q=80", color: "text-rose-600 bg-rose-50", includes: "ASO Titre, CRP, ESR, Rheumatoid Factor, Uric Acid, Complete Blood Count" },
-                    { id: 3, name: "Swasthya Mitra ADVANCE", tests: 9, parameters: 62, mrp: 2400, price: 750, gender: "All", dealType: "Wellness Bundle", image: "https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?auto=format&fit=crop&w=600&q=80", color: "text-blue-600 bg-blue-50", includes: "BGF, ESR, CBC, HbA1c, Iron Studies, KFT, Lipid Profile, LFT, Thyroid Profile" },
-                    { id: 4, name: "PreOperative Panel", tests: 12, parameters: 75, mrp: 2500, price: 750, gender: "All", dealType: "Organ Health", image: "https://images.unsplash.com/photo-1516549655169-df83a0774514?auto=format&fit=crop&w=600&q=80", color: "text-purple-600 bg-purple-50", includes: "Anti HCV, BUN, Creatinine, ESR, HBV, HIV, RBS, RPR, TSH, Blood Group, CBC, PT INR" },
-                    { id: 5, name: "Swasthya Mitra PREMIUM", tests: 11, parameters: 80, mrp: 3200, price: 975, gender: "All", dealType: "Wellness Bundle", image: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=600&q=80", color: "text-amber-600 bg-amber-50", includes: "BGF, ESR, Vitamin B12, Vitamin D, CBC, HbA1c, Iron Studies, KFT, Lipid, LFT, Thyroid" },
-                    { id: 6, name: "Swasthya COMPLETE", tests: 17, parameters: 110, mrp: 4200, price: 1450, gender: "All", dealType: "Wellness Bundle", image: "https://images.unsplash.com/photo-1579154204601-01588f351e67?auto=format&fit=crop&w=600&q=80", color: "text-teal-700 bg-teal-100", includes: "Amylase, Apolipoproteins, BGF, ESR, HBV, HsCRP, B12, D, CBC, HbA1c, Iron, KFT, Lipid, LFT, Thyroid, Urine" }
+                    { id: 1, name: "Swasthya Mitra BASIC", tests: 7, parameters: 45, mrp: 1800, price: 610, gender: "All", dealType: "Wellness Bundle", image: "https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&w=600&q=80", color: "text-teal-600 bg-teal-50", includes: "Lipid Profile, Liver Function Test, Kidney Function Test, CBC, Thyroid Profile, BGF, ESR", detailedParameters: [{ category: "Lipid Profile", items: ["Total Cholesterol", "Triglycerides", "HDL", "LDL"] }] },
+                    { id: 2, name: "Arthritis Panel Basic", tests: 6, parameters: 38, mrp: 1950, price: 650, gender: "All", dealType: "Lab Atoms", image: "https://images.unsplash.com/photo-1584515979956-d9f6e5d09982?auto=format&fit=crop&w=600&q=80", color: "text-rose-600 bg-rose-50", includes: "ASO Titre, CRP, ESR, Rheumatoid Factor, Uric Acid, Complete Blood Count", detailedParameters: [{ category: "Arthritis Markers", items: ["ASO Titre", "CRP", "RA Factor"] }] },
+                    { id: 3, name: "Swasthya Mitra ADVANCE", tests: 9, parameters: 62, mrp: 2400, price: 750, gender: "All", dealType: "Wellness Bundle", image: "https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?auto=format&fit=crop&w=600&q=80", color: "text-blue-600 bg-blue-50", includes: "BGF, ESR, CBC, HbA1c, Iron Studies, KFT, Lipid Profile, LFT, Thyroid Profile", detailedParameters: [{ category: "Advance Profile", items: ["HbA1c", "Iron Studies"] }] },
+                    { id: 4, name: "PreOperative Panel", tests: 12, parameters: 75, mrp: 2500, price: 750, gender: "All", dealType: "Organ Health", image: "https://images.unsplash.com/photo-1516549655169-df83a0774514?auto=format&fit=crop&w=600&q=80", color: "text-purple-600 bg-purple-50", includes: "Anti HCV, BUN, Creatinine, ESR, HBV, HIV, RBS, RPR, TSH, Blood Group, CBC, PT INR", detailedParameters: [{ category: "Pre-Op Profile", items: ["HIV", "HBsAg", "PT INR"] }] },
+                    { id: 5, name: "Swasthya Mitra PREMIUM", tests: 11, parameters: 80, mrp: 3200, price: 975, gender: "All", dealType: "Wellness Bundle", image: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=600&q=80", color: "text-amber-600 bg-amber-50", includes: "BGF, ESR, Vitamin B12, Vitamin D, CBC, HbA1c, Iron Studies, KFT, Lipid, LFT, Thyroid", detailedParameters: [{ category: "Vitamins", items: ["Vitamin B12", "Vitamin D"] }] },
+                    { id: 6, name: "Swasthya COMPLETE", tests: 17, parameters: 110, mrp: 4200, price: 1450, gender: "All", dealType: "Wellness Bundle", image: "https://images.unsplash.com/photo-1579154204601-01588f351e67?auto=format&fit=crop&w=600&q=80", color: "text-teal-700 bg-teal-100", includes: "Amylase, Apolipoproteins, BGF, ESR, HBV, HsCRP, B12, D, CBC, HbA1c, Iron, KFT, Lipid, LFT, Thyroid, Urine", detailedParameters: [{ category: "Complete Panel", items: ["Amylase", "hs-CRP"] }] }
                 ],
                 
+                init() {
+                    window.alpineApp = this;
+                },
+
+                parseMessage(text) {
+                    return text.replace(/\[ADD:(\d+)\]/g, (match, pkgId) => {
+                        const id = Number(pkgId);
+                        const pkg = this.packages.find(p => p.id === id);
+                        if (!pkg) return '';
+                        const inCart = this.cart.includes(id);
+                        return `<button onclick="window.alpineApp.toggleCart(${id})" class="mt-2 w-full py-2 px-3 text-xs font-bold rounded-xl ${inCart ? 'bg-teal-700 text-white' : 'bg-yellow-400 text-teal-950'} transition-all shadow-sm flex items-center justify-center space-x-1 cursor-pointer"><span>🛒 ${inCart ? 'Added ' + pkg.name + ' ✓' : 'Add ' + pkg.name + ' - ₹' + pkg.price}</span></button>`;
+                    }).replace(/\n/g, '<br>');
+                },
+
                 get filteredPackages() {
                     return this.packages.filter(p => {
                         if (this.activeCategoryTab === 'atoms' && p.dealType !== 'Lab Atoms') return false;
@@ -512,7 +585,13 @@
                 },
 
                 getMemberCount(id) { return this.packageMembers[id] || 1; },
-                setMembers(id, count) { this.packageMembers[id] = count; },
+                setMembers(id, count) { 
+                    this.packageMembers[id] = count;
+                    const needed = count - 1;
+                    while (this.familyMembers.length < needed) {
+                        this.familyMembers.push({ id: Date.now() + Math.random(), name: '', age: '', gender: '', email: '' });
+                    }
+                },
 
                 getPricing(pkg, count) {
                     const basePrice = pkg.price;
@@ -548,10 +627,6 @@
                         }
                     }
                 },
-
-                getTestCount(pkg) { return pkg.tests || 5; },
-                getParamCount(pkg) { return pkg.parameters || 30; },
-                getPackageCategories(pkg) { return pkg.includes; },
 
                 addFamilyMember() {
                     this.familyMembers.push({ id: Date.now() + Math.random(), name: '', age: '', gender: '', email: '' });
