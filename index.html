@@ -9,6 +9,35 @@
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
         body { font-family: 'Plus Jakarta Sans', sans-serif; }
+
+        @keyframes floatCells {
+            0%, 100% { transform: translateY(0px) translateX(0px); }
+            50% { transform: translateY(-12px) translateX(6px); }
+        }
+        .animate-float-cells { animation: floatCells 4s ease-in-out infinite; }
+
+        @keyframes spin3D {
+            0% { transform: rotateY(0deg); }
+            100% { transform: rotateY(360deg); }
+        }
+        .preserve-3d { transform-style: preserve-3d; perspective: 1000px; }
+        .animate-spin-3d { animation: spin3D 6s linear infinite; }
+
+        @keyframes heartbeat {
+            0%, 100% { transform: scale(1); filter: drop-shadow(0 0 4px rgba(225,29,72,0.3)); }
+            30% { transform: scale(1.15); filter: drop-shadow(0 0 12px rgba(225,29,72,0.6)); }
+            50% { transform: scale(0.95); }
+            70% { transform: scale(1.08); filter: drop-shadow(0 0 8px rgba(225,29,72,0.5)); }
+        }
+        .animate-beating-heart { animation: heartbeat 1.2s ease-in-out infinite; }
+
+        @keyframes humanCycle {
+            0% { transform: translateY(4px) rotate(10deg) scaleY(0.85); }
+            35% { transform: translateY(-4px) rotate(0deg) scaleY(1); }
+            70% { transform: translateY(0px) translateX(10px) scale(1.05); }
+            100% { transform: translateY(4px) rotate(10deg) scaleY(0.85); }
+        }
+        .animate-human-transform { animation: humanCycle 2.5s ease-in-out infinite; }
     </style>
 </head>
 <body class="min-h-screen bg-slate-50 font-sans text-slate-800 selection:bg-teal-200 flex flex-col pb-16" x-data="swasthyaApp()">
@@ -79,11 +108,84 @@
                 </div>
 
                 <!-- Tabs -->
-                <div class="mb-10 flex flex-wrap items-center justify-center gap-3">
+                <div class="mb-6 flex flex-wrap items-center justify-center gap-3">
                     <button @click="activeCategoryTab = 'all'" :class="activeCategoryTab === 'all' ? 'bg-teal-900 text-yellow-400 border-2 border-yellow-400 shadow-md scale-105' : 'bg-white text-slate-700 border border-slate-200 hover:bg-teal-50'" class="px-5 py-3 rounded-2xl font-bold text-sm transition-all shadow-sm">🔬 All Lab Tests</button>
                     <button @click="activeCategoryTab = 'atoms'" :class="activeCategoryTab === 'atoms' ? 'bg-teal-900 text-yellow-400 border-2 border-yellow-400 shadow-md scale-105' : 'bg-white text-slate-700 border border-slate-200 hover:bg-teal-50'" class="px-5 py-3 rounded-2xl font-bold text-sm transition-all shadow-sm">🧬 Lab Atoms</button>
                     <button @click="activeCategoryTab = 'health'" :class="activeCategoryTab === 'health' ? 'bg-teal-900 text-yellow-400 border-2 border-yellow-400 shadow-md scale-105' : 'bg-white text-slate-700 border border-slate-200 hover:bg-teal-50'" class="px-5 py-3 rounded-2xl font-bold text-sm transition-all shadow-sm">❤️ Organ Health</button>
                     <button @click="activeCategoryTab = 'bundles'" :class="activeCategoryTab === 'bundles' ? 'bg-teal-900 text-yellow-400 border-2 border-yellow-400 shadow-md scale-105' : 'bg-white text-slate-700 border border-slate-200 hover:bg-teal-50'" class="px-5 py-3 rounded-2xl font-bold text-sm transition-all shadow-sm">🧍 Wellness Bundles</button>
+                </div>
+
+                <!-- Cinematic Visualization Widget for Active Tab -->
+                <div class="mb-10 max-w-3xl mx-auto bg-gradient-to-r from-teal-900 via-teal-800 to-emerald-900 rounded-3xl p-6 shadow-xl border border-teal-600/40 text-white flex flex-col sm:flex-row items-center justify-between gap-6 overflow-hidden relative">
+                    <div class="absolute -right-10 -bottom-10 w-40 h-40 bg-teal-500/10 rounded-full blur-2xl pointer-events-none"></div>
+
+                    <!-- Tab A Visualization: Multi-layered floating blood cell grid -->
+                    <template x-if="activeCategoryTab === 'all'">
+                        <div class="w-full flex flex-col sm:flex-row items-center justify-between gap-4">
+                            <div>
+                                <span class="bg-teal-700 text-yellow-300 text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-full">Cinematic View A</span>
+                                <h4 class="text-lg font-extrabold mt-1 text-white">Cellular Blood Stream Grid</h4>
+                                <p class="text-xs text-teal-200 mt-1 max-w-sm">Multi-layered hematology suspension floating smoothly in real-time diagnostic parameters.</p>
+                            </div>
+                            <div class="relative w-36 h-24 bg-teal-950/60 rounded-2xl border border-teal-700/50 flex items-center justify-center overflow-hidden">
+                                <div class="absolute inset-0 flex items-center justify-center animate-float-cells space-x-2">
+                                    <div class="w-6 h-6 rounded-full bg-rose-500/80 shadow-md border border-rose-300 flex items-center justify-center text-[8px] font-bold">RBC</div>
+                                    <div class="w-4 h-4 rounded-full bg-teal-300/80 shadow-md border border-white"></div>
+                                    <div class="w-5 h-5 rounded-full bg-amber-400/80 shadow-md border border-white"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+
+                    <!-- Tab B Visualization: 3D Spinning DNA Double Helix -->
+                    <template x-if="activeCategoryTab === 'atoms'">
+                        <div class="w-full flex flex-col sm:flex-row items-center justify-between gap-4">
+                            <div>
+                                <span class="bg-blue-700 text-yellow-300 text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-full">Cinematic View B</span>
+                                <h4 class="text-lg font-extrabold mt-1 text-white">3D DNA Double-Helix Atom</h4>
+                                <p class="text-xs text-teal-200 mt-1 max-w-sm">Fluid 3D rotation axis loop simulating genetic molecular sequence breakdown.</p>
+                            </div>
+                            <div class="relative w-36 h-24 bg-teal-950/60 rounded-2xl border border-teal-700/50 flex items-center justify-center preserve-3d">
+                                <div class="animate-spin-3d flex flex-col space-y-1.5 items-center">
+                                    <div class="flex space-x-3"><div class="w-2.5 h-2.5 rounded-full bg-teal-400"></div><div class="w-6 h-1 bg-emerald-300/80"></div><div class="w-2.5 h-2.5 rounded-full bg-rose-400"></div></div>
+                                    <div class="flex space-x-3"><div class="w-2.5 h-2.5 rounded-full bg-blue-400"></div><div class="w-6 h-1 bg-teal-300/80"></div><div class="w-2.5 h-2.5 rounded-full bg-amber-400"></div></div>
+                                    <div class="flex space-x-3"><div class="w-2.5 h-2.5 rounded-full bg-teal-400"></div><div class="w-6 h-1 bg-emerald-300/80"></div><div class="w-2.5 h-2.5 rounded-full bg-rose-400"></div></div>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+
+                    <!-- Tab C Visualization: Beating Heart -->
+                    <template x-if="activeCategoryTab === 'health'">
+                        <div class="w-full flex flex-col sm:flex-row items-center justify-between gap-4">
+                            <div>
+                                <span class="bg-rose-700 text-white text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-full">Cinematic View C</span>
+                                <h4 class="text-lg font-extrabold mt-1 text-white">Anatomical Beating Heart</h4>
+                                <p class="text-xs text-teal-200 mt-1 max-w-sm">Intense scale-based pulsing loop synced with realistic shadow dynamics.</p>
+                            </div>
+                            <div class="relative w-36 h-24 bg-teal-950/60 rounded-2xl border border-teal-700/50 flex items-center justify-center">
+                                <div class="animate-beating-heart text-4xl">❤️</div>
+                            </div>
+                        </div>
+                    </template>
+
+                    <!-- Tab D Visualization: Humanoid Character Walking/Transforming Loop -->
+                    <template x-if="activeCategoryTab === 'bundles'">
+                        <div class="w-full flex flex-col sm:flex-row items-center justify-between gap-4">
+                            <div>
+                                <span class="bg-amber-600 text-teal-950 text-[10px] font-extrabold uppercase px-2.5 py-1 rounded-full">Cinematic View D</span>
+                                <h4 class="text-lg font-extrabold mt-1 text-white">Wellness Recovery Cycle</h4>
+                                <p class="text-xs text-teal-200 mt-1 max-w-sm">Automated status loop from weak posture to high-energy recovered standing.</p>
+                            </div>
+                            <div class="relative w-36 h-24 bg-teal-950/60 rounded-2xl border border-teal-700/50 flex items-center justify-center overflow-hidden">
+                                <div class="animate-human-transform flex flex-col items-center">
+                                    <div class="w-5 h-5 rounded-full bg-yellow-300 border border-teal-900 mb-0.5"></div>
+                                    <div class="w-2 h-8 bg-emerald-400 rounded-full"></div>
+                                    <div class="text-[9px] font-extrabold text-yellow-300 mt-1 uppercase tracking-tight">Recovering</div>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
                 </div>
 
                 <!-- Package Grid -->
@@ -445,11 +547,10 @@
         </div>
     </template>
 
-    <!-- Floating AI Chat Assistant with Custom Medical 'S+' Logo and Responsive Swasthya Care AI branding -->
+    <!-- Floating AI Chat Assistant with Custom Medical 'S+' Logo -->
     <div class="fixed bottom-28 right-6 z-50">
         <template x-if="!chatOpen">
             <button @click="chatOpen = true" class="hidden sm:flex bg-gradient-to-tr from-teal-800 via-teal-700 to-emerald-600 text-white p-3.5 rounded-full shadow-[0_10px_25px_rgb(13,148,136,0.6)] hover:scale-110 transition-all items-center justify-center border-2 border-white relative group">
-                <!-- Custom SVG matching requested S+ logo style -->
                 <svg class="w-7 h-7 text-white" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M70 30 C50 15, 30 20, 25 35 C20 50, 45 50, 50 60 C55 70, 30 80, 20 65" stroke="currentColor" stroke-width="12" stroke-linecap="round"/>
                     <path d="M30 50 L42 50 L47 40 L53 60 L58 48 L63 50 L70 50" stroke="#4ade80" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -459,7 +560,6 @@
                 <span class="absolute -top-10 right-0 bg-teal-900 text-white text-[11px] font-bold px-3 py-1 rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">✨ Swasthya Care AI Assistant</span>
             </button>
         </template>
-        <!-- Mobile fallback -->
         <template x-if="!chatOpen">
             <button @click="chatOpen = true" class="flex sm:hidden bg-gradient-to-tr from-teal-800 to-emerald-600 text-white p-3.5 rounded-full shadow-xl items-center justify-center border-2 border-white">
                 <svg class="w-6 h-6 text-white" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -473,7 +573,6 @@
             <div class="bg-white w-80 md:w-96 rounded-2xl shadow-2xl border border-slate-200 flex flex-col h-[500px]">
                 <div class="bg-teal-900 text-white p-4 flex justify-between items-center">
                     <div class="flex items-center space-x-2">
-                        <!-- Header Logo Icon -->
                         <svg class="w-6 h-6 text-emerald-400" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
                             <path d="M70 30 C50 15, 30 20, 25 35 C20 50, 45 50, 50 60 C55 70, 30 80, 20 65" stroke="currentColor" stroke-width="12" stroke-linecap="round"/>
                             <rect x="72" y="18" width="16" height="16" rx="4" fill="#22c55e"/>
