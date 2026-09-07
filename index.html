@@ -625,6 +625,7 @@
                 chatOpen: false,
                 inputValue: '',
                 isAILoading: false,
+                lastRecommendedPackage: null, // Track context for follow-up questions like "why this"
                 messages: [{ role: 'model', text: 'Hi! I am your **Swasthya Care AI** Health Assistant. How can I help you choose a health package or test today?' }],
                 testSearchQuery: '',
                 activeCategoryTab: 'all',
@@ -839,35 +840,55 @@
                     setTimeout(() => {
                         const q = text.toLowerCase();
                         let reply = "";
-                        const isHindi = q.includes('hindi') || q.includes('mein') || q.includes('kya') || q.includes('kaise') || q.includes('batao') || q.includes('mujhe') || q.includes('hain');
+                        const isHindi = q.includes('hindi') || q.includes('mein') || q.includes('kya') || q.includes('kaise') || q.includes('batao') || q.includes('mujhe') || q.includes('hain') || q.includes('kyun') || q.includes('kyu');
 
-                        if (isHindi) {
-                            if (q.includes('testost') || q.includes('repro') || q.includes('hormone') || q.includes('male') || q.includes('mard')) {
-                                reply = "पुरुषों के हॉर्मोन, प्रजनन स्वास्थ्य और फिटनेस जाँच के लिए हमारा **Gym Health - Male** पैकेज (₹1250) सबसे बेहतरीन है जिसमें टेस्टोस्टेरोन और अन्य जांच शामिल हैं। [ADD:5]";
-                            } else if (q.includes('sugar') || q.includes('diabet') || q.includes('glucose') || q.includes('hba1c')) {
-                                reply = "शुगर और डायबिटीज की जांच के लिए हमारा **Swasthya Mitra ADVANCE** पैकेज (₹750) बहुत अच्छा है। [ADD:3]";
-                            } else if (q.includes('stomach') || q.includes('pet') || q.includes('liver') || q.includes('diges') || q.includes('dard')) {
-                                reply = "पेट, पाचन और लीवर की समस्याओं के लिए हमारा **Swasthya COMPLETE** पैकेज (₹1450) सबसे उत्तम है। [ADD:6]";
+                        // Handle follow-up questions like "why this", "explain", "details"
+                        if (q.includes('why') || q.includes('kyun') || q.includes('kyu') || q.includes('explain') || q.includes('detail') || q.includes('what test') || q.includes('what is')) {
+                            if (this.lastRecommendedPackage) {
+                                const p = this.lastRecommendedPackage;
+                                if (isHindi) {
+                                    reply = `हमने **${p.name}** (₹${p.price}) इसलिए सुझाया क्योंकि इसमें ${p.tests} जांचें और ${p.parameters} पैरामीटर्स शामिल हैं, जैसे: ${p.includes}। यह आपकी सेहत के लिए सबसे सटीक है। [ADD:${p.id}]`;
+                                } else {
+                                    reply = `I recommended the **${p.name}** package (₹${p.price}) because it includes ${p.tests} essential tests and ${p.parameters} parameters covering: ${p.includes}. This gives us a complete clinical picture to address your health. [ADD:${p.id}]`;
+                                }
                             } else {
-                                reply = "नमस्ते! **Swasthya Care AI** में आपका स्वागत है। आप अपनी समस्या या टेस्ट का नाम बताएं, मैं आपके लिए सबसे सही पैकेज सुझाऊंगा। [ADD:1]";
+                                reply = isHindi ? "कृपया अपने लक्षण बताएं ताकि मैं सही पैकेज सुझा सकूं।" : "Please tell me your symptoms or concerns so I can recommend the exact package and explain why it fits your needs!";
+                            }
+                        } else if (isHindi) {
+                            if (q.includes('testost') || q.includes('repro') || q.includes('hormone') || q.includes('male') || q.includes('mard') || q.includes('gupt')) {
+                                this.lastRecommendedPackage = this.packages.find(p => p.id === 5); // Gym Health - Male
+                                reply = "पुरुषों के हॉर्मोन, टेस्टोस्टेरोन और प्रजनन स्वास्थ्य की जांच के लिए हमारा **Gym Health - Male** पैकेज (₹1250) सबसे उत्तम है। इसमें 14 टेस्ट शामिल हैं। [ADD:5]";
+                            } else if (q.includes('sugar') || q.includes('diabet') || q.includes('glucose') || q.includes('hba1c')) {
+                                this.lastRecommendedPackage = this.packages.find(p => p.id === 3); // Advance
+                                reply = "डायबीटीज और शुगर की जांच के लिए **Swasthya Mitra ADVANCE** पैकेज (₹750) सबसे सही है जिसमें HbA1c और ग्लूकोज शामिल है। [ADD:3]";
+                            } else if (q.includes('pet') || q.includes('stomach') || q.includes('liver') || q.includes('diges') || q.includes('dard')) {
+                                this.lastRecommendedPackage = this.packages.find(p => p.id === 6); // Complete
+                                reply = "पेट, पाचन और लीवर की जांच के लिए **Swasthya COMPLETE** पैकेज (₹1450) सबसे बेहतरीन है। [ADD:6]";
+                            } else {
+                                this.lastRecommendedPackage = this.packages.find(p => p.id === 1); // Basic
+                                reply = "आपके लक्षणों के आधार पर, हमारा **Swasthya Mitra BASIC** पैकेज (₹610) एक शानदार शुरुआती हेल्थ चेकअप है। [ADD:1]";
                             }
                         } else {
                             if (q.includes('testost') || q.includes('repro') || q.includes('hormone') || q.includes('male') || q.includes('gym') || q.includes('muscle')) {
-                                reply = "For male reproductive health, hormones, and fitness screening, our **Gym Health - Male** package (₹1250) includes Total Testosterone, organ panels, and wellness tests. [ADD:5]";
+                                this.lastRecommendedPackage = this.packages.find(p => p.id === 5);
+                                reply = "For male reproductive health, hormones, and fitness screening, our **Gym Health - Male** package (₹1250) includes Total Testosterone, vitamin panels, and organ evaluations. [ADD:5]";
                             } else if (q.includes('sugar') || q.includes('diabet') || q.includes('glucose') || q.includes('hba1c')) {
+                                this.lastRecommendedPackage = this.packages.find(p => p.id === 3);
                                 reply = "For diabetes screening and blood sugar monitoring, our **Swasthya Mitra ADVANCE** package (₹750) includes Fasting Blood Glucose and HbA1c tests. [ADD:3]";
-                            } else if (q.includes('stomach') || q.includes('diges') || q.includes('liver') || q.includes('gut') || q.includes('pain') || q.includes('heartburn') || q.includes('acid')) {
-                                reply = "For stomach, digestive, and liver health, our **Swasthya COMPLETE** package (₹1450) provides full organ evaluation including LFT and KFT. [ADD:6]";
+                            } else if (q.includes('stomach') || q.includes('diges') || q.includes('liver') || q.includes('gut') || q.includes('pain') || q.includes('stmotach') || q.includes('belly')) {
+                                this.lastRecommendedPackage = this.packages.find(p => p.id === 6);
+                                reply = "For stomach, digestive, and liver health, our **Swasthya COMPLETE** package (₹1450) provides full organ evaluation including LFT, KFT, and lipid profile. [ADD:6]";
                             } else if (q.includes('joint') || q.includes('bone') || q.includes('arthrit')) {
+                                this.lastRecommendedPackage = this.packages.find(p => p.id === 2);
                                 reply = "For joint and bone discomfort, our **Arthritis Panel Basic** (₹650) checks inflammatory markers like ASO, CRP, and ESR. [ADD:2]";
                             } else if (q.includes('brain') || q.includes('dizzy') || q.includes('head') || q.includes('tired') || q.includes('fatigue') || q.includes('energy')) {
-                                reply = "For fatigue, brain fog, and low energy, our **Swasthya Mitra PREMIUM** package (₹975) covers essential vitamin panels (B12, D) and complete blood counts. [ADD:5]";
-                            } else if (q.includes('explain') || q.includes('what is') || q.includes('mean')) {
-                                reply = "We offer diagnostic tests like **CBC** (Complete Blood Count for infections/anemia), **Lipid Profile** (for cholesterol/heart), **Liver & Kidney Function Tests** (LFT/KFT), and **Thyroid Profile** (hormones/metabolism). Which test would you like to explore?";
+                                this.lastRecommendedPackage = this.packages.find(p => p.id === 5);
+                                reply = "For fatigue and brain fog, our **Gym Health - Male** or **Swasthya Mitra PREMIUM** package (₹975) covers essential vitamin panels (B12, D) and complete blood counts. [ADD:5]";
                             } else if (q.includes('hi') || q.includes('hello') || q.includes('hey')) {
                                 reply = "Hello! I am your **Swasthya Care AI** assistant. Please describe your symptoms or ask about any test/package, and I'll give you instant recommendations.";
                             } else {
-                                reply = `Based on your request regarding "${text}", I recommend our comprehensive **Swasthya Mitra ADVANCE** package (₹750) for a thorough diagnostic screen. [ADD:3]`;
+                                this.lastRecommendedPackage = this.packages.find(p => p.id === 3);
+                                reply = `Based on your request regarding "${text}", I recommend our **Swasthya Mitra ADVANCE** package (₹750) for a thorough diagnostic screen covering 9 tests and 62 parameters. [ADD:3]`;
                             }
                         }
 
