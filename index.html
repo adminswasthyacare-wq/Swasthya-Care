@@ -51,10 +51,53 @@
             <div class="max-w-7xl mx-auto px-4 py-10 sm:px-6 lg:px-8">
                 
                 <!-- Hero Heading & Search -->
-                <div class="text-center mb-12">
-                    <div class="flex justify-center mb-4 cursor-pointer" @click="adminClicks++; if(adminClicks === 3) { adminModalOpen = true; adminPasswordInput = ''; adminAuthError = false; adminClicks = 0; }">
-                        <img src="https://i.ibb.co/T5w8drb/tmp-6c91eb22-fc8e-420d-beee-e9d1f6dd2b09.png" alt="Swasthya Care" class="h-40 sm:h-48 md:h-56 lg:h-64 object-contain drop-shadow-sm select-none">
-                    </div>
+<div class="text-center mb-12">
+    <div class="flex justify-center mb-4 cursor-pointer" @click="adminClicks++; if(adminClicks === 3) { adminModalOpen = true; adminPasswordInput = ''; adminAuthError = false; adminClicks = 0; }">
+        
+        <!-- Primary Logo Image -->
+        <img src="https://ibb.co" 
+             alt="Swasthya Care" 
+             class="h-40 sm:h-48 md:h-56 lg:h-64 object-contain drop-shadow-sm select-none"
+             onerror="this.style.display='none'; this.nextElementSibling.classList.remove('hidden');">
+        
+        <!-- CSS/Text Fallback (Hidden by default, styled to resemble the logo) -->
+        <div class="hidden flex flex-col items-center justify-center p-6 border border-slate-100 rounded-2xl bg-white shadow-sm max-w-md mx-auto select-none">
+            <!-- Icon/Visual Row Simulation -->
+            <div class="flex items-end justify-center space-x-6 mb-4">
+                <!-- Patient Icon Indicator -->
+                <div class="text-slate-400 text-2xl font-bold animate-pulse">👤</div>
+                <!-- Lab/Test Indicator -->
+                <div class="px-2 py-1 bg-teal-50 border border-teal-200 rounded text-[10px] font-semibold text-teal-700 tracking-wider uppercase">
+                    Diagnostic Tests
+                </div>
+                <!-- Healthy Restored Person Indicator -->
+                <div class="text-emerald-500 text-3xl font-bold">✨🙌</div>
+            </div>
+
+            <!-- Brand Typography -->
+            <h1 class="text-4xl sm:text-5xl font-extrabold tracking-tight flex items-center">
+                <span class="text-[#0B3C5D]">Swasthya</span>
+                <span class="text-[#2B9348] ml-2">Care</span>
+            </h1>
+            
+            <!-- Slogan -->
+            <p class="text-[11px] sm:text-xs font-bold tracking-widest text-[#0B3C5D] uppercase mt-2 opacity-90">
+                Test Today. A Healthier Tomorrow.
+            </p>
+            
+            <!-- Core Values Divider Row -->
+            <div class="flex items-center space-x-3 text-[10px] text-slate-400 tracking-widest uppercase mt-3 pt-2 border-t border-slate-100 w-full justify-center">
+                <span>Accurate</span>
+                <span class="text-slate-300">|</span>
+                <span>Reliable</span>
+                <span class="text-slate-300">|</span>
+                <span>Caring</span>
+            </div>
+        </div>
+
+    </div>
+</div>
+
                     <p class="text-lg md:text-xl text-slate-600 max-w-2xl mx-auto font-medium mt-6">
                         Invest in your well-being with our comprehensive, AI-curated health checkup plans.
                     </p>
