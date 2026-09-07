@@ -1,0 +1,2860 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { 
+  Activity, 
+  Microscope, 
+  Droplet, 
+  HeartPulse, 
+  Stethoscope, 
+  Syringe, 
+  ClipboardList, 
+  Dna,
+  ShieldCheck,
+  Award,
+  ShoppingCart,
+  MessageSquare,
+  X,
+  ArrowRight,
+  User,
+  Users,
+  Plus,
+  Minus,
+  Trash2,
+  MapPin,
+  Phone,
+  Check,
+  Lock,
+  Calendar,
+  Clock,
+  Search,
+  PhoneCall,
+  Info,
+  ChevronDown,
+  Upload,
+  FileSpreadsheet,
+  Save,
+  Mail,
+  Copy,
+  ExternalLink,
+  ChevronUp,
+  Receipt
+} from 'lucide-react';
+
+import { initializeApp } from 'firebase/app';
+import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from 'firebase/auth';
+import { getFirestore, collection, addDoc, onSnapshot } from 'firebase/firestore';
+
+const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
+const FallbackSwasthyaLogo = ({ className }) => (
+    <div className={`flex flex-col items-center justify-center ${className}`}>
+        <div className="flex items-center space-x-2">
+            <div className="relative w-12 h-12 flex-shrink-0">
+                <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-md">
+                    <circle cx="75" cy="25" r="10" fill="#22c55e" />
+                    <path d="M60 40 Q75 25 90 40 L80 80 Q75 85 70 80 Z" fill="#22c55e" />
+                    <path d="M65 50 Q50 65 65 80 Q80 65 65 50 Z" fill="#14532d" />
+                    <path d="M45 75 Q60 65 75 75" fill="none" stroke="#22c55e" strokeWidth="6" strokeLinecap="round" />
+                    <rect x="15" y="30" width="35" height="45" fill="none" stroke="#0f3b57" strokeWidth="4" rx="4" />
+                    <path d="M25 75 C 25 60, 40 60, 40 75 Z" fill="#0ea5e9" opacity="0.6"/>
+                    <circle cx="32" cy="50" r="3" fill="#0ea5e9" />
+                </svg>
+            </div>
+            <div className="flex flex-col justify-center">
+                <span className="text-3xl font-extrabold tracking-tight text-[#0f3b57] leading-none mb-0.5" style={{ fontFamily: "sans-serif" }}>
+                    Swasthya<span className="text-[#22c55e]">Care</span>
+                </span>
+                <span className="text-[7px] font-bold tracking-[0.15em] text-[#0f3b57] uppercase block mt-1">
+                    Test Today. A Healthier Tomorrow.
+                </span>
+            </div>
+        </div>
+    </div>
+);
+
+const FallbackBadge = ({ text, className }) => (
+    <div className={`flex items-center justify-center bg-white rounded-full border border-slate-200 shadow-sm ${className}`} style={{ aspectRatio: '1/1' }}>
+        <span className="text-[10px] font-bold text-slate-600 text-center leading-tight p-2">{text}</span>
+    </div>
+);
+
+const SafeLogo = ({ src, alt, className, fallback: FallbackComponent, fallbackText }) => {
+    const [error, setError] = useState(false);
+    return !error ? (
+        <img src={src} alt={alt} className={className} onError={() => setError(true)} />
+    ) : (
+        <FallbackComponent className={className} text={fallbackText} />
+    );
+};
+
+const initialPackages = [
+  {
+    id: 1,
+    name: "Swasthya Mitra BASIC",
+    tests: 7,
+    parameters: 45,
+    mrp: 1800,
+    price: 610,
+    icon: Activity,
+    color: "text-teal-600 bg-teal-50",
+    image: "https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&w=600&q=80",
+    gender: "All",
+    dealType: "Wellness Bundle",
+    bodyParts: ["cardiovascular", "kidney", "metabolic", "blood", "respiratory"],
+    includes: "Blood Glucose Fasting, ESR, Complete Blood Count, KFT, Lipid Profile, Liver Function Test, Thyroid Profile",
+    detailedParameters: [
+      { category: "Lipid Profile (9)", items: ["Total Cholesterol", "Triglycerides", "HDL Cholesterol", "LDL Cholesterol", "VLDL Cholesterol", "Total Cholesterol/HDL Ratio", "LDL/HDL Ratio", "HDL/LDL Ratio", "Non-HDL Cholesterol"] },
+      { category: "Liver Function Test (11)", items: ["Bilirubin Total", "Bilirubin Direct", "Bilirubin Indirect", "SGOT (AST)", "SGPT (ALT)", "SGPT/SGOT Ratio", "Alkaline Phosphatase", "Total Protein", "Albumin", "Globulin", "Albumin/Globulin Ratio"] },
+      { category: "Kidney Function Test (6)", items: ["Blood Urea Nitrogen (BUN)", "Serum Creatinine", "BUN/Creatinine Ratio", "Uric Acid", "Calcium", "Phosphorus"] },
+      { category: "Complete Blood Count (14)", items: ["Hemoglobin", "Total RBC", "Packed Cell Volume (PCV)", "Mean Corpuscular Volume (MCV)", "MCH", "MCHC", "Total WBC", "Differential Count", "Platelet Count"] },
+      { category: "Thyroid Profile (3)", items: ["Triiodothyronine (T3)", "Thyroxine (T4)", "Thyroid Stimulating Hormone (TSH)"] },
+      { category: "Blood Sugar & Inflammation (2)", items: ["Blood Glucose Fasting (BGF)", "Erythrocyte Sedimentation Rate (ESR)"] }
+    ]
+  },
+  {
+    id: 2,
+    name: "Arthritis Panel Basic",
+    tests: 6,
+    parameters: 38,
+    mrp: 1950,
+    price: 650,
+    icon: HeartPulse,
+    color: "text-rose-600 bg-rose-50",
+    image: "https://images.unsplash.com/photo-1584515979956-d9f6e5d09982?auto=format&fit=crop&w=600&q=80",
+    gender: "All",
+    dealType: "Lab Atoms",
+    bodyParts: ["bone", "blood", "immune"],
+    includes: "ASO Titre, CRP, ESR, Rheumatoid Arthritis Factor, Uric Acid, Complete Blood Count",
+    detailedParameters: [
+      { category: "Inflammation & Arthritis Markers (4)", items: ["ASO Titre Quantitative", "C-Reactive Protein (CRP)", "Rheumatoid Factor (RA)", "Serum Uric Acid"] },
+      { category: "General Blood & ESR (18)", items: ["Complete Blood Count (CBC - 16 parameters)", "Erythrocyte Sedimentation Rate (ESR)", "Blood Glucose Random"] },
+      { category: "Bone Mineral Markers (16)", items: ["Serum Calcium", "Serum Phosphorus", "Vitamin D Total", "Parathyroid Hormone (Intact PTH)"] }
+    ]
+  },
+  {
+    id: 3,
+    name: "Swasthya Mitra ADVANCE",
+    tests: 9,
+    parameters: 62,
+    mrp: 2400,
+    price: 750,
+    icon: Microscope,
+    color: "text-blue-600 bg-blue-50",
+    image: "https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?auto=format&fit=crop&w=600&q=80",
+    gender: "All",
+    dealType: "Wellness Bundle",
+    bodyParts: ["cardiovascular", "kidney", "metabolic", "blood", "liver", "intestine", "respiratory"],
+    includes: "BGF, ESR, CBC, HbA1c, Iron Studies, KFT, Lipid Profile, LFT, Thyroid Profile",
+    detailedParameters: [
+      { category: "Diabetes Screening (2)", items: ["Blood Glucose Fasting", "HbA1c (Glycated Hemoglobin)"] },
+      { category: "Iron Deficiency Panel (3)", items: ["Serum Iron", "Total Iron Binding Capacity (TIBC)", "Transferrin Saturation"] },
+      { category: "Comprehensive Profiles (57)", items: ["Lipid Profile (9)", "Liver Function Test (11)", "Kidney Function Test (6)", "Complete Blood Count (14)", "Thyroid Profile (3)", "Electrolytes & ESR (14)"] }
+    ]
+  },
+  {
+    id: 4,
+    name: "PreOperative Panel",
+    tests: 12,
+    parameters: 75,
+    mrp: 2500,
+    price: 750,
+    icon: Syringe,
+    color: "text-purple-600 bg-purple-50",
+    image: "https://images.unsplash.com/photo-1516549655169-df83a0774514?auto=format&fit=crop&w=600&q=80",
+    gender: "All",
+    dealType: "Organ Health",
+    bodyParts: ["blood", "metabolic", "immune", "kidney", "cardiovascular"],
+    includes: "Anti HCV, BUN, Creatinine, ESR, HBV, HIV, RBS, RPR, TSH, Blood Group, CBC, PT INR",
+    detailedParameters: [
+      { category: "Infectious Disease Screening (3)", items: ["HIV I & II Antibodies", "HBsAg (Hepatitis B Surface Antigen)", "Anti-HCV Antibody"] },
+      { category: "Coagulation & Blood Group (3)", items: ["Prothrombin Time (PT/INR)", "Bleeding Time & Clotting Time", "ABO Blood Group & Rh Typing"] },
+      { category: "Metabolic & Organ Screening (69)", items: ["Complete Blood Count (14)", "Kidney Function (BUN, Creatinine, Electrolytes)", "Random Blood Sugar", "Thyroid Screening (TSH)", "VDRL/RPR test"] }
+    ]
+  },
+  {
+    id: 5,
+    name: "Arthritis Panel Advance",
+    tests: 7,
+    parameters: 48,
+    mrp: 2900,
+    price: 950,
+    icon: Activity,
+    color: "text-orange-600 bg-orange-50",
+    image: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=600&q=80",
+    gender: "All",
+    dealType: "Lab Atoms",
+    bodyParts: ["bone", "blood", "immune"],
+    includes: "ASO Titre, CCP Antibody, CRP, ESR, RA Test, Uric Acid, Complete Blood Count",
+    detailedParameters: [
+      { category: "Advanced Autoimmune Markers (2)", items: ["Anti-Cyclic Citrullinated Peptide (Anti-CCP)", "Rheumatoid Arthritis (RA) Factor Quantitative"] },
+      { category: "Inflammation & Bone Health (46)", items: ["ASO Titre", "C-Reactive Protein (High Sensitivity)", "Serum Uric Acid", "Complete Blood Count (14)", "Calcium, Magnesium, Phosphorus"] }
+    ]
+  },
+  {
+    id: 6,
+    name: "Cervical Screening",
+    tests: 2,
+    parameters: 12,
+    mrp: 4500,
+    price: 1900,
+    icon: Dna,
+    color: "text-pink-600 bg-pink-50",
+    image: "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=600&q=80",
+    gender: "Female",
+    dealType: "Organ Health",
+    bodyParts: ["female_reproductive"],
+    includes: "HPV-Human Papilloma Virus DNA Detection, PAP Smear Cytology LBC",
+    detailedParameters: [
+      { category: "HPV DNA Assay (10)", items: ["High Risk HPV Genotypes 16 & 18", "Other High Risk HPV Types", "Internal Control Validation"] },
+      { category: "Cytology (2)", items: ["PAP Smear Liquid Based Cytology (LBC)", "Cellular Adequacy & Microscopic Findings"] }
+    ]
+  },
+  {
+    id: 7,
+    name: "Swasthya Mitra PREMIUM",
+    tests: 11,
+    parameters: 80,
+    mrp: 3200,
+    price: 975,
+    icon: Award,
+    color: "text-amber-600 bg-amber-50",
+    image: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=600&q=80",
+    popular: true,
+    gender: "All",
+    dealType: "Wellness Bundle",
+    bodyParts: ["cardiovascular", "kidney", "metabolic", "blood", "bone", "respiratory", "thyroid"],
+    includes: "BGF, ESR, Vitamin B12, Vitamin D, CBC, HbA1c, Iron Studies, KFT, Lipid, LFT, Thyroid",
+    detailedParameters: [
+      { category: "Vitamins & Nutritional Status (2)", items: ["Vitamin B12 (Cyanocobalamin)", "25-Hydroxy Vitamin D3"] },
+      { category: "Diabetes & Iron Panel (5)", items: ["Fasting Blood Glucose", "HbA1c", "Serum Iron", "TIBC", "Transferrin Saturation"] },
+      { category: "Core Health Panels (73)", items: ["Lipid Profile", "Liver Function Test", "Kidney Function Test", "Complete Blood Count", "Thyroid Profile", "Electrolytes"] }
+    ]
+  },
+  {
+    id: 8,
+    name: "Gym Health - Male",
+    tests: 14,
+    parameters: 92,
+    mrp: 3800,
+    price: 1250,
+    icon: ShieldCheck,
+    color: "text-cyan-600 bg-cyan-50",
+    image: "https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=600&q=80",
+    gender: "Male",
+    dealType: "Wellness Bundle",
+    bodyParts: ["cardiovascular", "kidney", "metabolic", "blood", "bone", "male_reproductive", "immune", "liver"],
+    includes: "BGF, ESR, IgE, Testosterone, B12, D, CBC, HbA1c, Iron, KFT, Lipid Adv, LFT, Thyroid, Urine",
+    detailedParameters: [
+      { category: "Hormonal & Fitness Markers (2)", items: ["Total Testosterone", "Immunoglobulin E (IgE Total)"] },
+      { category: "Vitamins & Complete Organ Profiling (90)", items: ["Vitamin B12", "Vitamin D", "Lipid Profile Advanced", "Liver Function Test", "Kidney Function Test", "Complete Blood Count", "Thyroid Profile", "Urine Routine (14 params)"] }
+    ]
+  },
+  {
+    id: 9,
+    name: "Gym Health - Female",
+    tests: 16,
+    parameters: 98,
+    mrp: 3950,
+    price: 1300,
+    icon: ShieldCheck,
+    color: "text-emerald-600 bg-emerald-50",
+    image: "https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=600&q=80",
+    gender: "Female",
+    dealType: "Wellness Bundle",
+    bodyParts: ["cardiovascular", "kidney", "metabolic", "blood", "bone", "female_reproductive", "immune", "thyroid"],
+    includes: "BGF, ESR, FSH, IgE, LH, Prolactin, B12, D, CBC, HbA1c, Iron, KFT, Lipid Adv, LFT, Thyroid, Urine",
+    detailedParameters: [
+      { category: "Female Reproductive Hormones (3)", items: ["Follicle Stimulating Hormone (FSH)", "Luteinizing Hormone (LH)", "Prolactin"] },
+      { category: "Comprehensive Panels (95)", items: ["Vitamin B12 & D", "Complete Blood Count", "Liver, Kidney & Lipid Profiles", "Thyroid Panel", "Urine Routine Analysis"] }
+    ]
+  },
+  {
+    id: 10,
+    name: "Swasthya Mitra Super",
+    tests: 13,
+    parameters: 88,
+    mrp: 3400,
+    price: 1125,
+    icon: Stethoscope,
+    color: "text-indigo-600 bg-indigo-50",
+    image: "https://images.unsplash.com/photo-1530497610245-94d3c16cda28?auto=format&fit=crop&w=600&q=80",
+    gender: "All",
+    dealType: "Wellness Bundle",
+    bodyParts: ["cardiovascular", "kidney", "metabolic", "blood", "bone", "immune", "respiratory", "thyroid", "liver"],
+    includes: "BGF, CRP, ESR, RA, Vitamin B12, Vitamin D, CBC, HbA1c, Iron, KFT, Lipid Adv, LFT, Thyroid",
+    detailedParameters: [
+      { category: "Inflammation & Vitamins (4)", items: ["C-Reactive Protein (CRP)", "Rheumatoid Factor", "Vitamin B12", "Vitamin D Total"] },
+      { category: "Advanced Clinical Biochemistry (84)", items: ["Advanced Lipid Profile", "Liver Function Test", "Kidney Function Test", "Complete Blood Count", "Thyroid Function Test", "Iron Deficiency Panel"] }
+    ]
+  },
+  {
+    id: 11,
+    name: "Swasthya COMPLETE",
+    tests: 17,
+    parameters: 110,
+    mrp: 4200,
+    price: 1450,
+    icon: ClipboardList,
+    color: "text-teal-700 bg-teal-100",
+    image: "https://images.unsplash.com/photo-1579154204601-01588f351e67?auto=format&fit=crop&w=600&q=80",
+    gender: "All",
+    dealType: "Wellness Bundle",
+    bodyParts: ["cardiovascular", "kidney", "metabolic", "blood", "bone", "immune", "liver", "intestine", "respiratory", "thyroid"],
+    includes: "Amylase, Apolipoproteins, BGF, ESR, HBV, HsCRP, B12, D, CBC, HbA1c, Iron, KFT, Lipid, LFT, Thyroid, Urine",
+    detailedParameters: [
+      { category: "Cardiac & Pancreatic Markers (3)", items: ["Apolipoprotein A1 & B (ApoA1/ApoB ratio)", "Serum Amylase", "High Sensitivity CRP (hs-CRP)"] },
+      { category: "Full Spectrum Diagnostics (107)", items: ["Complete Blood Count", "Liver, Kidney & Lipid Profiles", "Thyroid Profile", "Vitamins B12 & D", "Hepatitis B Screen", "Urine Routine Analysis"] }
+    ]
+  },
+  {
+    id: 12,
+    name: "SWASTHYA APLA Panel",
+    tests: 5,
+    parameters: 30,
+    mrp: 7500,
+    price: 3650,
+    icon: Droplet,
+    color: "text-red-600 bg-red-50",
+    image: "https://images.unsplash.com/photo-1615461066841-6116e61058f4?auto=format&fit=crop&w=600&q=80",
+    gender: "All",
+    dealType: "Lab Atoms",
+    bodyParts: ["blood", "immune"],
+    includes: "Beta 2 Glycoprotein IgG/IgM, Cardiolipin ACL-IgG/IgM, Lupus Anticoagulant Confirmatory",
+    detailedParameters: [
+      { category: "Antiphospholipid Antibody Suite (5)", items: ["Beta-2-Glycoprotein 1 (IgG & IgM)", "Cardiolipin Antibodies (ACL IgG & IgM)", "Lupus Anticoagulant Confirmatory Assay"] },
+      { category: "Clinical Validation (25)", items: ["Coagulation Profile", "Platelet Function Evaluation"] }
+    ]
+  }
+];
+
+const pathologyMedicalStandards = [
+  { name: "LIVER & KIDNEY FUNCTION TEST", items: ["Bilirubin Total", "Bilirubin Direct", "SGOT (AST)", "SGPT (ALT)", "Alkaline Phosphatase", "Total Protein", "Albumin", "Globulin", "Blood Urea Nitrogen (BUN)", "Serum Creatinine", "Uric Acid", "Serum Calcium", "Serum Phosphorus", "Sodium", "Potassium", "Chloride"] },
+  { name: "HbA1c", items: ["HbA1c (Glycated Hemoglobin)", "Estimated Average Glucose (eAG)"] },
+  { name: "HEMOGRAM", items: ["Hemoglobin", "Total RBC", "PCV", "MCV", "MCH", "MCHC", "Total WBC", "Neutrophils", "Lymphocytes", "Monocytes", "Eosinophils", "Basophils", "Platelet Count"] },
+  { name: "VITAMIN D25", items: ["25-Hydroxy Vitamin D3"] },
+  { name: "Lipid Profile", items: ["Total Cholesterol", "Triglycerides", "HDL Cholesterol", "LDL Cholesterol", "VLDL Cholesterol", "Total/HDL Ratio", "Non-HDL Cholesterol"] },
+  { name: "Thyroid Profile", items: ["Triiodothyronine (T3)", "Thyroxine (T4)", "Thyroid Stimulating Hormone (TSH)"] },
+  { name: "Vitamin B12", items: ["Cyanocobalamin"] },
+  { name: "Urine Routine Analysis", items: ["Color", "Transparency", "pH", "Specific Gravity", "Protein", "Glucose", "Ketones", "Blood", "WBCs", "RBCs"] }
+];
+
+export default function App() {
+  const [packages, setPackages] = useState(initialPackages);
+  const [view, setView] = useState('menu'); 
+  const [loaded, setLoaded] = useState(false);
+  
+  const [user, setUser] = useState(null);
+  const [bookings, setBookings] = useState([]);
+  
+  const targetWhatsappNumber = "917665857270"; 
+  const googleSheetUrl = "https://docs.google.com/spreadsheets/d/167GCKx0Lo8pAbdj2WxWDAtPEEzH_IF9ByeSdyrfwtqc/edit?usp=drive_link";
+  const [cart, setCart] = useState([]);
+  
+  // Track member counts per wellness bundle package ID: { [pkgId]: number (1 to 9) }
+  const [packageMembers, setPackageMembers] = useState({});
+  // Track open member dropdown per package ID
+  const [openMemberDropdown, setOpenMemberDropdown] = useState(null);
+  // Track firecracker celebration state when 4 members selected
+  const [celebratingPkgId, setCelebratingPkgId] = useState(null);
+
+  const [chatOpen, setChatOpen] = useState(false);
+  const [messages, setMessages] = useState([{ role: 'model', text: 'Hi! I am the Swasthya AI Assistant. How can I help you choose a health package today?' }]);
+  const [inputValue, setInputValue] = useState('');
+  const [isAILoading, setIsAILoading] = useState(false);
+  const chatEndRef = useRef(null);
+
+  const [activeBodyPart, setActiveBodyPart] = useState(null);
+  const [selectedBodyPartsFilter, setSelectedBodyPartsFilter] = useState([]);
+  const [testSearchQuery, setTestSearchQuery] = useState('');
+  const [activeCategoryTab, setActiveCategoryTab] = useState('all'); 
+  const [animatingTab, setAnimatingTab] = useState(null); 
+
+  // Modal State for viewing package detailed parameters
+  const [selectedPackageModal, setSelectedPackageModal] = useState(null);
+
+  const [adminModalOpen, setAdminModalOpen] = useState(false);
+  const [adminPassword, setAdminPassword] = useState('Bapuji&M22kinazar');
+  const [adminPasswordInput, setAdminPasswordInput] = useState('');
+  const [adminAuthError, setAdminAuthError] = useState(false);
+  const [adminCsvInput, setAdminCsvInput] = useState('');
+  const [adminFeedback, setAdminFeedback] = useState('');
+
+  // Email OTP Reset states for admin using admin.swasthyacare@gmail.com
+  const [showOtpModal, setShowOtpModal] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpInput, setOtpInput] = useState('');
+  const [newPasswordInput, setNewPasswordInput] = useState('');
+  const [otpMessage, setOtpMessage] = useState('');
+
+  const [primaryBooking, setPrimaryBooking] = useState({
+    name: '', age: '', gender: '', email: '', contact: '', houseNo: '', street: '', city: '', state: '', pincode: '', mapLocation: '', preferredDate: '', preferredTime: ''
+  });
+  const [locationStatus, setLocationStatus] = useState('');
+  const [familyMembers, setFamilyMembers] = useState([]);
+
+  // Per-patient test assignments: { [patientKey]: [pkgId1, pkgId2] }
+  // patientKey for primary is 'primary', for family is member.id
+  const [patientAssignments, setPatientAssignments] = useState({});
+
+  // Pre-confirmation bill accordion state
+  const [showPriceBreakup, setShowPriceBreakup] = useState(false);
+
+  // Admin table filtering & sorting
+  const [sortConfig, setSortConfig] = useState({ key: 'name', direction: 'asc' });
+  const [selectedInventoryIds, setSelectedInventoryIds] = useState([]);
+  const [editingPackage, setEditingPackage] = useState(null);
+  const [adminTypeFilter, setAdminTypeFilter] = useState('all'); 
+  const [adminSearchFilter, setAdminSearchFilter] = useState('');
+  const [adminDateFilter, setAdminDateFilter] = useState('all'); 
+
+  // Edit Modal helper states
+  const [selectedStandardAtom, setSelectedStandardAtom] = useState('');
+  const [selectedAtomQuickParam, setSelectedAtomQuickParam] = useState({}); 
+  const [collapsedCategories, setCollapsedCategories] = useState({});
+
+  // Compute minimum date (today if valid slots remain, else tomorrow)
+  const getMinBookingDate = () => {
+      const now = new Date();
+      const currentHour = now.getHours();
+      if (currentHour >= 17) {
+          const tomorrow = new Date(now);
+          tomorrow.setDate(tomorrow.getDate() + 1);
+          return tomorrow.toISOString().split('T')[0];
+      }
+      return now.toISOString().split('T')[0];
+  };
+
+  const getLocation = () => {
+      setLocationStatus('Requesting browser location permission...');
+      if (!navigator.geolocation) {
+          setLocationStatus('Geolocation is not supported by your browser.');
+          return;
+      }
+      navigator.geolocation.getCurrentPosition(
+          async (position) => {
+              const lat = position.coords.latitude;
+              const lng = position.coords.longitude;
+              const link = `https://maps.google.com/?q=${lat},${lng}`;
+              setLocationStatus('Location acquired! Fetching address...');
+              try {
+                  const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`, {
+                      headers: { 'Accept-Language': 'en' }
+                  });
+                  const data = await res.json();
+                  if (data && data.address) {
+                      const addr = data.address;
+                      setPrimaryBooking(prev => ({
+                          ...prev,
+                          street: addr.road || addr.suburb || addr.neighbourhood || prev.street,
+                          city: addr.city || addr.town || addr.village || addr.state_district || prev.city,
+                          state: addr.state || prev.state,
+                          pincode: addr.postcode || prev.pincode,
+                          mapLocation: link
+                      }));
+                      setLocationStatus('Location detected & address filled successfully ✓');
+                      return;
+                  }
+              } catch (err) {
+                  console.warn("Reverse geocode warning:", err);
+              }
+              setPrimaryBooking(prev => ({ ...prev, mapLocation: link }));
+              setLocationStatus('GPS Coordinates captured successfully ✓');
+          },
+          (error) => {
+              console.warn("Geolocation permission error:", error.message);
+              setLocationStatus('Location permission denied or unavailable. Please fill manually.');
+          },
+          { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+      );
+  };
+
+  useEffect(() => {
+    const initAuth = async () => {
+      if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+        await signInWithCustomToken(auth, __initial_auth_token);
+      } else {
+        await signInAnonymously(auth);
+      }
+    };
+    initAuth();
+    const unsubscribe = onAuthStateChanged(auth, setUser);
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (!user || view !== 'admin') return;
+    const unsubscribe = onSnapshot(
+      collection(db, 'artifacts', appId, 'public', 'data', 'bookings'), 
+      (snapshot) => {
+        const b = [];
+        snapshot.forEach(doc => b.push({ id: doc.id, ...doc.data() }));
+        b.sort((x, y) => (y.timestamp || 0) - (x.timestamp || 0));
+        setBookings(b);
+      },
+      (error) => console.error("Firebase Error: ", error)
+    );
+    return () => unsubscribe();
+  }, [user, view]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setLoaded(true), 100);
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    if (chatEndRef.current) {
+        chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages, isAILoading]);
+
+  const handleTabClick = (tabKey) => {
+      setAnimatingTab(tabKey);
+      setTimeout(() => {
+          setActiveCategoryTab(tabKey);
+          setAnimatingTab(null);
+      }, 900);
+  };
+
+  const getMemberCount = (pkgId) => packageMembers[pkgId] || 1;
+
+  const getPricingForMembers = (pkg, membersCount) => {
+      const basePrice = pkg.price;
+      const baseMrp = pkg.mrp || Math.round(basePrice * 2.5);
+      if (membersCount === 1) return { price: basePrice, mrp: baseMrp };
+
+      let totalPrice = 0;
+      let totalMrp = baseMrp * membersCount;
+
+      for (let i = 1; i <= membersCount; i++) {
+          if (i === 1) {
+              totalPrice += basePrice;
+          } else if (i === 2) {
+              totalPrice += Math.round(basePrice * (1 - 0.1495));
+          } else if (i === 3) {
+              totalPrice += Math.round(basePrice * (1 - 0.0723));
+          } else if (i >= 4) {
+              totalPrice += Math.round(basePrice * (1 - 0.0486));
+          }
+      }
+      return { price: totalPrice, mrp: totalMrp };
+  };
+
+  const getEncouragingBanner = (pkg, currentMembers) => {
+      if (currentMembers === 1) {
+          const nextPrice = Math.round(getPricingForMembers(pkg, 2).price / 2);
+          return `💡 Add 1 more family member → Pay ₹${nextPrice}/person!`;
+      } else if (currentMembers === 2) {
+          const nextPrice = Math.round(getPricingForMembers(pkg, 3).price / 3);
+          return `🎉 Family savings unlocked! 🧏‍♂️ + Add 1 more → Pay ₹${nextPrice}/person!`;
+      } else if (currentMembers === 3) {
+          const nextPrice = Math.round(getPricingForMembers(pkg, 4).price / 4);
+          return `🌟 Almost maximum value! 🧏‍♂️ + Add 1 more → Pay ₹${nextPrice}/person!`;
+      } else {
+          const finalPerPerson = Math.round(getPricingForMembers(pkg, 4).price / 4);
+          return `✨ Maximum Family Tier Active! 🎆 Best Value: ₹${finalPerPerson}/person!`;
+      }
+  };
+
+  const handleCsvImport = (csvText) => {
+      const lines = csvText.split('\n').filter(l => l.trim().length > 0);
+      if (lines.length <= 1) {
+          setAdminFeedback('Please provide valid CSV header and rows.');
+          return;
+      }
+      const updatedPackages = [...packages];
+      let importedCount = 0;
+      const todayStr = new Date().toISOString().split('T')[0];
+
+      for (let i = 1; i < lines.length; i++) {
+          const row = lines[i].split(',').map(item => item.trim().replace(/^"|"$/g, ''));
+          if (row.length >= 5) {
+              const name = row[0];
+              const dealType = row[1] || 'Lab Atoms';
+              const mrp = Number(row[2]) || 2000;
+              const price = Number(row[3]) || 750;
+              const gender = row[4] || 'All';
+
+              const existingIdx = updatedPackages.findIndex(p => p.name.toLowerCase() === name.toLowerCase());
+              if (existingIdx >= 0) {
+                  updatedPackages[existingIdx] = {
+                      ...updatedPackages[existingIdx],
+                      dealType,
+                      mrp,
+                      price,
+                      gender,
+                      modifiedDate: todayStr
+                  };
+              } else {
+                  updatedPackages.push({
+                      id: Date.now() + i,
+                      name,
+                      dealType,
+                      mrp,
+                      price,
+                      gender,
+                      modifiedDate: todayStr,
+                      bodyParts: ["cardiovascular", "kidney", "blood"],
+                      icon: Activity,
+                      color: "text-teal-600 bg-teal-50",
+                      image: "https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&w=600&q=80",
+                      detailedParameters: [{ category: "HEMOGRAM", items: ["Hemoglobin", "WBC", "Platelet Count"] }]
+                  });
+              }
+              importedCount++;
+          }
+      }
+      setPackages(updatedPackages);
+      setAdminFeedback(`Successfully imported/updated ${importedCount} packages from Excel/CSV! ✓`);
+  };
+
+  const handleFileUpload = (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (evt) => {
+          const buffer = evt.target.result;
+          let text = '';
+          try {
+              const decoderUtf8 = new TextDecoder('utf-8', { fatal: true });
+              text = decoderUtf8.decode(buffer);
+          } catch (err) {
+              const decoderFallback = new TextDecoder('windows-1252');
+              text = decoderFallback.decode(buffer);
+          }
+          setAdminCsvInput(text);
+          handleCsvImport(text);
+      };
+      reader.readAsArrayBuffer(file);
+  };
+
+  const copyBookingsToClipboardForGoogleSheets = () => {
+      if (bookings.length === 0) {
+          setAdminFeedback("No bookings available to copy.");
+          return;
+      }
+      let tsvContent = "BookingDate\tPrimaryPatientName\tAge\tGender\tContact\tEmail\tAddress\tPreferredSlot\tTotalAmount\tAssignedTestsAndMembers\n";
+      bookings.forEach(b => {
+          const date = new Date(b.timestamp).toLocaleString();
+          const name = b.primaryBooking?.name || '';
+          const age = b.primaryBooking?.age || '';
+          const gender = b.primaryBooking?.gender || '';
+          const contact = b.primaryBooking?.contact || '';
+          const email = b.primaryBooking?.email || '';
+          const addr = `${b.primaryBooking?.houseNo || ''}, ${b.primaryBooking?.street || ''}, ${b.primaryBooking?.city || ''} - ${b.primaryBooking?.pincode || ''}`;
+          const slot = `${b.primaryBooking?.preferredDate || ''} (${b.primaryBooking?.preferredTime || ''})`;
+          const amount = b.totalAmount || 0;
+          
+          let testsSummary = [];
+          const primaryCart = b.patientAssignments?.['primary'] || b.cart || [];
+          testsSummary.push(`[Primary: ${name}] -> ${primaryCart.map(id => packages.find(p => p.id === Number(id))?.name || id).join(', ')}`);
+          
+          if (b.familyMembers) {
+              b.familyMembers.forEach(m => {
+                  const mCart = b.patientAssignments?.[m.id] || [];
+                  testsSummary.push(`[Family: ${m.name || 'Member'}] -> ${mCart.map(id => packages.find(p => p.id === Number(id))?.name || id).join(', ')}`);
+              });
+          }
+
+          tsvContent += `${date}\t${name}\t${age}\t${gender}\t${contact}\t${email}\t${addr}\t${slot}\t${amount}\t"${testsSummary.join(' | ')}"\n`;
+      });
+      
+      navigator.clipboard.writeText(tsvContent).then(() => {
+          setAdminFeedback("Bookings copied to clipboard! Open your Google Sheet and press Ctrl+V to populate instantly. ✓");
+          window.open(googleSheetUrl, '_blank');
+      }).catch(err => {
+          console.error("Clipboard copy failed", err);
+          setAdminFeedback("Clipboard write failed. Please check browser permissions.");
+      });
+  };
+
+  const handleSort = (key) => {
+      let direction = 'asc';
+      if (sortConfig.key === key && sortConfig.direction === 'asc') {
+          direction = 'desc';
+      }
+      setSortConfig({ key, direction });
+  };
+
+  const filteredInventory = packages.filter(p => {
+      if (adminTypeFilter !== 'all') {
+          if (p.dealType !== adminTypeFilter) return false;
+      }
+      if (adminSearchFilter && !p.name.toLowerCase().includes(adminSearchFilter.toLowerCase())) {
+          return false;
+      }
+      if (adminDateFilter !== 'all') {
+          const modDate = new Date(p.modifiedDate || '2026-03-01');
+          const now = new Date('2026-03-07');
+          const diffDays = (now - modDate) / (1000 * 60 * 60 * 24);
+          if (adminDateFilter === 'last7' && diffDays > 7) return false;
+          if (adminDateFilter === 'last30' && diffDays > 30) return false;
+      }
+      return true;
+  });
+
+  const sortedInventory = [...filteredInventory].sort((a, b) => {
+      let aVal = a[sortConfig.key];
+      let bVal = b[sortConfig.key];
+      if (typeof aVal === 'string') {
+          aVal = aVal.toLowerCase();
+          bVal = bVal.toLowerCase();
+      }
+      if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
+      if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
+      return 0;
+  });
+
+  const formatMarkdown = (text) => {
+      let formattedText = text
+          .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') 
+          .replace(/\*(.*?)\*/g, '<em>$1</em>') 
+          .replace(/### (.*?)\n/g, '<strong class="block mt-2 mb-1 text-md text-teal-800">$1</strong>\n') 
+          .replace(/## (.*?)\n/g, '<strong class="block mt-2 mb-1 text-lg text-teal-900">$1</strong>\n') 
+          .replace(/# (.*?)\n/g, '<strong class="block mt-2 mb-1 text-xl text-teal-950">$1</strong>\n') 
+          .replace(/(^|\n)\*\s/g, '$1• '); 
+      return { __html: formattedText };
+  };
+
+  const renderModelMessage = (text) => {
+      const parts = text.split(/\[ADD:(\d+)\]/g);
+      return parts.map((part, index) => {
+          if (index % 2 === 1) { 
+              const pkgId = Number(part);
+              const pkg = packages.find(p => p.id === pkgId);
+              if (!pkg) return null;
+              const inCart = cart.includes(pkgId);
+              const calculatedTests = pkg.detailedParameters ? pkg.detailedParameters.length : 1;
+              const calculatedParams = pkg.detailedParameters ? pkg.detailedParameters.reduce((acc, cat) => acc + (cat.items ? cat.items.length : 0), 1) : 1;
+              return (
+                  <button
+                      key={index}
+                      onClick={() => toggleCart(pkgId)}
+                      className={`mt-3 mb-2 flex items-center justify-center w-full py-2.5 text-xs font-bold rounded-xl transition-all shadow-sm ${
+                          inCart 
+                          ? 'bg-teal-700 hover:bg-teal-800 text-white border border-teal-800' 
+                          : 'bg-yellow-400 hover:bg-yellow-500 text-teal-950 border border-yellow-500'
+                      }`}
+                  >
+                      <ShoppingCart className="w-4 h-4 mr-1.5" />
+                      {inCart ? `Added ${pkg.name} ✓` : `Add ${pkg.name} to Cart - ₹${pkg.price} (${calculatedTests} Tests, ${calculatedParams} Params)`}
+                  </button>
+              );
+          }
+          return <div key={index} dangerouslySetInnerHTML={formatMarkdown(part)} />;
+      });
+  };
+
+  const handleSendMessage = async (text, isSystem = false) => {
+      if (!text.trim()) return;
+      const newUserMessage = { role: 'user', text };
+      setMessages(prev => [...prev, newUserMessage]);
+      if (!isSystem) setInputValue('');
+      setIsAILoading(true);
+      try {
+          const chatHistory = messages.map(msg => ({
+              role: msg.role === 'model' ? 'model' : 'user',
+              parts: [{ text: msg.text }]
+          }));
+          chatHistory.push({ role: 'user', parts: [{ text: text }] });
+          const systemPrompt = `You are Swasthya AI, a friendly and expert health assistant for a diagnostic lab called 'Swasthya Care'.
+          Your primary job is to help users select the best health checkup plans based on their symptoms, age, gender, or specific test requirements.
+          Here is the strict catalog of available packages in JSON format:
+          ${JSON.stringify(packages)}
+          Guidelines:
+          1. ONLY recommend packages from the provided catalog. Do not invent packages or tests.
+          2. ALWAYS mention the price (₹), total tests, and parameter count when recommending a package.
+          3. If the user's gender is unknown or not specified, prioritize recommending universal 'All' gender wellness packages (e.g., Swasthya Mitra BASIC, ADVANCE, PREMIUM, COMPLETE) and gently ask if they prefer male or female specific tests.
+          4. Keep your responses concise, warm, and directly helpful.
+          5. CRITICAL: Whenever you recommend a package, you MUST append the exact tag [ADD:id] (where id is the package's id number) on a new line immediately after describing that package. Example: [ADD:1]`;
+
+          const payload = {
+              contents: chatHistory,
+              systemInstruction: { parts: [{ text: systemPrompt }] }
+          };
+          const apiKey = ""; 
+          const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+          const response = await fetch(apiUrl, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+          });
+          const result = await response.json();
+          const aiReply = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (aiReply) {
+              setMessages(prev => [...prev, { role: 'model', text: aiReply }]);
+          } else {
+              setMessages(prev => [...prev, { role: 'model', text: "I'm currently updating my medical database. Please try asking again in a moment!" }]);
+          }
+      } catch (error) {
+          console.error("Gemini API Error:", error);
+          setMessages(prev => [...prev, { role: 'model', text: "Sorry, I'm experiencing a brief network anomaly. Let's try that again." }]);
+      } finally {
+          setIsAILoading(false);
+      }
+  };
+
+  const toggleCart = (pkgId) => {
+    const isAdding = !cart.includes(pkgId);
+    setCart(prev => isAdding ? [...prev, pkgId] : prev.filter(id => id !== pkgId));
+  };
+
+  const toggleBodyPartFilter = (part) => {
+      setSelectedBodyPartsFilter(prev => 
+          prev.includes(part) ? prev.filter(p => p !== part) : [...prev, part]
+      );
+  };
+
+  const addFamilyMember = () => {
+    const newMember = {
+        id: Date.now(),
+        name: '',
+        age: '',
+        gender: '',
+        email: ''
+    };
+    setFamilyMembers([...familyMembers, newMember]);
+  };
+
+  const removeFamilyMember = (id) => {
+    setFamilyMembers(familyMembers.filter(member => member.id !== id));
+    setPatientAssignments(prev => {
+        const copy = { ...prev };
+        delete copy[id];
+        return copy;
+    });
+  };
+
+  const updateFamilyMember = (id, field, value) => {
+    setFamilyMembers(familyMembers.map(member => 
+        member.id === id ? { ...member, [field]: value } : member
+    ));
+  };
+
+  const calculateTotal = () => {
+    let total = 0;
+    cart.forEach(id => {
+        const pkg = packages.find(p => p.id === Number(id));
+        if (pkg) {
+            const count = getMemberCount(pkg.id);
+            const pricing = getPricingForMembers(pkg, count);
+            total += pricing.price;
+        }
+    });
+    return total;
+  };
+
+  // Check required family member slots vs selected member count in wellness bundles
+  const getRequiredFamilyMembersCount = () => {
+      let maxRequired = 0;
+      cart.forEach(id => {
+          const pkg = packages.find(p => p.id === Number(id));
+          if (pkg && pkg.dealType === 'Wellness Bundle') {
+              const count = getMemberCount(id);
+              const extra = count - 1;
+              if (extra > maxRequired) maxRequired = extra;
+          }
+      });
+      return maxRequired;
+  };
+
+  const requiredFamilySlots = getRequiredFamilyMembersCount();
+  const hasEnoughFamilyMembers = familyMembers.length >= requiredFamilySlots;
+
+  // Strict check: every required patient slot must have at least one test assigned
+  const areAllSlotsAssigned = () => {
+      const primaryList = patientAssignments['primary'] || [];
+      if (primaryList.length === 0) return false;
+
+      for (let i = 0; i < requiredFamilySlots; i++) {
+          const member = familyMembers[i];
+          if (!member) return false;
+          const mList = patientAssignments[member.id] || [];
+          if (mList.length === 0) return false;
+      }
+      return true;
+  };
+
+  const getGenderConflict = (userGender, selectedPackageIds) => {
+    if (!userGender || !selectedPackageIds || selectedPackageIds.length === 0) return null;
+    for (const pid of selectedPackageIds) {
+        const pkg = packages.find(p => p.id === Number(pid));
+        if (pkg && pkg.gender !== "All") {
+            if (userGender !== pkg.gender) {
+                return `⚠️ Cannot assign "${pkg.name}". This package is strictly for ${pkg.gender} patients.`;
+            }
+        }
+    }
+    return null;
+  };
+
+  const submitBooking = async (e) => {
+    e.preventDefault();
+
+    if (primaryBooking.preferredDate && primaryBooking.preferredTime) {
+        const todayStr = new Date().toISOString().split('T')[0];
+        if (primaryBooking.preferredDate === todayStr) {
+            const startHour = parseInt(primaryBooking.preferredTime.split(':')[0], 10);
+            const nowHour = new Date().getHours();
+            if (startHour <= nowHour + 4) {
+                alert("Please select a time slot at least 4 hours from the current time. If no slots are available today, please select tomorrow.");
+                return;
+            }
+        }
+    }
+
+    const totalAmount = calculateTotal();
+    const bookingData = {
+        primaryBooking,
+        cart,
+        packageMembers,
+        familyMembers,
+        patientAssignments,
+        totalAmount,
+        timestamp: Date.now(),
+        status: 'New'
+    };
+
+    try {
+        if (user) {
+            await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'bookings'), bookingData);
+        }
+    } catch (error) {
+        console.error("Error saving booking:", error);
+    }
+
+    let msg = `*New Booking from Swasthya Care*\n\n`;
+    msg += `*Primary Patient / Billing Name:*\nName: ${primaryBooking.name}\nAge: ${primaryBooking.age}\nSex: ${primaryBooking.gender}\nEmail: ${primaryBooking.email}\nContact: ${primaryBooking.contact}\n`;
+    msg += `*Preferred Date & Time:* ${primaryBooking.preferredDate || 'Not specified'} at ${primaryBooking.preferredTime || 'Not specified'}\n`;
+    msg += `*Address:* ${primaryBooking.houseNo}, ${primaryBooking.street}, ${primaryBooking.city}, ${primaryBooking.state} - ${primaryBooking.pincode}\n`;
+    if (primaryBooking.mapLocation) {
+        msg += `*Google Maps Link:* ${primaryBooking.mapLocation}\n`;
+    }
+    
+    msg += `\n*Assigned Tests & Packages:*\n`;
+    const primaryAssigned = patientAssignments['primary'] || [];
+    msg += `• Primary Patient (${primaryBooking.name}): ${primaryAssigned.map(id => packages.find(p => p.id === Number(id))?.name || id).join(', ')}\n`;
+    
+    familyMembers.forEach((m, idx) => {
+        if (idx < requiredFamilySlots) {
+            const mAssigned = patientAssignments[m.id] || [];
+            msg += `• Family Member ${idx+1} (${m.name || 'Unnamed'}): ${mAssigned.map(id => packages.find(p => p.id === Number(id))?.name || id).join(', ')}\n`;
+        }
+    });
+
+    msg += `\n*Total Amount Payable: ₹${totalAmount}*\n`;
+    const waLink = `https://wa.me/${targetWhatsappNumber}?text=${encodeURIComponent(msg)}`;
+    window.open(waLink, '_blank');
+    setView('success');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-50 font-sans text-slate-800 selection:bg-teal-200 flex flex-col">
+      
+      {/* Background blobs */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+         <div className="absolute top-0 right-0 w-1/3 h-1/3 bg-teal-100 rounded-bl-full opacity-50 blur-3xl mix-blend-multiply"></div>
+         <div className="absolute bottom-0 left-0 w-1/2 h-1/2 bg-yellow-100 rounded-tr-full opacity-40 blur-3xl mix-blend-multiply"></div>
+      </div>
+
+      <div className="relative z-10 flex-grow">
+        
+        {/* Global Top Header Bar */}
+        <header className="bg-white/95 backdrop-blur-md shadow-sm sticky top-0 z-50 border-b border-slate-200">
+          <div className="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+            
+            {/* Healthians Logo clickable to home screen */}
+            <div 
+              className="flex items-center cursor-pointer transition-transform hover:scale-105" 
+              onClick={() => { setView('menu'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+            >
+              <img 
+                  src="https://cdn1.healthians.com/img/healthians-logo.svg" 
+                  alt="Healthians Logo" 
+                  className="h-10 md:h-12 object-contain"
+              />
+            </div>
+            
+            {/* Top Right: NABL and CAP Certifications */}
+            <div className="flex items-center">
+              <span className="text-[10px] md:text-xs font-extrabold text-slate-500 uppercase tracking-wider mr-3 hidden sm:inline-block">
+                Accredited By
+              </span>
+              <div className="flex items-center space-x-2 md:space-x-3">
+                <SafeLogo 
+                    src="https://cdn1.healthians.com/img/lab_images/nabl.jpg" 
+                    alt="NABL Accredited" 
+                    className="h-10 md:h-14 w-auto object-contain drop-shadow-sm bg-white p-1 rounded border border-slate-200"
+                    fallback={FallbackBadge}
+                    fallbackText="NABL"
+                />
+                <SafeLogo 
+                    src="https://helma-mumbai.healthians.com/stationery/mailer-assets/68fb2c63f2840.png" 
+                    alt="CAP Accredited" 
+                    className="h-10 md:h-14 w-auto object-contain drop-shadow-sm bg-white p-1 rounded border border-slate-200"
+                    fallback={FallbackBadge}
+                    fallbackText="CAP"
+                />
+              </div>
+            </div>
+
+          </div>
+        </header>
+
+        {view === 'menu' && cart.length > 0 && (
+            <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-40 animate-in slide-in-from-bottom-8 duration-500">
+                <button 
+                    onClick={() => {
+                        setView('checkout');
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                    className="flex items-center space-x-3 bg-teal-900 text-white px-6 py-3 rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.3)] border-2 border-yellow-400 hover:bg-teal-800 hover:scale-105 transition-all"
+                >
+                    <div className="relative flex items-center justify-center">
+                        <ShoppingCart className="w-5 h-5 text-yellow-400" />
+                        <span className="absolute -top-3 -right-3 bg-yellow-400 text-teal-950 text-[10px] font-extrabold rounded-full w-5 h-5 flex items-center justify-center border-2 border-teal-900">
+                            {cart.length}
+                        </span>
+                    </div>
+                    <span className="font-bold text-sm tracking-wide">Proceed to Checkout</span>
+                </button>
+            </div>
+        )}
+
+        {view === 'menu' && (
+            <div className="max-w-7xl mx-auto px-4 py-10 sm:px-6 lg:px-8">
+                
+                {/* Main Hero Section */}
+                <div className={`text-center mb-12 transition-all duration-1000 transform ${loaded ? 'translate-y-0 opacity-100' : '-translate-y-12 opacity-0'}`}>
+                    
+                    <div 
+                        className="flex justify-center mb-4 cursor-pointer"
+                        onClick={(e) => {
+                            if (e.detail === 3) {
+                                setAdminModalOpen(true);
+                                setAdminPasswordInput('');
+                                setAdminAuthError(false);
+                            }
+                        }}
+                    >
+                        <SafeLogo 
+                            src="https://i.ibb.co/T5w8drb/tmp-6c91eb22-fc8e-420d-beee-e9d1f6dd2b09.png" 
+                            alt="Swasthya Care" 
+                            className="h-40 sm:h-48 md:h-56 lg:h-64 object-contain drop-shadow-sm select-none" 
+                            fallback={FallbackSwasthyaLogo}
+                        />
+                    </div>
+                    
+                    <p className="text-lg md:text-xl text-slate-600 max-w-2xl mx-auto font-medium mt-6">
+                        Invest in your well-being with our comprehensive, AI-curated health checkup plans.
+                    </p>
+
+                    {/* Blood Test Search Bar */}
+                    <div className="mt-8 max-w-xl mx-auto relative">
+                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                            <Search className="h-5 w-5 text-teal-600" />
+                        </div>
+                        <input
+                            type="text"
+                            value={testSearchQuery}
+                            onChange={(e) => setTestSearchQuery(e.target.value)}
+                            placeholder="Search blood test (e.g. Lipid, Thyroid, CBC, Glucose, ESR)..."
+                            className="w-full pl-11 pr-4 py-3 bg-white border border-teal-200 rounded-full shadow-sm focus:ring-2 focus:ring-teal-500 outline-none text-slate-700 font-medium"
+                        />
+                        {testSearchQuery && (
+                            <button 
+                                onClick={() => setTestSearchQuery('')}
+                                className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-slate-600 font-bold"
+                            >
+                                Clear
+                            </button>
+                        )}
+                    </div>
+                </div>
+
+                {/* Banner Section */}
+                <div className={`mb-16 bg-white rounded-3xl shadow-sm border border-slate-100 p-6 md:p-8 flex justify-center transition-all duration-1000 transform ${loaded ? 'translate-y-0 opacity-100' : 'translate-y-12 opacity-0'}`}>
+                    <div className="w-full max-w-3xl flex justify-center">
+                        <SafeLogo 
+                            src="image_7b3bc7.png" 
+                            alt="Healthians Metrics & Features Banner" 
+                            className="w-full h-auto object-contain drop-shadow-sm"
+                            fallback={() => <div className="text-center text-slate-400 text-xs font-semibold py-4">Trusted Diagnostics Nationwide</div>}
+                        />
+                    </div>
+                </div>
+
+                {/* Physiological Map layout */}
+                <div className={`mb-16 bg-white rounded-3xl shadow-sm border border-slate-100 p-8 flex flex-col md:flex-row items-center gap-12 transition-all duration-1000 transform ${loaded ? 'translate-y-0 opacity-100' : 'translate-y-12 opacity-0'}`}>
+                    
+                    {/* Left: Anatomically Accurate Silhouette */}
+                    <div className="w-full md:w-5/12 flex justify-left relative">
+                        <div className="relative w-64 h-[480px] select-none bg-slate-50 rounded-2xl p-4 border border-slate-200 shadow-inner flex flex-col items-center justify-center">
+                            
+                            <svg viewBox="0 0 300 480" className="w-full h-full drop-shadow-xl relative z-10 pointer-events-none" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M150 15 C175 15 185 35 185 60 C185 85 170 95 170 110 C200 117 225 133 230 170 L245 310 C248 325 228 325 220 310 L205 190 L198 345 C205 400 200 445 200 455 C200 465 170 465 165 450 L155 315 L145 315 L135 450 C130 465 100 465 100 455 C100 445 95 400 102 345 L95 190 L80 310 C72 325 52 325 55 310 L70 170 C75 133 100 117 130 110 C130 95 115 85 115 60 C115 35 125 15 150 15 Z" fill="#f8fafc" stroke="#cbd5e1" strokeWidth="2" />
+                                
+                                <g className="cursor-pointer transition-all duration-300 pointer-events-auto" onMouseEnter={() => setActiveBodyPart('thyroid')} onMouseLeave={() => setActiveBodyPart(null)} onClick={() => toggleBodyPartFilter('thyroid')}>
+                                    <path d="M146 105 L154 105 L156 118 L144 118 Z" fill="#0284c7" opacity="0.8" />
+                                </g>
+                                <g className="cursor-pointer transition-all duration-300 pointer-events-auto" onMouseEnter={() => setActiveBodyPart('respiratory')} onMouseLeave={() => setActiveBodyPart(null)} onClick={() => toggleBodyPartFilter('respiratory')}>
+                                    <path d="M148 138 C142 138 122 148 120 175 C118 195 132 205 146 195 C147 175 148 155 148 138 Z" fill="#0ea5e9" opacity="0.85" />
+                                    <path d="M152 138 C158 138 178 148 180 175 C182 195 168 205 154 195 C153 175 152 155 152 138 Z" fill="#0ea5e9" opacity="0.85" />
+                                </g>
+                                <g className="cursor-pointer transition-all duration-300 pointer-events-auto" onMouseEnter={() => setActiveBodyPart('cardiovascular')} onMouseLeave={() => setActiveBodyPart(null)} onClick={() => toggleBodyPartFilter('cardiovascular')}>
+                                    <path d="M148 180 C144 176 138 192 142 190 C146 198 150 206 150 206 C150 206 154 198 158 190 C162 182 156 176 152 180 C150 184 149 184 148 180 Z" fill="#e11d48" opacity="0.9" />
+                                </g>
+                                <g className="cursor-pointer transition-all duration-300 pointer-events-auto" onMouseEnter={() => setActiveBodyPart('kidney')} onMouseLeave={() => setActiveBodyPart(null)} onClick={() => toggleBodyPartFilter('kidney')}>
+                                    <path d="M128 242 C120 242 116 256 123 264 C129 264 133 252 128 242 Z" fill="#7e22ce" opacity="0.85" />
+                                    <path d="M172 242 C180 242 184 256 177 264 C171 264 167 252 172 242 Z" fill="#7e22ce" opacity="0.85" />
+                                </g>
+                                <g className="cursor-pointer transition-all duration-300 pointer-events-auto" onMouseEnter={() => setActiveBodyPart('liver')} onMouseLeave={() => setActiveBodyPart(null)} onClick={() => toggleBodyPartFilter('liver')}>
+                                    <path d="M142 207 C162 203 175 217 170 231 C155 235 138 223 142 207 Z" fill="#b91c1c" opacity="0.85" />
+                                </g>
+                                <g className="cursor-pointer transition-all duration-300 pointer-events-auto" onMouseEnter={() => setActiveBodyPart('intestine')} onMouseLeave={() => setActiveBodyPart(null)} onClick={() => toggleBodyPartFilter('intestine')}>
+                                    <path d="M136 255 Q150 245 164 255 Q170 280 150 288 Q130 280 136 255 Z" fill="#d97706" opacity="0.85" />
+                                </g>
+                                <g className="cursor-pointer transition-all duration-300 pointer-events-auto" onMouseEnter={() => setActiveBodyPart('bone')} onMouseLeave={() => setActiveBodyPart(null)} onClick={() => toggleBodyPartFilter('bone')}>
+                                    <circle cx="90" cy="155" r="5" fill="#f59e0b" stroke="#d97706" strokeWidth="1.5" />
+                                    <circle cx="210" cy="155" r="5" fill="#f59e0b" stroke="#d97706" strokeWidth="1.5" />
+                                    <circle cx="75" cy="252" r="5" fill="#f59e0b" stroke="#d97706" strokeWidth="1.5" />
+                                    <circle cx="230" cy="252" r="5" fill="#f59e0b" stroke="#d97706" strokeWidth="1.5" />
+                                    <circle cx="112" cy="380" r="5" fill="#f59e0b" stroke="#d97706" strokeWidth="1.5" />
+                                    <circle cx="180" cy="380" r="5" fill="#f59e0b" stroke="#d97706" strokeWidth="1.5" />
+                                </g>
+                                <g className="cursor-pointer transition-all duration-300 pointer-events-auto" onMouseEnter={() => setActiveBodyPart('male_reproductive')} onMouseLeave={() => setActiveBodyPart(null)} onClick={() => toggleBodyPartFilter('male_reproductive')}>
+                                    <ellipse cx="144" cy="305" rx="8" ry="9" fill="#3b82f6" opacity="0.9" />
+                                </g>
+                                <g className="cursor-pointer transition-all duration-300 pointer-events-auto" onMouseEnter={() => setActiveBodyPart('female_reproductive')} onMouseLeave={() => setActiveBodyPart(null)} onClick={() => toggleBodyPartFilter('female_reproductive')}>
+                                    <ellipse cx="156" cy="305" rx="8" ry="6" fill="#ec4899" opacity="0.9" />
+                                </g>
+                            </svg>
+                            
+                            {activeBodyPart && (
+                                <div className="absolute top-4 bg-teal-900 text-white px-3 py-1 rounded-lg shadow text-xs font-bold capitalize z-10">
+                                    {activeBodyPart.replace('_', ' ')}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* Right: Physiological System Cards */}
+                    <div className="w-full md:w-7/12">
+                        <h2 className="text-2xl font-extrabold text-teal-950 mb-2">Physiological Systems Map</h2>
+                        <p className="text-slate-600 mb-6 text-sm">Select multiple systems below to filter packages based on clinical diagnostic panels.</p>
+                        
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                            {[
+                                { id: 'thyroid', label: 'Thyroid Gland' },
+                                { id: 'respiratory', label: 'Respiratory system' },
+                                { id: 'cardiovascular', label: 'Cardiovascular' },
+                                { id: 'kidney', label: 'Kidney system' },
+                                { id: 'liver', label: 'Liver' },
+                                { id: 'intestine', label: 'Intestine' },
+                                { id: 'bone', label: 'Bone (Joints)' },
+                                { id: 'immune', label: 'Immune system' },
+                                { id: 'metabolic', label: 'Metabolic system' },
+                                { id: 'male_reproductive', label: 'Male Reproductive' },
+                                { id: 'female_reproductive', label: 'Female Reproductive' },
+                                { id: 'blood', label: 'Blood Profile' }
+                            ].map(sys => {
+                                const isSelected = selectedBodyPartsFilter.includes(sys.id);
+                                return (
+                                    <button 
+                                        key={sys.id}
+                                        onClick={() => toggleBodyPartFilter(sys.id)} 
+                                        onMouseEnter={() => setActiveBodyPart(sys.id)}
+                                        onMouseLeave={() => setActiveBodyPart(null)}
+                                        className={`p-3 rounded-xl border text-left transition-all text-xs font-bold flex items-center justify-between ${
+                                            isSelected 
+                                            ? 'bg-teal-900 text-white border-teal-900 shadow-md' 
+                                            : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-teal-50'
+                                        }`}
+                                    >
+                                        <span>{sys.label}</span>
+                                        {isSelected && <Check className="w-3.5 h-3.5 text-yellow-400 shrink-0 ml-1" />}
+                                    </button>
+                                );
+                            })}
+                        </div>
+
+                        {selectedBodyPartsFilter.length > 0 && (
+                            <div className="mt-6 flex items-center justify-between bg-teal-50 p-3 rounded-xl border border-teal-200">
+                                <span className="text-xs font-bold text-teal-900">
+                                    Active Filters: {selectedBodyPartsFilter.length} system(s) selected
+                                </span>
+                                <button 
+                                    onClick={() => setSelectedBodyPartsFilter([])} 
+                                    className="text-xs bg-red-100 hover:bg-red-200 text-red-800 px-3 py-1 rounded-lg font-bold transition-colors"
+                                >
+                                    Clear All Filters
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                </div>
+
+                {/* 4 Section Navigation Tabs */}
+                <div className="mb-10 flex flex-wrap items-center justify-center gap-3">
+                    <button 
+                        onClick={() => handleTabClick('all')}
+                        className={`px-5 py-3 rounded-2xl font-bold text-sm transition-all shadow-sm flex items-center space-x-2 relative overflow-hidden ${activeCategoryTab === 'all' ? 'bg-teal-900 text-yellow-400 border-2 border-yellow-400 shadow-md scale-105' : 'bg-white text-slate-700 border border-slate-200 hover:bg-teal-50'}`}
+                    >
+                        {animatingTab === 'all' && (
+                            <span className="absolute inset-0 bg-teal-900 text-white flex items-center justify-center z-20 text-xl" style={{ animation: 'zoomIn 0.8s ease-in-out infinite alternate' }}>
+                                🔬
+                            </span>
+                        )}
+                        <span>🔬 All Lab Tests</span>
+                    </button>
+
+                    <button 
+                        onClick={() => handleTabClick('atoms')}
+                        className={`px-5 py-3 rounded-2xl font-bold text-sm transition-all shadow-sm flex items-center space-x-2 relative overflow-hidden ${activeCategoryTab === 'atoms' ? 'bg-teal-900 text-yellow-400 border-2 border-yellow-400 shadow-md scale-105' : 'bg-white text-slate-700 border border-slate-200 hover:bg-teal-50'}`}
+                    >
+                        {animatingTab === 'atoms' && (
+                            <span className="absolute inset-0 bg-blue-900 text-white flex items-center justify-center z-20 text-xl" style={{ animation: 'spin 1.2s linear infinite' }}>
+                                🧬
+                            </span>
+                        )}
+                        <span>🧬 Lab Atoms</span>
+                    </button>
+
+                    <button 
+                        onClick={() => handleTabClick('health')}
+                        className={`px-5 py-3 rounded-2xl font-bold text-sm transition-all shadow-sm flex items-center space-x-2 relative overflow-hidden ${activeCategoryTab === 'health' ? 'bg-teal-900 text-yellow-400 border-2 border-yellow-400 shadow-md scale-105' : 'bg-white text-slate-700 border border-slate-200 hover:bg-teal-50'}`}
+                    >
+                        {animatingTab === 'health' && (
+                            <span className="absolute inset-0 bg-rose-900 text-white flex items-center justify-center z-25 text-2xl" style={{ animation: 'ping 0.5s cubic-bezier(0, 0, 0.2, 1) infinite' }}>
+                                ❤️
+                            </span>
+                        )}
+                        <span>❤️ Organ Health</span>
+                    </button>
+
+                    <button 
+                        onClick={() => handleTabClick('bundles')}
+                        className={`px-5 py-3 rounded-2xl font-bold text-sm transition-all shadow-sm flex items-center space-x-2 relative overflow-hidden ${activeCategoryTab === 'bundles' ? 'bg-teal-900 text-yellow-400 border-2 border-yellow-400 shadow-md scale-105' : 'bg-white text-slate-700 border border-slate-200 hover:bg-teal-50'}`}
+                    >
+                        {animatingTab === 'bundles' && (
+                            <span className="absolute inset-0 bg-teal-950 text-white flex items-center justify-center z-20 text-xl" style={{ animation: 'bounce 0.5s infinite' }}>
+                                🧍🏃
+                            </span>
+                        )}
+                        <span>🧍 Wellness Bundles</span>
+                    </button>
+                </div>
+
+                {/* Packages Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                    {packages
+                        .filter(pkg => {
+                            if (activeCategoryTab === 'atoms' && pkg.dealType !== 'Lab Atoms') return false;
+                            if (activeCategoryTab === 'health' && pkg.dealType !== 'Organ Health') return false;
+                            if (activeCategoryTab === 'bundles' && pkg.dealType !== 'Wellness Bundle') return false;
+
+                            const matchesBodyFilter = selectedBodyPartsFilter.length > 0 ? selectedBodyPartsFilter.some(part => pkg.bodyParts.includes(part)) : true;
+                            const matchesSearchQuery = testSearchQuery ? pkg.name.toLowerCase().includes(testSearchQuery.toLowerCase()) : true;
+                            const isHighlighted = activeBodyPart ? pkg.bodyParts.includes(activeBodyPart) : true;
+                            return matchesBodyFilter && matchesSearchQuery && isHighlighted;
+                        })
+                        .map((pkg, index) => {
+                            const isBundle = pkg.dealType === 'Wellness Bundle';
+                            const currentMembers = getMemberCount(pkg.id);
+                            const pricing = getPricingForMembers(pkg, currentMembers);
+                            const isCelebrating = celebratingPkgId === pkg.id;
+                            const calculatedTests = pkg.detailedParameters ? pkg.detailedParameters.length : 1;
+                            const calculatedParams = pkg.detailedParameters ? pkg.detailedParameters.reduce((acc, cat) => acc + (cat.items ? cat.items.length : 0), 1) : 1;
+
+                            return (
+                                <div 
+                                    key={pkg.id} 
+                                    className={`
+                                        bg-white rounded-2xl shadow-sm border border-slate-100 flex flex-col h-full overflow-hidden group
+                                        transition-all duration-500 ease-out hover:shadow-xl hover:border-teal-300 relative
+                                        ${loaded ? 'translate-y-0 opacity-100' : 'translate-y-24 opacity-0'}
+                                    `}
+                                    style={{ transitionDelay: `${index * 50}ms` }}
+                                >
+                                    {isCelebrating && (
+                                        <div className="absolute inset-0 z-40 pointer-events-none flex items-center justify-center bg-yellow-500/10 backdrop-blur-[1px] animate-in fade-in duration-300">
+                                            <div className="text-4xl animate-bounce">🎆🎉✨</div>
+                                        </div>
+                                    )}
+
+                                    <div className="relative h-40 overflow-hidden bg-slate-100">
+                                        <img src={pkg.image} alt={pkg.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                                        <div className="absolute top-3 right-3 flex flex-col items-end gap-1">
+                                            {pkg.gender !== 'All' && (
+                                                <span className={`text-[10px] uppercase font-extrabold px-2.5 py-1 rounded-full shadow ${pkg.gender === 'Female' ? 'bg-pink-600 text-white' : 'bg-blue-600 text-white'}`}>
+                                                    {pkg.gender} Only
+                                                </span>
+                                            )}
+                                        </div>
+                                        {/* Bottom-left: test count */}
+                                        <div className="absolute bottom-3 left-3 bg-white/95 backdrop-blur-sm px-2.5 py-1 rounded-lg text-xs font-bold text-teal-900 shadow">
+                                            {calculatedTests} Tests
+                                        </div>
+                                        {/* Bottom-right: parameter count (clickable to open modal) */}
+                                        <button
+                                            onClick={() => setSelectedPackageModal(pkg)}
+                                            className="absolute bottom-3 right-3 bg-teal-900/95 hover:bg-teal-950 backdrop-blur-sm px-2.5 py-1 rounded-lg text-xs font-bold text-yellow-400 shadow transition-transform hover:scale-105 cursor-pointer flex items-center space-x-1"
+                                            title="Click to view full parameters list"
+                                        >
+                                            <span>{calculatedParams} Parameters</span>
+                                            <Info className="w-3 h-3 ml-0.5 text-yellow-400" />
+                                        </button>
+                                    </div>
+
+                                    <div className="p-6 flex flex-col flex-grow">
+                                        <div className="flex items-center space-x-2 mb-2">
+                                            <div className={`p-2 rounded-lg ${pkg.color}`}>
+                                                <pkg.icon className="w-5 h-5" />
+                                            </div>
+                                            <h3 className="text-lg font-bold text-slate-800 leading-tight">{pkg.name}</h3>
+                                        </div>
+                                        <p className="text-xs text-slate-500 mb-4 flex-grow leading-relaxed">
+                                            {pkg.detailedParameters ? pkg.detailedParameters.map(c => c.category).join(', ') : 'Clinical Diagnostic Package'}
+                                        </p>
+                                        
+                                        {isBundle && (
+                                            <div className="mb-4 relative">
+                                                <div className="flex items-center space-x-2">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => setOpenMemberDropdown(openMemberDropdown === pkg.id ? null : pkg.id)}
+                                                        className="flex-1 flex items-center justify-between bg-teal-50/80 hover:bg-teal-100/80 border border-teal-200 text-teal-900 px-3 py-2 rounded-xl text-xs font-bold transition-colors shadow-sm"
+                                                    >
+                                                        <span>{currentMembers} Member{currentMembers > 1 ? 's' : ''}</span>
+                                                        <ChevronDown className="w-4 h-4 text-teal-700" />
+                                                    </button>
+                                                    
+                                                    {currentMembers >= 4 && (
+                                                        <div className="flex items-center space-x-1 bg-teal-50 border border-teal-200 p-1 rounded-xl animate-in fade-in">
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    const nextCount = currentMembers > 4 ? currentMembers - 1 : 4;
+                                                                    setPackageMembers({ ...packageMembers, [pkg.id]: nextCount });
+                                                                }}
+                                                                className="bg-white hover:bg-teal-100 text-teal-900 p-1.5 rounded-lg border border-teal-200 transition-colors text-xs font-bold"
+                                                                title="Reduce members"
+                                                            >
+                                                                <Minus className="w-3 h-3" />
+                                                            </button>
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    const nextCount = currentMembers < 9 ? currentMembers + 1 : 9;
+                                                                    setPackageMembers({ ...packageMembers, [pkg.id]: nextCount });
+                                                                }}
+                                                                className="bg-teal-900 hover:bg-teal-800 text-yellow-400 p-1.5 rounded-lg transition-colors text-xs font-bold"
+                                                                title="Add more members (5-9)"
+                                                            >
+                                                                <Plus className="w-3 h-3" />
+                                                            </button>
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                {openMemberDropdown === pkg.id && currentMembers <= 4 && (
+                                                    <div className="absolute bottom-full mb-2 left-0 right-0 bg-white rounded-2xl shadow-2xl border border-slate-200 p-2 z-30 animate-in fade-in duration-200">
+                                                        {[1, 2, 3, 4].map(num => {
+                                                            const pOpt = getPricingForMembers(pkg, num);
+                                                            const isSelected = currentMembers === num;
+                                                            return (
+                                                                <div
+                                                                    key={num}
+                                                                    onClick={() => {
+                                                                        setPackageMembers({ ...packageMembers, [pkg.id]: num });
+                                                                        setOpenMemberDropdown(null);
+                                                                        if (num === 4) {
+                                                                            setCelebratingPkgId(pkg.id);
+                                                                            setTimeout(() => setCelebratingPkgId(null), 1800);
+                                                                        }
+                                                                    }}
+                                                                    className={`flex items-center justify-between p-2.5 rounded-xl cursor-pointer transition-colors ${isSelected ? 'bg-teal-50 border border-teal-300' : 'hover:bg-slate-50'}`}
+                                                                >
+                                                                    <div className="flex items-center space-x-2">
+                                                                        <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${isSelected ? 'border-teal-700 bg-teal-700' : 'border-slate-300'}`}>
+                                                                            {isSelected && <div className="w-1.5 h-1.5 bg-white rounded-full"></div>}
+                                                                        </div>
+                                                                        <span className="text-xs font-bold text-slate-800">{num} Member{num > 1 ? 's' : ''}</span>
+                                                                    </div>
+                                                                    <div className="flex items-center space-x-2">
+                                                                        <span className="text-xs font-extrabold text-teal-800">₹{pOpt.price}</span>
+                                                                        <span className="text-xs text-rose-500 line-through">₹{pOpt.mrp}</span>
+                                                                    </div>
+                                                                </div>
+                                                            );
+                                                        })}
+                                                    </div>
+                                                )}
+
+                                                <div className="mt-2 text-center py-1.5 px-2 bg-amber-50 border border-amber-200 rounded-lg text-[11px] font-bold text-amber-800">
+                                                    {getEncouragingBanner(pkg, currentMembers)}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        <div className="mt-auto">
+                                            <div className="flex items-center space-x-3 mb-4">
+                                                <span className="text-sm font-bold text-slate-400 line-through">₹{pricing.mrp}</span>
+                                                <span className="text-2xl font-extrabold text-emerald-700">₹{pricing.price}</span>
+                                            </div>
+
+                                            <div className="grid grid-cols-2 gap-2">
+                                                <button
+                                                    onClick={() => toggleCart(pkg.id)}
+                                                    className={`flex items-center justify-center w-full py-2 text-xs font-bold rounded-lg transition-colors shadow-sm ${
+                                                        cart.includes(pkg.id) 
+                                                        ? 'bg-teal-700 hover:bg-teal-800 text-white border border-teal-800' 
+                                                        : 'bg-yellow-400 hover:bg-yellow-500 text-teal-950'
+                                                    }`}
+                                                >
+                                                    <ShoppingCart className="w-3.5 h-3.5 mr-1" /> 
+                                                    {cart.includes(pkg.id) ? 'Added ✓' : 'Add to Cart'}
+                                                </button>
+                                                <button
+                                                    onClick={() => {
+                                                        setChatOpen(true);
+                                                        handleSendMessage(`Tell me more about ${pkg.name}.`, true);
+                                                    }}
+                                                    className="flex items-center justify-center w-full py-2 text-xs font-bold bg-slate-100 hover:bg-teal-50 text-teal-800 border border-slate-200 rounded-lg transition-colors"
+                                                >
+                                                    <MessageSquare className="w-3.5 h-3.5 mr-1" /> Ask AI
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                </div>
+
+                {/* Award Section first, then Trusted Diagnostics Banner below award and above contact */}
+                <div className={`mt-16 mb-8 bg-white rounded-3xl shadow-sm border border-slate-100 p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-8 transition-all duration-1000 transform ${loaded ? 'translate-y-0 opacity-100' : 'translate-y-12 opacity-0'}`}>
+                    <div className="w-full md:w-5/12 flex justify-start">
+                        <SafeLogo 
+                            src="https://cdn3.healthians.com/img/unit-no1.svg" 
+                            alt="Times Health Excellence Survey 2024" 
+                            className="w-full max-w-sm object-contain drop-shadow-sm transition-transform duration-700 hover:scale-105"
+                            fallback={FallbackBadge}
+                            fallbackText="Award Winning Service"
+                        />
+                    </div>
+                    <div className="w-full md:w-7/12 bg-slate-50 p-6 rounded-2xl border border-slate-200 text-slate-700 text-sm md:text-base font-medium leading-relaxed">
+                        With a presence in <strong className="text-teal-900">250+ cities</strong>, Healthians offers quick, affordable, and hassle-free at-home testing services, backed by a trusted network of <strong className="text-teal-900">NABL and CAP</strong> accredited labs.
+                    </div>
+                </div>
+
+                {/* Trusted Diagnostics Nationwide Banner below award and above contact */}
+                <div className="mb-12 bg-teal-50 rounded-3xl p-6 md:p-8 border border-teal-200 text-center shadow-sm">
+                    <h3 className="text-xl font-extrabold text-teal-950 mb-2">Trusted Diagnostics Nationwide</h3>
+                    <p className="text-xs md:text-sm text-teal-800 max-w-2xl mx-auto font-medium">
+                        Our advanced laboratories use fully automated analyzers to ensure 99.9% diagnostic accuracy, trusted by over 10 million households across India.
+                    </p>
+                </div>
+
+            </div>
+        )}
+
+        {view === 'checkout' && (
+            <div className="max-w-4xl mx-auto px-4 py-12 sm:px-6 lg:px-8 animate-in fade-in slide-in-from-right-8 duration-500">
+                <button 
+                    onClick={() => setView('menu')}
+                    className="flex items-center text-teal-700 hover:text-teal-900 font-semibold mb-8 group"
+                >
+                    <ArrowRight className="w-5 h-5 mr-2 transform rotate-180 group-hover:-translate-x-1 transition-transform" />
+                    Back to Packages
+                </button>
+
+                <div className="bg-white rounded-3xl shadow-lg border border-slate-100 overflow-hidden">
+                    <div className="bg-teal-900 p-6 md:p-8 text-white">
+                        <h2 className="text-3xl font-extrabold mb-2 text-yellow-400">Complete Your Booking</h2>
+                        <p className="text-teal-100">Assign tests to family members and fill patient & address details.</p>
+                    </div>
+
+                    <form onSubmit={submitBooking} className="p-6 md:p-8">
+                        <div className="mb-10">
+                            <div className="flex items-center mb-6">
+                                <div className="bg-teal-100 p-2 rounded-lg mr-3">
+                                    <User className="w-5 h-5 text-teal-700" />
+                                </div>
+                                <h3 className="text-xl font-bold text-slate-800">Primary Patient Details & Address</h3>
+                            </div>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label className="block text-sm font-semibold text-slate-700 mb-1">Full Name (Billing Name) <span className="text-red-500">*</span></label>
+                                    <input required type="text" value={primaryBooking.name} onChange={e => setPrimaryBooking({...primaryBooking, name: e.target.value})} className="w-full p-2.5 bg-slate-50 border border-teal-200 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none" placeholder="John Doe" />
+                                </div>
+                                <div className="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label className="block text-sm font-semibold text-slate-700 mb-1">Age <span className="text-red-500">*</span></label>
+                                        <input required type="number" min="1" max="120" value={primaryBooking.age} onChange={e => setPrimaryBooking({...primaryBooking, age: e.target.value})} className="w-full p-2.5 bg-slate-50 border border-teal-200 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none" placeholder="Years" />
+                                    </div>
+                                    <div>
+                                        <label className="block text-sm font-semibold text-slate-700 mb-1">Sex <span className="text-red-500">*</span></label>
+                                        <select required value={primaryBooking.gender} onChange={e => setPrimaryBooking({...primaryBooking, gender: e.target.value})} className="w-full p-2.5 bg-slate-50 border border-teal-200 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none appearance-none">
+                                            <option value="">Select</option>
+                                            <option value="Male">Male</option>
+                                            <option value="Female">Female</option>
+                                            <option value="Other">Other</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-semibold text-slate-700 mb-1">Email ID <span className="text-red-500">*</span></label>
+                                    <input required type="email" value={primaryBooking.email} onChange={e => setPrimaryBooking({...primaryBooking, email: e.target.value})} className="w-full p-2.5 bg-slate-50 border border-teal-200 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none" placeholder="email@example.com" />
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-semibold text-slate-700 mb-1 flex items-center">
+                                        <Phone className="w-4 h-4 mr-1" /> Contact No <span className="text-red-500 ml-1">*</span>
+                                    </label>
+                                    <input required type="tel" value={primaryBooking.contact} onChange={e => setPrimaryBooking({...primaryBooking, contact: e.target.value})} className="w-full p-2.5 bg-slate-50 border border-teal-200 rounded-lg focus:ring-2 focus:ring-teal-500 outline-none" placeholder="10-digit mobile" />
+                                </div>
+
+                                {/* Primary Patient Test Assignment Card */}
+                                <div className="md:col-span-2 bg-teal-50/70 p-4 rounded-xl border border-teal-200 space-y-3">
+                                    <label className="block text-xs font-bold text-teal-950 uppercase">Assign Tests for Primary Patient ({primaryBooking.name || 'Primary'}):</label>
+                                    
+                                    <div className="space-y-2">
+                                        <span className="text-[11px] font-semibold text-slate-600 block">Select from added cart items:</span>
+                                        {cart.length === 0 ? (
+                                            <p className="text-xs text-slate-400 italic">No tests currently in cart.</p>
+                                        ) : (
+                                            <div className="flex flex-wrap gap-2">
+                                                {cart.map(id => {
+                                                    const pkg = packages.find(p => p.id === id);
+                                                    if (!pkg) return null;
+                                                    const assignedList = patientAssignments['primary'] || [];
+                                                    const isAssigned = assignedList.includes(id);
+                                                    return (
+                                                        <button
+                                                            key={id}
+                                                            type="button"
+                                                            onClick={() => {
+                                                                const current = patientAssignments['primary'] || [];
+                                                                const updated = isAssigned ? current.filter(x => x !== id) : [...current, id];
+                                                                setPatientAssignments({ ...patientAssignments, primary: updated });
+                                                            }}
+                                                            className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all flex items-center space-x-1.5 ${
+                                                                isAssigned 
+                                                                ? 'bg-teal-900 text-yellow-400 border-teal-900' 
+                                                                : 'bg-white text-slate-700 border-slate-200 hover:bg-teal-100'
+                                                            }`}
+                                                        >
+                                                            <span>{pkg.name}</span>
+                                                            {isAssigned && <Check className="w-3 h-3 text-yellow-400" />}
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <div className="pt-2 border-t border-teal-200 flex items-center justify-between">
+                                        <span className="text-[11px] font-semibold text-slate-600">Want to add more tests from our complete list?</span>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setView('menu');
+                                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                                            }}
+                                            className="text-xs bg-teal-900 hover:bg-teal-800 text-yellow-400 font-bold px-3 py-1.5 rounded-lg shadow-sm transition-colors flex items-center"
+                                        >
+                                            Go to Home Menu <ArrowRight className="w-3.5 h-3.5 ml-1" />
+                                        </button>
+                                    </div>
+
+                                    {getGenderConflict(primaryBooking.gender, patientAssignments['primary']) && (
+                                        <div className="p-2 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700 flex items-center">
+                                            <ShieldCheck className="w-4 h-4 mr-2 text-red-500 shrink-0" />
+                                            <span>{getGenderConflict(primaryBooking.gender, patientAssignments['primary'])}</span>
+                                        </div>
+                                    )}
+                                </div>
+
+                                {/* Address Fields for Primary Member */}
+                                <div className="md:col-span-2 border-t border-slate-200 pt-4 mt-2">
+                                    <div className="flex flex-col md:flex-row md:items-center justify-between mb-4">
+                                        <label className="block text-sm font-bold text-teal-900 flex items-center mb-2 md:mb-0">
+                                            <MapPin className="w-5 h-5 mr-1 text-teal-700" /> Home Address for Sample Collection <span className="text-red-500 ml-1">*</span>
+                                        </label>
+                                        <button 
+                                            type="button" 
+                                            onClick={getLocation}
+                                            className="text-xs bg-teal-50 hover:bg-teal-100 border border-teal-200 text-teal-800 font-bold py-1.5 px-3 rounded-lg shadow-sm transition-colors flex items-center cursor-pointer"
+                                        >
+                                            <MapPin className="w-3 h-3 mr-1 text-red-500" /> 
+                                            Auto-detect My Location
+                                        </button>
+                                    </div>
+                                    
+                                    {locationStatus && (
+                                        <p className={`text-xs font-bold mb-3 ${locationStatus.includes('✓') ? 'text-green-600' : 'text-amber-600'}`}>
+                                            {locationStatus}
+                                        </p>
+                                    )}
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div>
+                                            <label className="block text-xs font-semibold text-slate-700 mb-1">House / Flat / Block No. <span className="text-red-500">*</span></label>
+                                            <input required type="text" value={primaryBooking.houseNo} onChange={e => setPrimaryBooking({...primaryBooking, houseNo: e.target.value})} className="w-full p-2.5 bg-slate-50 border border-teal-200 rounded-lg outline-none" placeholder="e.g. Flat 4B" />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-semibold text-slate-700 mb-1">Street / Locality <span className="text-red-500">*</span></label>
+                                            <input required type="text" value={primaryBooking.street} onChange={e => setPrimaryBooking({...primaryBooking, street: e.target.value})} className="w-full p-2.5 bg-slate-50 border border-teal-200 rounded-lg outline-none" placeholder="e.g. Main Market" />
+                                        </div>
+                                        <div>
+                                            <label className="block text-xs font-semibold text-slate-700 mb-1">City <span className="text-red-500">*</span></label>
+                                            <input required type="text" value={primaryBooking.city} onChange={e => setPrimaryBooking({...primaryBooking, city: e.target.value})} className="w-full p-2.5 bg-slate-50 border border-teal-200 rounded-lg outline-none" placeholder="City Name" />
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-xs font-semibold text-slate-700 mb-1">State <span className="text-red-500">*</span></label>
+                                                <input required type="text" value={primaryBooking.state} onChange={e => setPrimaryBooking({...primaryBooking, state: e.target.value})} className="w-full p-2.5 bg-slate-50 border border-teal-200 rounded-lg outline-none" placeholder="State Name" />
+                                            </div>
+                                            <div>
+                                                <label className="block text-xs font-semibold text-slate-700 mb-1">Pincode <span className="text-red-500">*</span></label>
+                                                <input required type="text" value={primaryBooking.pincode} onChange={e => setPrimaryBooking({...primaryBooking, pincode: e.target.value})} className="w-full p-2.5 bg-slate-50 border border-teal-200 rounded-lg outline-none" placeholder="6 digits" />
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {primaryBooking.mapLocation && (
+                                        <div className="mt-3 p-2 bg-green-50 border border-green-200 rounded-lg text-xs font-medium text-green-800 flex items-center">
+                                            <Check className="w-4 h-4 mr-1 text-green-600" /> GPS Map Link Attached
+                                        </div>
+                                    )}
+                                </div>
+
+                                <div className="md:col-span-2 bg-teal-50/50 p-4 rounded-xl border border-teal-100">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                                        <div>
+                                            <label className="block text-xs font-bold text-teal-900 mb-1 flex items-center">
+                                                <Calendar className="w-4 h-4 mr-1 text-teal-700" /> Preferred Collection Date <span className="text-red-500 ml-1">*</span>
+                                            </label>
+                                            <input 
+                                                required 
+                                                type="date" 
+                                                min={getMinBookingDate()}
+                                                value={primaryBooking.preferredDate} 
+                                                onChange={e => setPrimaryBooking({...primaryBooking, preferredDate: e.target.value})} 
+                                                className="w-full p-2.5 bg-white border border-teal-200 rounded-lg outline-none text-sm" 
+                                            />
+                                        </div>
+                                        <div className="text-[11px] text-amber-700 font-medium italic flex items-center">
+                                            * Note: Must be at least 4 hours ahead. If today's slots have passed, please select tomorrow.
+                                        </div>
+                                    </div>
+
+                                    <label className="block text-xs font-bold text-teal-900 mb-2 flex items-center">
+                                        <Clock className="w-4 h-4 mr-1 text-teal-700" /> Select Time Slot <span className="text-red-500 ml-1">*</span>
+                                    </label>
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 max-h-48 overflow-y-auto p-1 bg-white border border-teal-200 rounded-xl">
+                                        {[
+                                          "06:00 AM - 07:00 AM", "06:30 AM - 07:30 AM", "07:00 AM - 08:00 AM", "07:30 AM - 08:30 AM", "08:00 AM - 09:00 AM", "08:30 AM - 09:30 AM",
+                                          "09:00 AM - 10:00 AM", "09:30 AM - 10:30 AM", "10:00 AM - 11:00 AM", "10:30 AM - 11:30 AM", "11:00 AM - 12:00 PM", "11:30 AM - 12:30 PM",
+                                          "12:00 PM - 13:00 PM", "12:30 PM - 13:30 PM", "13:00 PM - 14:00 PM", "13:30 PM - 14:30 PM", "14:00 PM - 15:00 PM", "14:30 PM - 15:30 PM",
+                                          "15:00 PM - 16:00 PM", "15:30 PM - 16:30 PM", "16:00 PM - 17:00 PM"
+                                        ].map(slot => {
+                                            let isDisabled = false;
+                                            const todayStr = new Date().toISOString().split('T')[0];
+                                            if (primaryBooking.preferredDate === todayStr) {
+                                                const startHour = parseInt(slot.split(':')[0], 10);
+                                                const nowHour = new Date().getHours();
+                                                if (startHour <= nowHour + 4) isDisabled = true;
+                                            }
+                                            return (
+                                                <button
+                                                    key={slot}
+                                                    type="button"
+                                                    disabled={isDisabled}
+                                                    onClick={() => setPrimaryBooking({...primaryBooking, preferredTime: slot})}
+                                                    className={`py-2 px-3 text-xs font-bold rounded-lg border transition-all ${
+                                                        isDisabled
+                                                        ? 'bg-slate-100 text-slate-300 border-slate-200 cursor-not-allowed'
+                                                        : primaryBooking.preferredTime === slot
+                                                          ? 'bg-teal-900 text-yellow-400 border-teal-900 shadow-md scale-[1.02]'
+                                                          : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-teal-50'
+                                                    }`}
+                                                >
+                                                    {slot}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                    {!primaryBooking.preferredTime && (
+                                        <p className="text-[11px] text-red-500 font-bold mt-1">Please select an eligible time slot at least 4 hours ahead.</p>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Family Members & Test Assignment Section */}
+                        <div className="mb-10">
+                            <div className="flex items-center justify-between mb-6">
+                                <div className="flex items-center">
+                                    <div className="bg-teal-100 p-2 rounded-lg mr-3">
+                                        <Users className="w-5 h-5 text-teal-700" />
+                                    </div>
+                                    <h3 className="text-xl font-bold text-slate-800">Additional Family Members & Test Assignment</h3>
+                                </div>
+                                <button type="button" onClick={addFamilyMember} className="flex items-center text-sm font-bold text-teal-700 bg-teal-50 hover:bg-teal-100 px-3 py-2 rounded-lg border border-teal-200 transition-colors">
+                                    <Plus className="w-4 h-4 mr-1" /> Add Family Member
+                                </button>
+                            </div>
+
+                            <p className="text-xs text-slate-500 mb-4">Assign your cart items to specific family members below so tests are generated separately for each person.</p>
+
+                            {requiredFamilySlots > 0 && familyMembers.length < requiredFamilySlots && (
+                                <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs font-bold text-amber-800">
+                                    ⚠️ You have selected wellness package member slots requiring {requiredFamilySlots} family member(s). Please add {requiredFamilySlots - familyMembers.length} more family member(s) below.
+                                </div>
+                            )}
+
+                            {familyMembers.length === 0 ? (
+                                <p className="text-slate-500 text-sm italic bg-slate-50 p-4 rounded-lg border border-dashed border-slate-200 mb-6">No additional family members added. Click 'Add Family Member' above if you have multiple members.</p>
+                            ) : (
+                                <div className="space-y-6 mb-6">
+                                    {familyMembers.map((member, index) => {
+                                        const assignedList = patientAssignments[member.id] || [];
+                                        const memberConflict = getGenderConflict(member.gender, assignedList);
+                                        return (
+                                            <div key={member.id} className="relative bg-white border border-teal-100 rounded-xl p-5 shadow-sm space-y-4">
+                                                <button type="button" onClick={() => removeFamilyMember(member.id)} className="absolute top-4 right-4 text-red-400 hover:text-red-600">
+                                                    <Trash2 className="w-5 h-5" />
+                                                </button>
+                                                <h4 className="font-bold text-teal-800">Family Member {index + 1}</h4>
+                                                
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                    <div>
+                                                        <label className="block text-xs font-semibold text-slate-700 mb-1">Name <span className="text-red-500">*</span></label>
+                                                        <input required type="text" value={member.name} onChange={e => updateFamilyMember(member.id, 'name', e.target.value)} className="w-full p-2 border border-teal-200 rounded-md outline-none text-sm" placeholder="Member Name" />
+                                                    </div>
+                                                    <div className="grid grid-cols-2 gap-4">
+                                                        <div>
+                                                            <label className="block text-xs font-semibold text-slate-700 mb-1">Age <span className="text-red-500">*</span></label>
+                                                            <input required type="number" min="1" max="120" value={member.age} onChange={e => updateFamilyMember(member.id, 'age', e.target.value)} className="w-full p-2 border border-teal-200 rounded-md outline-none text-sm" placeholder="Years" />
+                                                        </div>
+                                                        <div>
+                                                            <label className="block text-xs font-semibold text-slate-700 mb-1">Sex <span className="text-red-500">*</span></label>
+                                                            <select required value={member.gender} onChange={e => updateFamilyMember(member.id, 'gender', e.target.value)} className="w-full p-2 border border-teal-200 rounded-md outline-none text-sm appearance-none">
+                                                                <option value="">Select</option>
+                                                                <option value="Male">Male</option>
+                                                                <option value="Female">Female</option>
+                                                                <option value="Other">Other</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div className="bg-teal-50/50 p-3 rounded-lg border border-teal-100 space-y-3">
+                                                    <label className="block text-xs font-bold text-teal-900">Assign Tests for this Member:</label>
+                                                    
+                                                    <div>
+                                                        <span className="text-[11px] font-semibold text-slate-600 block mb-1">Select from added cart items:</span>
+                                                        {cart.length === 0 ? (
+                                                            <p className="text-xs text-slate-400 italic">No tests currently in cart.</p>
+                                                        ) : (
+                                                            <div className="flex flex-wrap gap-2">
+                                                                {cart.map(id => {
+                                                                    const pkg = packages.find(p => p.id === id);
+                                                                    if (!pkg) return null;
+                                                                    const isAssigned = assignedList.includes(id);
+                                                                    return (
+                                                                        <button
+                                                                            key={id}
+                                                                            type="button"
+                                                                            onClick={() => {
+                                                                                const current = assignedList;
+                                                                                const updated = isAssigned ? current.filter(x => x !== id) : [...current, id];
+                                                                                setPatientAssignments({ ...patientAssignments, [member.id]: updated });
+                                                                            }}
+                                                                            className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all flex items-center space-x-1.5 ${
+                                                                                isAssigned 
+                                                                                ? 'bg-teal-900 text-yellow-400 border-teal-900' 
+                                                                                : 'bg-white text-slate-700 border-slate-200 hover:bg-teal-100'
+                                                                            }`}
+                                                                        >
+                                                                            <span>{pkg.name}</span>
+                                                                            {isAssigned && <Check className="w-3 h-3 text-yellow-400" />}
+                                                                        </button>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        )}
+                                                    </div>
+
+                                                    <div className="pt-2 border-t border-teal-100 flex items-center justify-between">
+                                                        <span className="text-[11px] font-semibold text-slate-600">Want to add more tests from our complete list?</span>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => {
+                                                                setView('menu');
+                                                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                                                            }}
+                                                            className="text-xs bg-teal-900 hover:bg-teal-800 text-yellow-400 font-bold px-3 py-1.5 rounded-lg shadow-sm transition-colors flex items-center"
+                                                        >
+                                                            Go to Home Menu <ArrowRight className="w-3.5 h-3.5 ml-1" />
+                                                        </button>
+                                                    </div>
+                                                </div>
+
+                                                {memberConflict && (
+                                                    <div className="p-2 bg-red-50 border border-red-200 rounded-lg text-xs text-red-700 flex items-center">
+                                                        <ShieldCheck className="w-4 h-4 mr-2 text-red-500 shrink-0" />
+                                                        <span>{memberConflict}</span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Pre-Confirmation Bill & Price Breakdown Accordion */}
+                        <div className="mb-8 bg-slate-50 rounded-2xl p-5 border border-slate-200 shadow-sm">
+                            <div className="flex justify-between items-center cursor-pointer" onClick={() => setShowPriceBreakup(!showPriceBreakup)}>
+                                <div className="flex items-center space-x-2">
+                                    <Receipt className="w-5 h-5 text-teal-700" />
+                                    <h4 className="font-extrabold text-sm text-teal-950">Pre-Confirmation Bill & Price Breakdown</h4>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <span className="text-xs font-bold text-teal-800">Total: ₹{calculateTotal()}</span>
+                                    {showPriceBreakup ? <ChevronUp className="w-4 h-4 text-slate-600" /> : <ChevronDown className="w-4 h-4 text-slate-600" />}
+                                </div>
+                            </div>
+
+                            {showPriceBreakup && (
+                                <div className="mt-4 pt-4 border-t border-slate-200 space-y-4 text-xs">
+                                    <div className="bg-white p-3 rounded-xl border border-slate-200 space-y-1">
+                                        <p className="font-bold text-teal-900">Primary Patient: {primaryBooking.name || 'Not filled'}</p>
+                                        <p className="text-slate-600">Assigned Packages: {(patientAssignments['primary'] || []).map(id => packages.find(p => p.id === Number(id))?.name).join(', ') || 'None assigned'}</p>
+                                    </div>
+
+                                    {familyMembers.map((m, idx) => (
+                                        <div key={m.id} className="bg-white p-3 rounded-xl border border-slate-200 space-y-1">
+                                            <p className="font-bold text-slate-800">Family Member {idx+1}: {m.name || 'Unnamed'}</p>
+                                            <p className="text-slate-600">Assigned Packages: {(patientAssignments[m.id] || []).map(id => packages.find(p => p.id === Number(id))?.name).join(', ') || 'None assigned'}</p>
+                                        </div>
+                                    ))}
+
+                                    <div className="bg-amber-50 border border-amber-200 p-3 rounded-xl text-[11px] font-bold text-amber-800">
+                                        💡 Family Bundle Discount Active! Final collection date & time will be officially confirmed after successful payment verification.
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Total and Submit */}
+                        <div className="bg-teal-900 rounded-xl p-6 flex flex-col md:flex-row justify-between items-center text-white">
+                            <div className="mb-4 md:mb-0 text-center md:text-left">
+                                <p className="text-teal-200 font-medium">Total Amount Payable</p>
+                                <p className="text-3xl font-extrabold text-yellow-400">₹{calculateTotal()}</p>
+                            </div>
+                            <div className="w-full md:w-auto flex flex-col items-center md:items-end">
+                                {familyMembers.length < requiredFamilySlots && (
+                                    <span className="text-amber-300 text-xs font-bold mb-2 block text-center">
+                                        Please add {requiredFamilySlots - familyMembers.length} more family member(s) to match your bundle selection.
+                                    </span>
+                                )}
+                                {!areAllSlotsAssigned() && familyMembers.length >= requiredFamilySlots && (
+                                    <span className="text-amber-300 text-xs font-bold mb-2 block text-center">
+                                        Please ensure every patient (Primary & Family Members) has at least one test assigned.
+                                    </span>
+                                )}
+                                <button 
+                                    type="submit" 
+                                    disabled={cart.length === 0 || familyMembers.length < requiredFamilySlots || !areAllSlotsAssigned()}
+                                    className="w-full bg-yellow-400 hover:bg-yellow-500 disabled:opacity-50 disabled:bg-slate-500 disabled:text-slate-300 disabled:cursor-not-allowed text-teal-950 font-bold text-lg py-3 px-8 rounded-full shadow-lg transform transition-transform hover:scale-105"
+                                >
+                                    Confirm Booking
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        )}
+
+        {view === 'success' && (
+          <div className="max-w-2xl mx-auto px-4 py-20 text-center animate-in zoom-in duration-500">
+              <div className="inline-flex items-center justify-center w-24 h-24 bg-teal-100 rounded-full mb-8 shadow-inner">
+                  <Check className="w-12 h-12 text-teal-600" />
+              </div>
+              <h2 className="text-4xl font-extrabold text-teal-950 mb-4">Booking Confirmed!</h2>
+              <p className="text-lg text-slate-600 mb-8 max-w-lg mx-auto">
+                  Thank you, <span className="font-bold text-teal-800">{primaryBooking.name}</span>. Your home sample collection has been scheduled.
+              </p>
+              
+              <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 mb-8 text-left space-y-4">
+                  <h3 className="font-bold text-slate-800 border-b pb-2">Booking Summary</h3>
+                  <div className="space-y-3 text-sm">
+                      <div className="flex justify-between">
+                          <span className="text-slate-600">Primary Customer (Billing Name):</span>
+                          <span className="font-extrabold text-teal-900">{primaryBooking.name}</span>
+                      </div>
+                      <div className="flex justify-between">
+                          <span className="text-slate-600">Contact / Email:</span>
+                          <span className="font-medium text-slate-800">{primaryBooking.contact} | {primaryBooking.email}</span>
+                      </div>
+                      <div className="flex justify-between">
+                          <span className="text-slate-600">Preferred Slot:</span>
+                          <span className="font-medium text-slate-800">{primaryBooking.preferredDate} ({primaryBooking.preferredTime})</span>
+                      </div>
+                      
+                      <div className="border-t pt-3">
+                          <span className="text-xs font-bold text-slate-700 block mb-2">Booked Tests Per Member:</span>
+                          <div className="space-y-2">
+                              {/* Primary Patient tests */}
+                              <div className="bg-teal-50/70 p-3 rounded-xl border border-teal-200">
+                                  <span className="font-bold text-xs text-teal-950 block mb-1">
+                                      👤 Primary Patient: {primaryBooking.name} ({primaryBooking.gender}, {primaryBooking.age} yrs)
+                                  </span>
+                                  <div className="flex flex-wrap gap-1.5">
+                                      {(patientAssignments['primary'] || []).map(id => {
+                                          const pkg = packages.find(p => p.id === Number(id));
+                                          return pkg ? (
+                                              <span key={id} className="bg-white text-teal-900 text-xs font-bold px-2.5 py-1 rounded-lg border border-teal-200">
+                                                  {pkg.name}
+                                              </span>
+                                          ) : null;
+                                      })}
+                                  </div>
+                              </div>
+
+                              {/* Family Members tests */}
+                              {familyMembers.map((m, idx) => (
+                                  <div key={m.id} className="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                                      <span className="font-bold text-xs text-slate-800 block mb-1">
+                                          👥 Family Member {idx+1}: {m.name || 'Unnamed'} ({m.gender || 'N/A'}, {m.age || 'N/A'} yrs)
+                                      </span>
+                                      <div className="flex flex-wrap gap-1.5">
+                                          {(patientAssignments[m.id] || []).length === 0 ? (
+                                              <span className="text-xs text-slate-400 italic">No specific tests assigned.</span>
+                                          ) : (
+                                              (patientAssignments[m.id] || []).map(id => {
+                                                  const pkg = packages.find(p => p.id === Number(id));
+                                                  return pkg ? (
+                                                      <span key={id} className="bg-white text-slate-800 text-xs font-bold px-2.5 py-1 rounded-lg border border-slate-200">
+                                                          {pkg.name}
+                                                      </span>
+                                                  ) : null;
+                                              })
+                                          )}
+                                      </div>
+                                  </div>
+                              ))}
+                          </div>
+                      </div>
+
+                      <div className="flex justify-between border-t pt-3">
+                          <span className="font-bold text-slate-800">Total Amount Payable:</span>
+                          <span className="font-extrabold text-teal-700 text-lg">₹{calculateTotal()}</span>
+                      </div>
+                  </div>
+                  <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs font-bold text-amber-800">
+                      ⚠️ Note: The final appointment date and time will be officially verified and confirmed after successful payment.
+                  </div>
+              </div>
+
+              <button 
+                  onClick={() => {
+                      setView('menu');
+                      setCart([]);
+                      setFamilyMembers([]);
+                      setPatientAssignments({});
+                      setPrimaryBooking({name: '', age: '', gender: '', email: '', contact: '', houseNo: '', street: '', city: '', state: '', pincode: '', mapLocation: '', preferredDate: '', preferredTime: ''});
+                      setLocationStatus('');
+                  }}
+                  className="bg-teal-900 text-white px-8 py-3 rounded-full font-bold hover:bg-teal-800 transition-colors shadow-md flex items-center justify-center mx-auto"
+              >
+                  <ArrowRight className="w-5 h-5 mr-2 transform rotate-180" /> Return to Home
+              </button>
+          </div>
+        )}
+
+        {view === 'admin' && (
+          <div className="max-w-7xl mx-auto px-4 py-12 animate-in fade-in duration-500">
+             <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+                 <h2 className="text-3xl font-extrabold text-teal-950 flex items-center">
+                    <Lock className="w-8 h-8 mr-3 text-teal-700" /> Lab Admin Dashboard & Google Sheets Sync
+                 </h2>
+                 <div className="flex items-center space-x-3">
+                     <button
+                         onClick={copyBookingsToClipboardForGoogleSheets}
+                         className="bg-emerald-700 hover:bg-emerald-800 text-white px-4 py-2.5 rounded-xl font-bold text-xs transition-colors shadow flex items-center"
+                     >
+                         <Copy className="w-4 h-4 mr-2" /> Copy Data for Google Sheets
+                     </button>
+                     <a 
+                         href={googleSheetUrl} 
+                         target="_blank" 
+                         rel="noreferrer"
+                         className="bg-teal-800 hover:bg-teal-900 text-yellow-400 px-4 py-2.5 rounded-xl font-bold text-xs transition-colors shadow flex items-center"
+                     >
+                         <ExternalLink className="w-4 h-4 mr-2" /> Open Google Sheets
+                     </a>
+                     <button onClick={() => setView('menu')} className="bg-slate-200 text-slate-800 px-4 py-2.5 rounded-xl font-bold text-xs hover:bg-slate-300 transition-colors">
+                         Exit Admin
+                     </button>
+                 </div>
+             </div>
+
+             {/* Excel / CSV Bulk Sync Section */}
+             <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-6 md:p-8 mb-8">
+                 <div className="flex items-center space-x-3 mb-4">
+                     <FileSpreadsheet className="w-6 h-6 text-teal-700" />
+                     <h3 className="text-lg font-extrabold text-teal-950">Bulk Excel / CSV Test & Pricing Manager</h3>
+                 </div>
+                 <p className="text-xs text-slate-500 mb-4">
+                     Upload a CSV file or paste your CSV data below (Format: <code className="bg-slate-100 p-1 rounded font-mono text-teal-800">Package Name, Deal Type, MRP, Price, Gender</code>) to instantly update inventory.
+                 </p>
+                 
+                 <div className="mb-4">
+                     <label className="block text-xs font-bold text-slate-700 mb-2">Upload CSV / Excel File</label>
+                     <input 
+                         type="file" 
+                         accept=".csv, .txt" 
+                         onChange={handleFileUpload}
+                         className="block w-full text-xs text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100 cursor-pointer border border-slate-200 rounded-xl bg-slate-50 p-2"
+                     />
+                 </div>
+
+                 {adminFeedback && (
+                     <div className="mb-4 p-3 bg-teal-50 border border-teal-200 rounded-xl text-xs font-bold text-teal-900">
+                         {adminFeedback}
+                     </div>
+                 )}
+
+                 <textarea
+                     rows="4"
+                     value={adminCsvInput}
+                     onChange={e => setAdminCsvInput(e.target.value)}
+                     placeholder="PackageName,DealType,MRP,Price,Gender&#10;Swasthya Mitra BASIC, Lab Atoms, 1800, 610, All"
+                     className="w-full p-4 bg-slate-50 border border-slate-200 rounded-2xl font-mono text-xs outline-none focus:ring-2 focus:ring-teal-500 mb-4"
+                 />
+
+                 <div className="flex justify-end space-x-3">
+                     <button
+                         onClick={() => {
+                             const sample = "PackageName,DealType,MRP,Price,Gender\nCustom Health Check,Lab Atoms,2500,850,All";
+                             setAdminCsvInput(sample);
+                         }}
+                         className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold text-xs transition-colors"
+                     >
+                         Load Sample Format
+                     </button>
+                     <button
+                         onClick={() => handleCsvImport(adminCsvInput)}
+                         className="px-6 py-2 bg-teal-900 hover:bg-teal-800 text-yellow-400 rounded-xl font-bold text-xs transition-colors shadow flex items-center"
+                     >
+                         <Upload className="w-4 h-4 mr-2" /> Sync Catalog & Pricing
+                     </button>
+                 </div>
+             </div>
+
+             {/* Active Catalog & Test Inventory Table */}
+             <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden mb-12">
+                <div className="p-6 border-b bg-slate-50 flex flex-col md:flex-row justify-between items-center gap-4">
+                    <div>
+                        <h3 className="font-extrabold text-teal-950 text-lg">Active Catalog & Test Inventory ({packages.length} Packages)</h3>
+                        <p className="text-xs text-slate-500">Click table headers to sort • Filter by Deal Type, keyword, or date modified</p>
+                    </div>
+                    
+                    <div className="flex flex-wrap items-center gap-2">
+                        <input
+                            type="text"
+                            value={adminSearchFilter}
+                            onChange={e => setAdminSearchFilter(e.target.value)}
+                            placeholder="Search inventory..."
+                            className="px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-medium outline-none focus:ring-1 focus:ring-teal-500"
+                        />
+
+                        <select 
+                            value={adminTypeFilter} 
+                            onChange={e => setAdminTypeFilter(e.target.value)}
+                            className="bg-white border border-slate-200 text-xs font-bold text-teal-900 rounded-xl px-3 py-1.5 outline-none cursor-pointer shadow-sm"
+                        >
+                            <option value="all">All Deal Types</option>
+                            <option value="Lab Atoms">Lab Atoms</option>
+                            <option value="Organ Health">Organ Health</option>
+                            <option value="Wellness Bundle">Wellness Bundle</option>
+                        </select>
+
+                        <select
+                            value={adminDateFilter}
+                            onChange={e => setAdminDateFilter(e.target.value)}
+                            className="bg-white border border-slate-200 text-xs font-bold text-teal-900 rounded-xl px-3 py-1.5 outline-none cursor-pointer shadow-sm"
+                        >
+                            <option value="all">All Dates</option>
+                            <option value="last7">Modified Last 7 Days</option>
+                            <option value="last30">Modified Last 30 Days</option>
+                        </select>
+
+                        {selectedInventoryIds.length > 0 && (
+                            <button
+                                onClick={() => {
+                                    setPackages(packages.filter(p => !selectedInventoryIds.includes(p.id)));
+                                    setSelectedInventoryIds([]);
+                                    setAdminFeedback(`Successfully removed ${selectedInventoryIds.length} selected packages.`);
+                                }}
+                                className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition-colors shadow"
+                            >
+                                Delete Selected ({selectedInventoryIds.length})
+                            </button>
+                        )}
+                    </div>
+                </div>
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left text-sm">
+                        <thead className="bg-teal-900 text-white select-none">
+                            <tr>
+                                <th className="p-4 w-10 text-center">
+                                    <input 
+                                        type="checkbox" 
+                                        checked={selectedInventoryIds.length === packages.length && packages.length > 0}
+                                        onChange={() => {
+                                            if (selectedInventoryIds.length === packages.length) setSelectedInventoryIds([]);
+                                            else setSelectedInventoryIds(packages.map(p => p.id));
+                                        }}
+                                        className="rounded text-teal-600 focus:ring-teal-500 w-4 h-4 cursor-pointer"
+                                    />
+                                </th>
+                                <th className="p-4 font-semibold cursor-pointer hover:text-yellow-300" onClick={() => handleSort('name')}>
+                                    Package Name
+                                </th>
+                                <th className="p-4 font-semibold cursor-pointer hover:text-yellow-300" onClick={() => handleSort('dealType')}>
+                                    Deal Type
+                                </th>
+                                <th className="p-4 font-semibold cursor-pointer hover:text-yellow-300" onClick={() => handleSort('mrp')}>
+                                    MRP (₹)
+                                </th>
+                                <th className="p-4 font-semibold cursor-pointer hover:text-yellow-300" onClick={() => handleSort('price')}>
+                                    Price (₹)
+                                </th>
+                                <th className="p-4 font-semibold cursor-pointer hover:text-yellow-300" onClick={() => handleSort('modifiedDate')}>
+                                    Date Modified
+                                </th>
+                                <th className="p-4 font-semibold text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                            {sortedInventory.map((pkg) => {
+                                const isChecked = selectedInventoryIds.includes(pkg.id);
+                                const calcTests = pkg.detailedParameters ? pkg.detailedParameters.length : 1;
+                                const calcParams = pkg.detailedParameters ? pkg.detailedParameters.reduce((acc, c) => acc + (c.items ? c.items.length : 0), 1) : 1;
+                                return (
+                                    <tr key={pkg.id} className={`hover:bg-slate-50 transition-colors ${isChecked ? 'bg-teal-50/60' : ''}`}>
+                                        <td className="p-4 text-center">
+                                            <input 
+                                                type="checkbox" 
+                                                checked={isChecked}
+                                                onChange={() => {
+                                                    setSelectedInventoryIds(prev => prev.includes(pkg.id) ? prev.filter(item => item !== pkg.id) : [...prev, pkg.id]);
+                                                }}
+                                                className="rounded text-teal-600 focus:ring-teal-500 w-4 h-4 cursor-pointer"
+                                            />
+                                        </td>
+                                        <td className="p-4 font-bold text-teal-900">
+                                            {pkg.name}
+                                            <span className="block text-[10px] text-slate-400 font-normal">{calcTests} Tests • {calcParams} Parameters</span>
+                                        </td>
+                                        <td className="p-4">
+                                            <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold border bg-teal-100 text-teal-900 border-teal-200">
+                                                {pkg.dealType || 'Lab Atoms'}
+                                            </span>
+                                        </td>
+                                        <td className="p-4 text-slate-500 line-through">₹{pkg.mrp}</td>
+                                        <td className="p-4 font-extrabold text-emerald-700">₹{pkg.price}</td>
+                                        <td className="p-4 text-slate-500 text-xs font-mono">{pkg.modifiedDate || '2026-03-01'}</td>
+                                        <td className="p-4 text-right space-x-2 whitespace-nowrap">
+                                            <button 
+                                                onClick={() => setEditingPackage({ ...pkg, detailedParameters: pkg.detailedParameters || [] })}
+                                                className="text-teal-700 hover:text-teal-900 p-2 rounded-lg hover:bg-teal-50 transition-colors inline-block"
+                                                title="Edit Package & Parameters"
+                                            >
+                                                <Info className="w-4 h-4" />
+                                            </button>
+                                            <button 
+                                                onClick={() => {
+                                                    setPackages(packages.filter(p => p.id !== pkg.id));
+                                                    setAdminFeedback(`Removed "${pkg.name}" from inventory.`);
+                                                }}
+                                                className="text-red-500 hover:text-red-700 p-2 rounded-lg hover:bg-red-50 transition-colors inline-block"
+                                                title="Remove Package"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                </div>
+             </div>
+
+             {/* Bookings Table */}
+             <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+                <div className="p-6 border-b bg-slate-50 flex justify-between items-center">
+                    <h3 className="font-extrabold text-teal-950 text-lg">Recent Patient Bookings & Google Sheets Sync</h3>
+                    <button 
+                        onClick={copyBookingsToClipboardForGoogleSheets}
+                        className="text-xs bg-emerald-700 text-white font-bold px-4 py-2 rounded-xl hover:bg-emerald-800 transition-colors flex items-center shadow"
+                    >
+                        <Copy className="w-3.5 h-3.5 mr-1.5" /> Copy Data for Google Sheets
+                    </button>
+                </div>
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left text-sm">
+                        <thead className="bg-teal-900 text-white">
+                            <tr>
+                                <th className="p-4 font-semibold">Date & Time</th>
+                                <th className="p-4 font-semibold">Primary Patient</th>
+                                <th className="p-4 font-semibold">Contact & Location</th>
+                                <th className="p-4 font-semibold">Preferred Slot</th>
+                                <th className="p-4 font-semibold">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                            {bookings.length === 0 ? (
+                                <tr><td colSpan="5" className="p-8 text-center text-slate-500 italic">No bookings recorded in session yet. Click 'Copy Data for Google Sheets' to sync.</td></tr>
+                            ) : (
+                                bookings.map((booking) => (
+                                    <tr key={booking.id} className="hover:bg-slate-50 transition-colors">
+                                        <td className="p-4 whitespace-nowrap text-slate-600">
+                                            {new Date(booking.timestamp).toLocaleString()}
+                                        </td>
+                                        <td className="p-4 font-bold text-teal-900">{booking.primaryBooking?.name}</td>
+                                        <td className="p-4 text-slate-600">
+                                            {booking.primaryBooking?.contact}
+                                            {booking.primaryBooking?.mapLocation && (
+                                                <a href={booking.primaryBooking.mapLocation} target="_blank" rel="noreferrer" className="ml-2 inline-flex text-teal-600 hover:text-teal-800" title="View on Map">
+                                                    <MapPin className="w-4 h-4" />
+                                                </a>
+                                            )}
+                                        </td>
+                                        <td className="p-4 text-slate-600">{booking.primaryBooking?.preferredDate} ({booking.primaryBooking?.preferredTime})</td>
+                                        <td className="p-4 font-bold text-teal-700">₹{booking.totalAmount}</td>
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+             </div>
+          </div>
+        )}
+
+      </div>
+
+      {/* Edit Package & Parameters Modal */}
+      {editingPackage && (() => {
+          const calculatedTests = editingPackage.detailedParameters ? editingPackage.detailedParameters.length : 0;
+          const calculatedParameters = editingPackage.detailedParameters ? editingPackage.detailedParameters.reduce((acc, cat) => acc + (cat.items ? cat.items.length : 0), 0) : 0;
+
+          return (
+              <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
+                  <div className="bg-white rounded-3xl max-w-2xl w-full p-6 md:p-8 shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto flex flex-col">
+                      <div className="flex justify-between items-center mb-6 border-b pb-4 shrink-0">
+                          <h3 className="text-xl font-extrabold text-teal-950">Edit Package & Test Parameters</h3>
+                          <button onClick={() => setEditingPackage(null)} className="text-slate-400 hover:text-slate-600">
+                              <X className="w-5 h-5" />
+                          </button>
+                      </div>
+
+                      <form onSubmit={(e) => {
+                          e.preventDefault();
+                          const todayStr = new Date().toISOString().split('T')[0];
+                          const finalizedPkg = {
+                              ...editingPackage,
+                              modifiedDate: todayStr
+                          };
+                          setPackages(packages.map(p => p.id === editingPackage.id ? finalizedPkg : p));
+                          setEditingPackage(null);
+                          setAdminFeedback(`Successfully updated "${editingPackage.name}" ✓`);
+                      }} className="space-y-4 flex-1">
+                          <div>
+                              <label className="block text-xs font-bold text-slate-700 mb-1">Package Name</label>
+                              <input 
+                                  type="text" 
+                                  required
+                                  value={editingPackage.name} 
+                                  onChange={e => setEditingPackage({...editingPackage, name: e.target.value})} 
+                                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none text-sm font-bold"
+                              />
+                          </div>
+
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                              <div>
+                                  <label className="block text-xs font-bold text-teal-950 uppercase tracking-wide mb-1">Deal Type</label>
+                                  <select
+                                      value={editingPackage.dealType || 'Lab Atoms'}
+                                      onChange={e => setEditingPackage({ ...editingPackage, dealType: e.target.value })}
+                                      className="w-full p-2.5 bg-white border border-teal-200 rounded-xl outline-none text-sm font-bold text-teal-900 cursor-pointer shadow-sm"
+                                  >
+                                      <option value="Lab Atoms">Lab Atoms</option>
+                                      <option value="Organ Health">Organ Health</option>
+                                      <option value="Wellness Bundle">Wellness Bundle</option>
+                                  </select>
+                              </div>
+                              <div>
+                                  <label className="block text-xs font-bold text-slate-700 mb-1">Tests Qty (Auto-linked)</label>
+                                  <input 
+                                      type="number" 
+                                      readOnly
+                                      value={calculatedTests} 
+                                      className="w-full p-2.5 bg-slate-100 border border-slate-200 rounded-xl outline-none text-sm font-bold text-teal-900 cursor-not-allowed"
+                                  />
+                              </div>
+                              <div>
+                                  <label className="block text-xs font-bold text-slate-700 mb-1">Parameter Qty (Auto-linked)</label>
+                                  <input 
+                                      type="number" 
+                                      readOnly
+                                      value={calculatedParameters} 
+                                      className="w-full p-2.5 bg-slate-100 border border-slate-200 rounded-xl outline-none text-sm font-bold text-emerald-700 cursor-not-allowed"
+                                  />
+                              </div>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                  <label className="block text-xs font-bold text-slate-700 mb-1">MRP (₹)</label>
+                                  <input 
+                                      type="number" 
+                                      required
+                                      value={editingPackage.mrp} 
+                                      onChange={e => setEditingPackage({...editingPackage, mrp: Number(e.target.value)})} 
+                                      className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none text-sm"
+                                  />
+                              </div>
+                              <div>
+                                  <label className="block text-xs font-bold text-slate-700 mb-1">Price (₹)</label>
+                                  <input 
+                                      type="number" 
+                                      required
+                                      value={editingPackage.price} 
+                                      onChange={e => setEditingPackage({...editingPackage, price: Number(e.target.value)})} 
+                                      className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none text-sm font-bold text-emerald-700"
+                                  />
+                              </div>
+                          </div>
+
+                          <div>
+                              <label className="block text-xs font-bold text-slate-700 mb-1">Gender Restriction</label>
+                              <select 
+                                  value={editingPackage.gender} 
+                                  onChange={e => setEditingPackage({...editingPackage, gender: e.target.value})} 
+                                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl outline-none text-sm appearance-none"
+                              >
+                                  <option value="All">All (Universal)</option>
+                                  <option value="Male">Male Only</option>
+                                  <option value="Female">Female Only</option>
+                              </select>
+                          </div>
+
+                          {/* Pathology Medical Standards Selector Builder */}
+                          <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3">
+                              <label className="block text-xs font-bold text-teal-950 uppercase tracking-wide">
+                                  Add Test:
+                              </label>
+                              <div className="flex gap-2">
+                                  <select
+                                      value={selectedStandardAtom}
+                                      onChange={e => setSelectedStandardAtom(e.target.value)}
+                                      className="flex-1 p-2 bg-white border border-slate-200 rounded-xl text-xs font-medium outline-none cursor-pointer"
+                                  >
+                                      <option value="">Select standard medical atom/profile...</option>
+                                      {pathologyMedicalStandards.map((item, idx) => (
+                                          <option key={idx} value={item.name}>{item.name} ({item.items.length} parameters)</option>
+                                      ))}
+                                  </select>
+                                  <button
+                                      type="button"
+                                      onClick={() => {
+                                          if (!selectedStandardAtom) return;
+                                          const existingParams = [...(editingPackage.detailedParameters || [])];
+                                          const found = pathologyMedicalStandards.find(s => s.name === selectedStandardAtom);
+                                          if (found) {
+                                              existingParams.push({ category: found.name, items: [...found.items] });
+                                          }
+                                          setEditingPackage({ ...editingPackage, detailedParameters: existingParams });
+                                          setSelectedStandardAtom('');
+                                      }}
+                                      className="bg-teal-900 hover:bg-teal-800 text-yellow-400 px-5 py-2 rounded-xl text-xs font-bold transition-colors shadow"
+                                  >
+                                      Add
+                                  </button>
+                              </div>
+
+                              {/* Render current included categories resembling LFT and HbA1c accordion cards */}
+                              <div className="mt-3 space-y-3">
+                                  {editingPackage.detailedParameters && editingPackage.detailedParameters.map((cat, cIdx) => {
+                                      const isCollapsed = collapsedCategories[cIdx];
+                                      return (
+                                          <div key={cIdx} className="bg-white p-3.5 rounded-xl border border-slate-200 shadow-sm space-y-2">
+                                              <div className="flex justify-between items-center cursor-pointer" onClick={() => setCollapsedCategories({ ...collapsedCategories, [cIdx]: !isCollapsed })}>
+                                                  <div className="flex items-center space-x-2">
+                                                      <span className="font-extrabold text-xs text-teal-950 uppercase">{cat.category}</span>
+                                                      <span className="text-xs bg-slate-100 px-2 py-0.5 rounded-md font-bold text-slate-600">
+                                                          {cat.items ? cat.items.length : 0} {cat.items && cat.items.length === 1 ? 'parameter' : 'parameters'}
+                                                      </span>
+                                                  </div>
+                                                  <div className="flex items-center space-x-2">
+                                                      <button
+                                                          type="button"
+                                                          onClick={(e) => {
+                                                              e.stopPropagation();
+                                                              const newDetailed = editingPackage.detailedParameters.filter((_, idx) => idx !== cIdx);
+                                                              setEditingPackage({ ...editingPackage, detailedParameters: newDetailed });
+                                                          }}
+                                                          className="text-red-500 hover:text-red-700 text-xs font-bold px-2 py-1 bg-red-50 rounded-lg"
+                                                      >
+                                                          Remove
+                                                      </button>
+                                                      {isCollapsed ? <ChevronDown className="w-4 h-4 text-slate-500" /> : <ChevronDown className="w-4 h-4 text-slate-500 transform rotate-180" />}
+                                                  </div>
+                                              </div>
+                                              
+                                              {!isCollapsed && (
+                                                  <>
+                                                      <div className="flex flex-wrap gap-1.5 pt-1">
+                                                          {cat.items && cat.items.map((item, iIdx) => (
+                                                              <span key={iIdx} className="inline-flex items-center bg-teal-50 text-teal-900 text-[11px] font-medium px-2.5 py-1 rounded-lg border border-teal-100">
+                                                                  {item}
+                                                                  <button
+                                                                      type="button"
+                                                                      onClick={() => {
+                                                                          const updatedCatItems = cat.items.filter((_, i) => i !== iIdx);
+                                                                          const updatedDetailed = [...editingPackage.detailedParameters];
+                                                                          updatedDetailed[cIdx] = { ...cat, items: updatedCatItems };
+                                                                          setEditingPackage({ ...editingPackage, detailedParameters: updatedDetailed });
+                                                                      }}
+                                                                      className="ml-1.5 text-slate-400 hover:text-red-600 font-bold"
+                                                                  >
+                                                                      ×
+                                                                  </button>
+                                                              </span>
+                                                          ))}
+                                                      </div>
+
+                                                      {/* Parameter add dropdown with custom option built-in */}
+                                                      <div className="flex items-center space-x-2 pt-2 border-t border-slate-100">
+                                                          <select
+                                                              value={selectedAtomQuickParam[cIdx] || ''}
+                                                              onChange={e => {
+                                                                  const val = e.target.value;
+                                                                  if (!val) return;
+                                                                  if (val === 'OTHER_CUSTOM') {
+                                                                      const customName = prompt("Enter custom parameter name:");
+                                                                      if (customName && customName.trim()) {
+                                                                          const updatedCatItems = [...(cat.items || []), customName.trim()];
+                                                                          const updatedDetailed = [...editingPackage.detailedParameters];
+                                                                          updatedDetailed[cIdx] = { ...cat, items: updatedCatItems };
+                                                                          setEditingPackage({ ...editingPackage, detailedParameters: updatedDetailed });
+                                                                      }
+                                                                      return;
+                                                                  }
+                                                                  const updatedCatItems = [...(cat.items || []), val];
+                                                                  const updatedDetailed = [...editingPackage.detailedParameters];
+                                                                  updatedDetailed[cIdx] = { ...cat, items: updatedCatItems };
+                                                                  setEditingPackage({ ...editingPackage, detailedParameters: updatedDetailed });
+                                                                  setSelectedAtomQuickParam({ ...selectedAtomQuickParam, [cIdx]: '' });
+                                                              }}
+                                                              className="flex-1 p-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs outline-none cursor-pointer"
+                                                          >
+                                                              <option value="">+ Add parameter from standard list...</option>
+                                                              <option value="OTHER_CUSTOM" className="font-bold text-teal-700">+ Other (Type custom parameter)...</option>
+                                                              {pathologyMedicalStandards.map((std, sIdx) => (
+                                                                  <optgroup key={sIdx} label={std.name}>
+                                                                      {std.items.map((subItem, subIdx) => (
+                                                                          <option key={subIdx} value={subItem}>{subItem}</option>
+                                                                      ))}
+                                                                  </optgroup>
+                                                              ))}
+                                                          </select>
+                                                      </div>
+                                                  </>
+                                              )}
+                                          </div>
+                                      );
+                                  })}
+                              </div>
+                          </div>
+
+                          <div className="mt-6 border-t pt-4 flex justify-end space-x-3">
+                              <button 
+                                  type="button" 
+                                  onClick={() => setEditingPackage(null)}
+                                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold text-xs transition-colors"
+                              >
+                                  Cancel
+                              </button>
+                              <button 
+                                  type="submit"
+                                  className="px-6 py-2 bg-teal-900 hover:bg-teal-800 text-yellow-400 rounded-xl font-bold text-xs transition-colors shadow flex items-center"
+                              >
+                                  <Save className="w-4 h-4 mr-1.5" /> Save Changes
+                              </button>
+                          </div>
+                      </form>
+                  </div>
+              </div>
+          );
+      })()}
+
+      {/* Package Parameters Detail Modal */}
+      {selectedPackageModal && (
+          <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
+              <div className="bg-white rounded-3xl max-w-2xl w-full p-6 md:p-8 shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto flex flex-col">
+                  
+                  <div className="flex justify-between items-start mb-6 border-b pb-4">
+                      <div>
+                          <span className="text-xs uppercase font-extrabold tracking-wider text-teal-700 bg-teal-50 px-2.5 py-1 rounded-full">
+                              {selectedPackageModal.detailedParameters ? selectedPackageModal.detailedParameters.length : 1} Tests Included • {selectedPackageModal.detailedParameters ? selectedPackageModal.detailedParameters.reduce((acc, c) => acc + (c.items ? c.items.length : 0), 1) : 1} Parameters
+                          </span>
+                          <h3 className="text-2xl font-extrabold text-teal-950 mt-2">{selectedPackageModal.name}</h3>
+                      </div>
+                      <button onClick={() => setSelectedPackageModal(null)} className="text-slate-400 hover:text-slate-600 bg-slate-100 p-2 rounded-full">
+                          <X className="w-5 h-5" />
+                      </button>
+                  </div>
+
+                  <div className="flex items-center space-x-4 bg-teal-50/70 p-4 rounded-2xl mb-6 border border-teal-100">
+                      <div>
+                          <p className="text-xs text-slate-500 font-medium">Package Pricing</p>
+                          <div className="flex items-center space-x-3 mt-1">
+                              <span className="text-sm font-bold text-slate-400 line-through">₹{selectedPackageModal.mrp}</span>
+                              <span className="text-2xl font-extrabold text-emerald-700">₹{selectedPackageModal.price}</span>
+                          </div>
+                      </div>
+                      <div className="ml-auto">
+                          <button
+                              onClick={() => {
+                                  toggleCart(selectedPackageModal.id);
+                                  setSelectedPackageModal(null);
+                              }}
+                              className={`px-6 py-2.5 rounded-xl font-bold text-xs shadow transition-all ${
+                                  cart.includes(selectedPackageModal.id)
+                                  ? 'bg-teal-700 text-white'
+                                  : 'bg-yellow-400 hover:bg-yellow-500 text-teal-950'
+                              }`}
+                          >
+                              {cart.includes(selectedPackageModal.id) ? 'Added to Cart ✓' : 'Add to Cart - ₹' + selectedPackageModal.price}
+                          </button>
+                      </div>
+                  </div>
+
+                  <div className="flex-1 space-y-4">
+                      <h4 className="text-sm font-bold text-slate-800 uppercase tracking-wide">Complete Parameter Breakdown:</h4>
+                      {selectedPackageModal.detailedParameters && selectedPackageModal.detailedParameters.map((cat, idx) => (
+                          <div key={idx} className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                              <h5 className="font-extrabold text-teal-900 text-sm mb-2 uppercase">{cat.category} ({cat.items ? cat.items.length : 0})</h5>
+                              <ul className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                                  {cat.items.map((item, i) => (
+                                      <li key={i} className="text-xs text-slate-600 flex items-center">
+                                          <span className="w-1.5 h-1.5 bg-teal-600 rounded-full mr-2"></span>
+                                          {item}
+                                      </li>
+                                  ))}
+                              </ul>
+                          </div>
+                      ))}
+                  </div>
+
+                  <div className="mt-6 border-t pt-4 flex justify-end">
+                      <button 
+                          onClick={() => setSelectedPackageModal(null)}
+                          className="bg-slate-900 text-white px-6 py-2.5 rounded-xl font-bold text-xs hover:bg-slate-800 transition-colors"
+                      >
+                          Close Details
+                      </button>
+                  </div>
+
+              </div>
+          </div>
+      )}
+
+      {/* Footer */}
+      <footer className="w-full bg-white shadow-[0_-4px_6px_-1px_rgb(0,0,0,0.05)] border-t border-slate-200 relative z-10 mt-auto">
+        <div className="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center space-x-3">
+                <div className="bg-teal-100 p-3 rounded-full text-teal-800">
+                    <PhoneCall className="w-5 h-5" />
+                </div>
+                <div>
+                    <h4 className="font-extrabold text-sm text-teal-950">Connect with an Expert</h4>
+                    <p className="text-xs text-slate-500">Have questions about our tests? Speak with our lab specialists.</p>
+                </div>
+            </div>
+            <a 
+                href="tel:7665857270"
+                className="bg-teal-900 hover:bg-teal-800 text-yellow-400 px-6 py-3 rounded-xl font-extrabold text-sm whitespace-nowrap shadow transition-transform hover:scale-105 flex items-center"
+            >
+                <Phone className="w-4 h-4 mr-2" /> 7665-857-270
+            </a>
+        </div>
+      </footer>
+
+      {/* Secure Admin Password Modal with Email OTP Reset Option for admin.swasthyacare@gmail.com */}
+      {adminModalOpen && (
+          <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in">
+              <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100">
+                  <div className="flex justify-between items-center mb-4">
+                      <div className="flex items-center space-x-2 text-teal-900">
+                          <Lock className="w-6 h-6 text-teal-700" />
+                          <h3 className="font-extrabold text-lg">Lab Admin Login</h3>
+                      </div>
+                      <button onClick={() => setAdminModalOpen(false)} className="text-slate-400 hover:text-slate-600">
+                          <X className="w-5 h-5" />
+                      </button>
+                  </div>
+
+                  {!showOtpModal ? (
+                      <>
+                          <p className="text-xs text-slate-500 mb-4">Enter your secure credentials to view patient bookings.</p>
+                          <form onSubmit={(e) => {
+                              e.preventDefault();
+                              if (adminPasswordInput === adminPassword) {
+                                  setAdminModalOpen(false);
+                                  setView('admin');
+                                  setAdminAuthError(false);
+                              } else {
+                                  setAdminAuthError(true);
+                              }
+                          }}>
+                              <div className="mb-4">
+                                  <label className="block text-xs font-bold text-slate-700 mb-1">Admin Password</label>
+                                  <input 
+                                      type="password" 
+                                      required
+                                      value={adminPasswordInput}
+                                      onChange={e => setAdminPasswordInput(e.target.value)}
+                                      placeholder="Enter password..."
+                                      className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-teal-500 text-sm"
+                                  />
+                                  {adminAuthError && (
+                                      <p className="text-xs text-red-600 font-bold mt-1">Incorrect password. Please try again.</p>
+                                  )}
+                              </div>
+
+                              <div className="flex items-center justify-between mb-4">
+                                  <button
+                                      type="button"
+                                      onClick={() => {
+                                          setShowOtpModal(true);
+                                          setResetEmail('');
+                                          setOtpSent(false);
+                                          setOtpMessage('');
+                                      }}
+                                      className="text-xs text-teal-700 hover:underline font-bold flex items-center"
+                                  >
+                                      <Mail className="w-3.5 h-3.5 mr-1" /> Reset Password via Email OTP
+                                  </button>
+                              </div>
+
+                              <div className="flex justify-end space-x-2">
+                                  <button 
+                                      type="button" 
+                                      onClick={() => setAdminModalOpen(false)}
+                                      className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold text-xs transition-colors"
+                                  >
+                                      Cancel
+                                  </button>
+                                  <button 
+                                      type="submit"
+                                      className="px-5 py-2 bg-teal-900 hover:bg-teal-800 text-yellow-400 rounded-xl font-bold text-xs transition-colors shadow"
+                                  >
+                                      Login
+                                  </button>
+                              </div>
+                          </form>
+                      </>
+                  ) : (
+                      <>
+                          <p className="text-xs text-slate-500 mb-4">Enter registered admin email (<span className="font-mono text-teal-800">admin.swasthyacare@gmail.com</span>) to receive OTP.</p>
+                          <form onSubmit={(e) => {
+                              e.preventDefault();
+                              if (!otpSent) {
+                                  if (resetEmail.trim().toLowerCase() === 'admin.swasthyacare@gmail.com') {
+                                      setOtpSent(true);
+                                      setOtpMessage('OTP sent to admin.swasthyacare@gmail.com. Please check your inbox (Hint: 1234) ✓');
+                                  } else {
+                                      setOtpMessage('Registered admin email not recognized. Please use admin.swasthyacare@gmail.com');
+                                  }
+                              } else {
+                                  if (otpInput === '1234' && newPasswordInput.trim().length >= 6) {
+                                      setAdminPassword(newPasswordInput.trim());
+                                      setAdminPasswordInput(newPasswordInput.trim());
+                                      setShowOtpModal(false);
+                                      setOtpMessage('Password updated successfully! You can now log in.');
+                                  } else {
+                                      setOtpMessage('Invalid OTP or password too short (min 6 chars).');
+                                  }
+                              }
+                          }}>
+                              <div className="mb-4">
+                                  <label className="block text-xs font-bold text-slate-700 mb-1">Admin Email Address</label>
+                                  <input 
+                                      type="email" 
+                                      required
+                                      disabled={otpSent}
+                                      value={resetEmail}
+                                      onChange={e => setResetEmail(e.target.value)}
+                                      placeholder="admin.swasthyacare@gmail.com"
+                                      className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none text-sm font-mono"
+                                  />
+                              </div>
+
+                              {otpSent && (
+                                  <>
+                                      <div className="mb-4">
+                                          <label className="block text-xs font-bold text-slate-700 mb-1">Enter Email OTP (Hint: 1234)</label>
+                                          <input 
+                                              type="text" 
+                                              required
+                                              value={otpInput}
+                                              onChange={e => setOtpInput(e.target.value)}
+                                              placeholder="Enter 4-digit OTP"
+                                              className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none text-sm"
+                                          />
+                                      </div>
+                                      <div className="mb-4">
+                                          <label className="block text-xs font-bold text-slate-700 mb-1">New Admin Password</label>
+                                          <input 
+                                              type="password" 
+                                              required
+                                              value={newPasswordInput}
+                                              onChange={e => setNewPasswordInput(e.target.value)}
+                                              placeholder="New secure password"
+                                              className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl outline-none text-sm"
+                                          />
+                                      </div>
+                                  </>
+                              )}
+
+                              {otpMessage && (
+                                  <p className={`text-xs font-bold mb-3 ${otpMessage.includes('✓') || otpMessage.includes('successfully') ? 'text-green-600' : 'text-red-600'}`}>
+                                      {otpMessage}
+                                  </p>
+                              )}
+
+                              <div className="flex justify-end space-x-2">
+                                  <button 
+                                      type="button" 
+                                      onClick={() => setShowOtpModal(false)}
+                                      className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold text-xs transition-colors"
+                                  >
+                                      Back
+                                  </button>
+                                  <button 
+                                      type="submit"
+                                      className="px-5 py-2 bg-teal-900 hover:bg-teal-800 text-yellow-400 rounded-xl font-bold text-xs transition-colors shadow"
+                                  >
+                                      {otpSent ? 'Reset Password' : 'Send Email OTP'}
+                                  </button>
+                              </div>
+                          </form>
+                      </>
+                  )}
+              </div>
+          </div>
+      )}
+
+      {/* Floating AI Chat Assistant */}
+      <div className="fixed bottom-6 right-6 z-50">
+          {!chatOpen && (
+              <button 
+                  onClick={() => setChatOpen(true)}
+                  className="bg-teal-700 text-white p-4 rounded-full shadow-2xl hover:bg-teal-800 transition-transform hover:scale-110 flex items-center justify-center border-2 border-teal-600 relative group"
+              >
+                  <MessageSquare className="w-7 h-7" />
+                  <span className="absolute -top-12 right-0 bg-white text-teal-900 text-xs font-bold px-3 py-2 rounded-lg shadow-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
+                      Ask Swasthya AI
+                  </span>
+              </button>
+          )}
+
+          {chatOpen && (
+              <div className="bg-white w-80 md:w-96 rounded-2xl shadow-[0_10px_40px_rgb(0,0,0,0.2)] border border-slate-200 flex flex-col h-[500px] max-h-[80vh] animate-in slide-in-from-bottom-8 duration-300 overflow-hidden">
+                  <div className="bg-teal-900 text-white p-4 flex justify-between items-center shrink-0">
+                      <div className="flex items-center">
+                          <div className="bg-teal-100 p-1.5 rounded-full mr-3">
+                              <MessageSquare className="w-5 h-5 text-teal-800" />
+                          </div>
+                          <div>
+                              <h3 className="font-bold leading-tight text-yellow-400">Swasthya AI</h3>
+                              <p className="text-[10px] text-teal-200">Online | Health Assistant</p>
+                          </div>
+                      </div>
+                      <button onClick={() => setChatOpen(false)} className="text-teal-200 hover:text-white transition-colors p-1">
+                          <X className="w-5 h-5" />
+                      </button>
+                  </div>
+
+                  <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-slate-50">
+                      {messages.map((msg, idx) => (
+                          <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                              <div className={`max-w-[85%] rounded-2xl p-3 text-sm shadow-sm whitespace-pre-line ${
+                                  msg.role === 'user' 
+                                  ? 'bg-teal-600 text-white rounded-tr-sm' 
+                                  : 'bg-white border border-slate-200 text-slate-700 rounded-tl-sm'
+                              }`}>
+                                  {msg.role === 'user' ? msg.text : renderModelMessage(msg.text)}
+                              </div>
+                          </div>
+                      ))}
+                      {isAILoading && (
+                          <div className="flex justify-start animate-in fade-in">
+                              <div className="bg-white border border-slate-200 text-slate-500 rounded-2xl rounded-tl-sm p-4 text-sm shadow-sm flex items-center space-x-1.5">
+                                  <div className="w-2 h-2 bg-teal-500 rounded-full animate-bounce"></div>
+                                  <div className="w-2 h-2 bg-teal-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                                  <div className="w-2 h-2 bg-teal-500 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></div>
+                              </div>
+                          </div>
+                      )}
+                      <div ref={chatEndRef} />
+                  </div>
+
+                  <div className="p-3 bg-white border-t border-slate-100 shrink-0">
+                      <form 
+                          onSubmit={(e) => {
+                              e.preventDefault();
+                              if (inputValue.trim()) {
+                                  handleSendMessage(inputValue);
+                              }
+                          }}
+                          className="flex items-center"
+                      >
+                          <input 
+                              type="text" 
+                              value={inputValue}
+                              onChange={(e) => setInputValue(e.target.value)}
+                              placeholder="Ask about a package, test, or symptom..." 
+                              className="flex-1 p-2.5 bg-slate-50 border border-slate-200 rounded-l-xl outline-none focus:ring-1 focus:ring-teal-500 text-sm"
+                              disabled={isAILoading}
+                          />
+                          <button 
+                              type="submit"
+                              disabled={!inputValue.trim() || isAILoading}
+                              className="bg-teal-700 text-white px-4 py-2.5 rounded-r-xl hover:bg-teal-800 disabled:opacity-50 transition-colors border border-teal-700 border-l-0"
+                          >
+                              <span className="font-bold text-sm">Send</span>
+                          </button>
+                      </form>
+                  </div>
+              </div>
+          )}
+      </div>
+    </div>
+  );
+}
