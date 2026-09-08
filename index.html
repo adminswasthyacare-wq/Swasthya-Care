@@ -341,14 +341,19 @@
         ];
 
         function App() {
-          const [packages, setPackages] = useState(initialPackages);
+          const [packages, setPackages] = useState(() => {
+              const saved = localStorage.getItem('swasthya_catalog_v2');
+              if (saved) {
+                  try { return JSON.parse(saved); } catch(e) {}
+              }
+              return initialPackages;
+          });
           const [view, setView] = useState('menu');
           const [loaded, setLoaded] = useState(false);
           const [user, setUser] = useState(null);
           const [bookings, setBookings] = useState([]);
           
-          const targetWhatsappNumber = "917665857270";
-          const googleSheetUrl = "https://docs.google.com/spreadsheets/d/167GCKx0Lo8pAbdj2WxWDAtPEEzH_IF9ByeSdyrfwtqc/edit?usp=drive_link";
+          const googleSheetUrl = "https://docs.google.com/spreadsheets/d/1lFkrSc4hMtbj-Wll09Fhvhjy88_fZHzaqtWjyprZIao/edit?usp=sharing";
           const [cart, setCart] = useState([]);
           
           const [packageMembers, setPackageMembers] = useState({});
@@ -375,7 +380,7 @@
           const [adminCsvInput, setAdminCsvInput] = useState('');
           const [adminFeedback, setAdminFeedback] = useState('');
 
-          // Secure Email OTP Reset state for admin.swasthyacare@gmail.com
+          // Secure Email OTP Reset state
           const [showOtpModal, setShowOtpModal] = useState(false);
           const [resetEmail, setResetEmail] = useState('');
           const [otpSent, setOtpSent] = useState(false);
@@ -383,6 +388,7 @@
           const [otpInput, setOtpInput] = useState('');
           const [newPasswordInput, setNewPasswordInput] = useState('');
           const [otpMessage, setOtpMessage] = useState('');
+          const [simulatedInboxNotice, setSimulatedInboxNotice] = useState('');
 
           const [primaryBooking, setPrimaryBooking] = useState({
             name: '', age: '', gender: '', email: '', contact: '', houseNo: '', street: '', city: '', state: '', pincode: '', mapLocation: '', preferredDate: '', preferredTime: ''
@@ -405,28 +411,29 @@
           const [customParamInput, setCustomParamInput] = useState({});
           const [collapsedCategories, setCollapsedCategories] = useState({});
 
-          // Load catalog from Firestore on startup
+          // Load catalog from Firestore on startup with fallback to localStorage
           useEffect(() => {
               if (!user) return;
               try {
-                  const unsub = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('catalog').doc('main_catalog')
-                      .onSnapshot((docSnap) => {
-                          if (docSnap.exists && docSnap.data().packages) {
-                              setPackages(docSnap.data().packages);
-                          } else {
-                              // Initialize default catalog in Firestore
-                              db.collection('artifacts').doc(appId).collection('public').doc('data').collection('catalog').doc('main_catalog').set({ packages: initialPackages });
-                          }
-                      }, (err) => console.warn("Catalog sync warning:", err));
-                  return () => unsub();
+                  const docRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('catalog').doc('main_catalog');
+                  docRef.get().then(docSnap => {
+                      if (docSnap.exists && docSnap.data().packages) {
+                          const remotePkgs = docSnap.data().packages;
+                          setPackages(remotePkgs);
+                          localStorage.setItem('swasthya_catalog_v2', JSON.stringify(remotePkgs));
+                      } else {
+                          docRef.set({ packages });
+                      }
+                  }).catch(err => console.warn("Catalog sync warning:", err));
               } catch(e) {
                   console.warn("Catalog load note:", e);
               }
           }, [user]);
 
-          // Save catalog helper
+          // Save catalog helper with localStorage persistence
           const persistCatalog = async (updatedPkgs) => {
               setPackages(updatedPkgs);
+              localStorage.setItem('swasthya_catalog_v2', JSON.stringify(updatedPkgs));
               try {
                   if (user) {
                       await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('catalog').doc('main_catalog').set({ packages: updatedPkgs });
@@ -668,51 +675,7 @@
               document.body.appendChild(link);
               link.click();
               document.body.removeChild(link);
-              setAdminFeedback("Complete CSV Catalog (with tests & parameters) downloaded successfully for admin.swasthyacare@gmail.com! ✓");
-          };
-
-          const exportBookingsToExcel = () => {
-              if (bookings.length === 0) {
-                  setAdminFeedback("No bookings available to export for admin.swasthyacare@gmail.com.");
-                  return;
-              }
-              let csvContent = "ExportedFor: admin.swasthyacare@gmail.com\n";
-              csvContent += "BookingDate,PrimaryPatientName,Age,Gender,Contact,Email,Address,PreferredSlot,TotalAmount,AssignedTestsAndMembers\n";
-              
-              bookings.forEach(b => {
-                  const date = new Date(b.timestamp).toLocaleString();
-                  const name = (b.primaryBooking?.name || '').replace(/,/g, ' ');
-                  const age = b.primaryBooking?.age || '';
-                  const gender = b.primaryBooking?.gender || '';
-                  const contact = b.primaryBooking?.contact || '';
-                  const email = b.primaryBooking?.email || '';
-                  const addr = `${b.primaryBooking?.houseNo || ''} ${b.primaryBooking?.street || ''} ${b.primaryBooking?.city || ''} - ${b.primaryBooking?.pincode || ''}`.replace(/,/g, ' ');
-                  const slot = `${b.primaryBooking?.preferredDate || ''} (${b.primaryBooking?.preferredTime || ''})`;
-                  const amount = b.totalAmount || 0;
-                  
-                  let testsSummary = [];
-                  const primaryCart = b.patientAssignments?.['primary'] || b.cart || [];
-                  testsSummary.push(`[Primary: ${name}] -> ${primaryCart.map(id => packages.find(p => p.id === Number(id))?.name || id).join(', ')}`);
-                  
-                  if (b.familyMembers) {
-                      b.familyMembers.forEach(m => {
-                          const mCart = b.patientAssignments?.[m.id] || [];
-                          testsSummary.push(`[Family: ${m.name || 'Member'}] -> ${mCart.map(id => packages.find(p => p.id === Number(id))?.name || id).join(', ')}`);
-                      });
-                  }
-
-                  csvContent += `"${date}","${name}",${age},"${gender}","${contact}","${email}","${addr}","${slot}",${amount},"${testsSummary.join(' | ')}"\n`;
-              });
-
-              const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-              const url = URL.createObjectURL(blob);
-              const link = document.createElement("a");
-              link.setAttribute("href", url);
-              link.setAttribute("download", "swasthya_care_bookings_admin.swasthyacare@gmail.com.csv");
-              document.body.appendChild(link);
-              link.click();
-              document.body.removeChild(link);
-              setAdminFeedback("Bookings exported to Excel/CSV successfully for admin.swasthyacare@gmail.com! ✓");
+              setAdminFeedback("Complete CSV Catalog (with tests & parameters) downloaded successfully! ✓");
           };
 
           const handleSort = (key) => {
@@ -959,6 +922,7 @@
               });
 
               msg += `\n*Total Amount Payable: ₹${totalAmount}*\n`;
+              const targetWhatsappNumber = "917665857270";
               const waLink = `https://wa.me/${targetWhatsappNumber}?text=${encodeURIComponent(msg)}`;
               window.open(waLink, '_blank');
               setView('success');
@@ -1388,22 +1352,16 @@
                           <div className="max-w-7xl mx-auto px-4 py-12">
                               <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
                                   <h2 className="text-3xl font-extrabold text-teal-950 flex items-center">
-                                      <Icon name="lock" className="w-8 h-8 mr-3 text-teal-700" /> Lab Admin Dashboard (admin.swasthyacare@gmail.com)
+                                      <Icon name="lock" className="w-8 h-8 mr-3 text-teal-700" /> Lab Admin Dashboard
                                   </h2>
                                   <div className="flex items-center space-x-3">
-                                      <button
-                                          onClick={exportBookingsToExcel}
-                                          className="bg-emerald-700 hover:bg-emerald-800 text-white px-5 py-2.5 rounded-xl font-bold text-xs flex items-center shadow transition-colors"
-                                      >
-                                          <Icon name="download" className="w-4 h-4 mr-2" /> Export Bookings to Excel (CSV)
-                                      </button>
                                       <a
                                           href={googleSheetUrl}
                                           target="_blank"
                                           rel="noreferrer"
-                                          className="bg-teal-800 hover:bg-teal-900 text-yellow-400 px-5 py-2.5 rounded-xl font-bold text-xs flex items-center shadow transition-colors"
+                                          className="bg-emerald-700 hover:bg-emerald-800 text-white px-5 py-2.5 rounded-xl font-bold text-xs flex items-center shadow transition-colors"
                                       >
-                                          <Icon name="external" className="w-4 h-4 mr-2" /> Open Google Sheets
+                                          <Icon name="external" className="w-4 h-4 mr-2" /> Open Google Sheets (Live Cloud Bookings)
                                       </a>
                                       <button onClick={() => setView('menu')} className="bg-slate-200 text-slate-800 px-4 py-2.5 rounded-xl font-bold text-xs hover:bg-slate-300 transition-colors">Exit Admin</button>
                                   </div>
@@ -1411,7 +1369,7 @@
 
                               <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-6 md:p-8 mb-8">
                                   <div className="flex justify-between items-center mb-4">
-                                      <h3 className="text-lg font-extrabold text-teal-950">Bulk CSV Test & Pricing Manager (For admin.swasthyacare@gmail.com)</h3>
+                                      <h3 className="text-lg font-extrabold text-teal-950">Bulk CSV Test & Pricing Manager</h3>
                                       <button
                                           onClick={downloadCsvCatalog}
                                           className="bg-teal-50 hover:bg-teal-100 border border-teal-200 text-teal-900 px-4 py-2 rounded-xl text-xs font-bold flex items-center transition-colors shadow-sm"
@@ -1420,7 +1378,7 @@
                                       </button>
                                   </div>
                                   <div className="mb-4">
-                                      <label className="block text-xs font-bold text-slate-700 mb-2">Upload CSV File (Persists automatically across page reloads)</label>
+                                      <label className="block text-xs font-bold text-slate-700 mb-2">Upload CSV File (Saves to cloud & browser instantly)</label>
                                       <input 
                                           type="file" 
                                           accept=".csv, .txt" 
@@ -1560,7 +1518,7 @@
                       <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
                           <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl">
                               <h3 className="font-extrabold text-lg mb-4 text-teal-950 flex items-center">
-                                  <Icon name="lock" className="w-5 h-5 mr-2 text-teal-700" /> Lab Admin Login (admin.swasthyacare@gmail.com)
+                                  <Icon name="lock" className="w-5 h-5 mr-2 text-teal-700" /> Lab Admin Login
                               </h3>
                               {!showOtpModal ? (
                                   <form onSubmit={(e) => {
@@ -1576,7 +1534,7 @@
                                       <input type="password" required value={adminPasswordInput} onChange={e => setAdminPasswordInput(e.target.value)} placeholder="Enter password..." className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl mb-3 text-sm outline-none" />
                                       {adminAuthError && <p className="text-xs text-red-600 font-bold mb-3">Incorrect password.</p>}
                                       <div className="flex items-center justify-between mb-4">
-                                          <button type="button" onClick={() => { setShowOtpModal(true); setResetEmail(''); setOtpSent(false); setOtpMessage(''); }} className="text-xs text-teal-700 font-bold hover:underline flex items-center">
+                                          <button type="button" onClick={() => { setShowOtpModal(true); setResetEmail(''); setOtpSent(false); setOtpMessage(''); setSimulatedInboxNotice(''); }} className="text-xs text-teal-700 font-bold hover:underline flex items-center">
                                               <Icon name="mail" className="w-3.5 h-3.5 mr-1" /> Reset Password via Email OTP
                                           </button>
                                       </div>
@@ -1593,7 +1551,8 @@
                                               const secureOtp = Math.floor(1000 + Math.random() * 9000).toString();
                                               setGeneratedOtp(secureOtp);
                                               setOtpSent(true);
-                                              setOtpMessage('OTP has been successfully sent to admin.swasthyacare@gmail.com. Please check your inbox.');
+                                              setSimulatedInboxNotice(`📬 Simulated Inbox (admin.swasthyacare@gmail.com): Your Swasthya Care Admin OTP is ${secureOtp}`);
+                                              setOtpMessage('OTP successfully sent to admin.swasthyacare@gmail.com.');
                                           } else {
                                               setOtpMessage('Please use correct admin email: admin.swasthyacare@gmail.com');
                                           }
@@ -1614,8 +1573,13 @@
                                       </div>
                                       {otpSent && (
                                           <>
+                                              {simulatedInboxNotice && (
+                                                  <div className="mb-3 p-3 bg-teal-50 border border-teal-200 rounded-xl text-xs font-bold text-teal-900">
+                                                      {simulatedInboxNotice}
+                                                  </div>
+                                              )}
                                               <div className="mb-3">
-                                                  <label className="block text-xs font-bold text-slate-700 mb-1">Enter OTP sent to admin.swasthyacare@gmail.com</label>
+                                                  <label className="block text-xs font-bold text-slate-700 mb-1">Enter OTP received</label>
                                                   <input type="text" required value={otpInput} onChange={e => setOtpInput(e.target.value)} placeholder="4-digit OTP" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm" />
                                               </div>
                                               <div className="mb-3">
@@ -1624,7 +1588,7 @@
                                               </div>
                                           </>
                                       )}
-                                      {otpMessage && <p className={`text-xs font-bold mb-3 ${otpMessage.includes('successfully') ? 'text-green-600' : 'text-red-600'}`}>{otpMessage}</p>}
+                                      {otpMessage && <p className={`text-xs font-bold mb-3 ${otpMessage.includes('successfully') || otpMessage.includes('sent') ? 'text-green-600' : 'text-red-600'}`}>{otpMessage}</p>}
                                       <div className="flex justify-end space-x-2">
                                           <button type="button" onClick={() => setShowOtpModal(false)} className="px-4 py-2 bg-slate-100 rounded-xl text-xs font-bold">Back</button>
                                           <button type="submit" className="px-5 py-2 bg-teal-900 text-yellow-400 rounded-xl text-xs font-bold">{otpSent ? 'Update Password' : 'Send OTP'}</button>
