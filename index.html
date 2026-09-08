@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gemini - Web App Clone</title>
+    <title>Gemini - Shared Conversation</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -15,6 +15,7 @@
                         geminiSurface: '#1e1f20',
                         geminiSurfaceHigh: '#282a2c',
                         geminiBorder: '#444746',
+                        geminiBlue: '#a8c7fa',
                     }
                 }
             }
@@ -26,7 +27,6 @@
         body {
             font-family: 'Google Sans', 'Google Sans Text', sans-serif;
         }
-        /* Custom scrollbar matching Google Design */
         ::-webkit-scrollbar {
             width: 8px;
             height: 8px;
@@ -40,336 +40,153 @@
         }
     </style>
 </head>
-<body class="bg-[#131314] text-[#e3e3e3] h-screen w-screen flex overflow-hidden m-0">
+<body class="bg-[#131314] text-[#e3e3e3] h-screen w-screen flex flex-col overflow-hidden m-0">
 
-    <aside id="sidebar" class="bg-[#1e1f20] w-72 flex flex-col justify-between p-3 transition-all duration-300 z-20 md:relative absolute h-full -translate-x-full md:translate-x-0">
-        <div class="flex flex-col gap-4">
-            <!-- Top bar in sidebar: Menu & New Chat -->
-            <div class="flex items-center justify-between">
-                <button onclick="toggleSidebar()" class="p-3 rounded-full hover:bg-[#333537] text-[#c4c7c5] transition">
-                    <i class="fa-solid fa-bars text-lg"></i>
-                </button>
-                <button onclick="createNewChat()" class="flex items-center gap-2 bg-[#282a2c] hover:bg-[#333537] px-4 py-2 rounded-full text-sm font-medium transition text-[#e3e3e3]">
-                    <i class="fa-solid fa-plus text-[#a8c7fa]"></i> New chat
-                </button>
-            </div>
-
-            <!-- Recent Chats -->
-            <div class="mt-4 overflow-y-auto max-h-[calc(100vh-200px)] flex flex-col gap-1 pr-1">
-                <span class="text-xs font-semibold text-[#c4c7c5] px-3 py-1">Recent</span>
-                <div id="chatHistoryList" class="flex flex-col gap-1">
-                    <!-- Dynamic chat items populate here -->
-                </div>
-            </div>
-        </div>
-
-        <!-- Sidebar Footer -->
-        <div class="flex flex-col gap-1 border-t border-[#444746] pt-3">
-            <button onclick="openSettings()" class="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-[#333537] text-sm text-[#c4c7c5] transition">
-                <i class="fa-solid fa-gear text-base"></i> Settings & Help
-            </button>
-            <div class="flex items-center gap-3 px-3 py-2.5">
-                <div class="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center font-bold text-white text-xs">AD</div>
-                <div class="flex flex-col overflow-hidden">
-                    <span class="text-xs font-medium text-[#e3e3e3] truncate">Ajay</span>
-                    <span class="text-[10px] text-[#c4c7c5] truncate">ajaydating1@gmail.com</span>
-                </div>
-            </div>
-        </div>
-    </aside>
-
-    <main class="flex-1 flex flex-col h-full bg-[#131314] relative overflow-hidden">
-        
-        <!-- Header -->
-        <header class="flex items-center justify-between px-6 py-4 z-10">
-            <div class="flex items-center gap-3">
-                <button onclick="toggleSidebar()" class="md:hidden p-2 rounded-full hover:bg-[#282a2c] text-[#c4c7c5]">
-                    <i class="fa-solid fa-bars text-lg"></i>
-                </button>
-                <div class="flex items-center gap-2 cursor-pointer" onclick="resetToHome()">
-                    <span class="text-lg font-medium text-[#c4c7c5] tracking-wide">Gemini</span>
-                    <span class="text-xs bg-[#282a2c] text-[#a8c7fa] px-2 py-0.5 rounded-md font-semibold">Advanced</span>
-                </div>
-            </div>
-            <div class="flex items-center gap-4">
-                <button onclick="toggleTheme()" class="p-2.5 rounded-full hover:bg-[#282a2c] text-[#c4c7c5] transition" title="Toggle Theme">
-                    <i id="themeIcon" class="fa-solid fa-sun"></i>
-                </button>
-                <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-purple-500 to-blue-500 flex items-center justify-center text-white font-bold text-xs shadow-md">
+    <!-- Top Shared Header -->
+    <header class="flex items-center justify-between px-6 py-4 bg-[#1e1f20] border-b border-[#444746] z-10">
+        <div class="flex items-center gap-3">
+            <div class="flex items-center gap-2 cursor-pointer" onclick="window.location.reload()">
+                <div class="w-7 h-7 rounded-full bg-gradient-to-tr from-purple-500 to-blue-500 flex items-center justify-center text-white text-xs shadow-md">
                     <i class="fa-solid fa-sparkles"></i>
                 </div>
+                <span class="text-lg font-medium text-[#e3e3e3] tracking-wide">Gemini</span>
+                <span class="text-xs bg-[#282a2c] text-[#a8c7fa] px-2 py-0.5 rounded-md font-semibold">Shared chat</span>
             </div>
-        </header>
+        </div>
+        <div class="flex items-center gap-3">
+            <button onclick="shareToast()" class="flex items-center gap-2 bg-[#282a2c] hover:bg-[#333537] px-4 py-2 rounded-full text-sm font-medium transition text-[#e3e3e3] border border-[#444746]">
+                <i class="fa-solid fa-share-nodes text-[#a8c7fa]"></i> Share
+            </button>
+            <button onclick="tryGemini()" class="flex items-center gap-2 bg-[#d3e3fd] hover:bg-white text-[#062e6f] px-5 py-2 rounded-full text-sm font-medium transition shadow-sm">
+                Try Gemini
+            </button>
+        </div>
+    </header>
 
-        <!-- Chat Container / Welcome Screen -->
-        <div id="mainContainer" class="flex-1 overflow-y-auto px-4 md:px-0 flex flex-col items-center justify-between pb-6">
+    <!-- Main Scrollable Conversation View -->
+    <main class="flex-1 overflow-y-auto flex flex-col items-center pb-24 px-4 md:px-0">
+        
+        <div class="w-full max-w-3xl flex flex-col gap-8 mt-8">
             
-            <!-- Welcome View (Shown when no chat is active) -->
-            <div id="welcomeView" class="w-full max-w-3xl flex flex-col items-start px-4 mt-12 md:mt-24 transition-all duration-300">
-                <h1 class="text-4xl md:text-5xl font-normal bg-gradient-to-r from-[#9eb7ff] via-[#d1e1ff] to-[#ffb3ae] bg-clip-text text-transparent leading-tight">
-                    Hello, Ajay
+            <!-- Conversation Title Banner -->
+            <div class="bg-[#1e1f20] border border-[#444746] p-5 rounded-2xl flex flex-col gap-2">
+                <div class="flex items-center gap-2 text-xs text-[#c4c7c5]">
+                    <i class="fa-solid fa-globe text-[#a8c7fa]"></i> Shared from Gemini • 5 sci-fi books & descriptions
+                </div>
+                <h1 class="text-xl font-medium text-[#e3e3e3]">
+                    List of well-known sci-fi books with descriptions in a table format
                 </h1>
-                <p class="text-3xl md:text-4xl font-normal text-[#444746] dark:text-[#c4c7c5] mt-1">
-                    How can I help you today?
-                </p>
+            </div>
 
-                <!-- Suggestion Cards Grid -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 w-full mt-10">
-                    <div onclick="sendPromptCard('Give me a list of 5 well-known sci-fi books in a table with descriptions')" class="bg-[#1e1f20] hover:bg-[#282a2c] p-4 rounded-2xl flex flex-col justify-between h-36 cursor-pointer transition relative group border border-transparent hover:border-[#444746]">
-                        <p class="text-sm text-[#e3e3e3]">Give me a list of well-known sci-fi books</p>
-                        <div class="self-end p-2 bg-[#131314] rounded-full text-[#a8c7fa] opacity-0 group-hover:opacity-100 transition">
-                            <i class="fa-solid fa-compass text-xs"></i>
-                        </div>
-                    </div>
-                    <div onclick="sendPromptCard('Draft a guide on how to set up the perfect movie marathon night with friends')" class="bg-[#1e1f20] hover:bg-[#282a2c] p-4 rounded-2xl flex flex-col justify-between h-36 cursor-pointer transition relative group border border-transparent hover:border-[#444746]">
-                        <p class="text-sm text-[#e3e3e3]">Set up the perfect movie marathon night</p>
-                        <div class="self-end p-2 bg-[#131314] rounded-full text-[#a8c7fa] opacity-0 group-hover:opacity-100 transition">
-                            <i class="fa-solid fa-film text-xs"></i>
-                        </div>
-                    </div>
-                    <div onclick="sendPromptCard('Describe a new fashion trend that is inspired by retro styles')" class="bg-[#1e1f20] hover:bg-[#282a2c] p-4 rounded-2xl flex flex-col justify-between h-36 cursor-pointer transition relative group border border-transparent hover:border-[#444746]">
-                        <p class="text-sm text-[#e3e3e3]">Describe a new retro-inspired fashion trend</p>
-                        <div class="self-end p-2 bg-[#131314] rounded-full text-[#a8c7fa] opacity-0 group-hover:opacity-100 transition">
-                            <i class="fa-solid fa-shirt text-xs"></i>
-                        </div>
-                    </div>
-                    <div onclick="sendPromptCard('Help me brainstorm short story ideas for creative writing class')" class="bg-[#1e1f20] hover:bg-[#282a2c] p-4 rounded-2xl flex flex-col justify-between h-36 cursor-pointer transition relative group border border-transparent hover:border-[#444746]">
-                        <p class="text-sm text-[#e3e3e3]">Brainstorm short story ideas for writing class</p>
-                        <div class="self-end p-2 bg-[#131314] rounded-full text-[#a8c7fa] opacity-0 group-hover:opacity-100 transition">
-                            <i class="fa-solid fa-pen-nib text-xs"></i>
-                        </div>
-                    </div>
+            <!-- User Prompt Message -->
+            <div class="flex gap-4 w-full justify-end">
+                <div class="bg-[#282a2c] text-[#e3e3e3] px-5 py-3 rounded-2xl max-w-[85%] text-sm leading-relaxed border border-[#444746]">
+                    Give me a list of 5 well-known sci-fi books and show the results in a table with descriptions
                 </div>
             </div>
 
-            <!-- Active Chat Conversation Stream -->
-            <div id="chatStream" class="w-full max-w-3xl flex flex-col gap-6 px-4 my-auto hidden">
-                <!-- Messages appended dynamically here -->
-            </div>
-
-            <div class="w-full max-w-3xl px-4 mt-6">
-                <div class="bg-[#1e1f20] border border-[#444746] rounded-3xl p-3 flex flex-col gap-2 shadow-lg focus-within:border-[#a8c7fa] transition">
-                    <textarea id="promptInput" rows="1" oninput="autoResize(this)" onkeydown="handleKey(event)" placeholder="Enter a prompt here..." class="w-full bg-transparent text-[#e3e3e3] placeholder-[#c4c7c5] outline-none resize-none px-3 text-base max-h-36"></textarea>
+            <!-- Gemini Response Message -->
+            <div class="flex gap-4 w-full justify-start">
+                <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-purple-500 to-blue-500 flex items-center justify-center text-white text-xs shrink-0 mt-1">
+                    <i class="fa-solid fa-sparkles"></i>
+                </div>
+                <div class="flex flex-col gap-3 max-w-[90%] text-sm text-[#e3e3e3] leading-relaxed bg-[#1e1f20] p-5 rounded-2xl border border-[#444746]">
+                    <p>Sure, here is a list of 5 well-known sci-fi books in a table with descriptions:</p>
                     
-                    <div class="flex items-center justify-between px-2">
-                        <div class="flex items-center gap-1">
-                            <button onclick="triggerUpload()" class="p-2.5 rounded-full hover:bg-[#333537] text-[#c4c7c5] transition" title="Upload Image or File">
-                                <i class="fa-solid fa-circle-plus text-lg"></i>
-                            </button>
-                            <button class="p-2.5 rounded-full hover:bg-[#333537] text-[#c4c7c5] transition" title="Use Microphone">
-                                <i class="fa-solid fa-microphone text-lg"></i>
-                            </button>
-                        </div>
-                        <button id="sendBtn" onclick="submitPrompt()" class="p-2.5 rounded-full bg-[#dde3ea] text-[#1f1f1f] hover:bg-white transition disabled:opacity-40 disabled:cursor-not-allowed" disabled title="Send message">
-                            <i class="fa-solid fa-arrow-up text-sm font-bold"></i>
-                        </button>
+                    <!-- Table Component -->
+                    <div class="overflow-x-auto my-2 border border-[#444746] rounded-xl">
+                        <table class="w-full border-collapse text-left text-xs">
+                            <thead>
+                                <tr class="bg-[#282a2c] text-[#e3e3e3]">
+                                    <th class="p-3 border-b border-[#444746] font-medium">Book</th>
+                                    <th class="p-3 border-b border-[#444746] font-medium">Author</th>
+                                    <th class="p-3 border-b border-[#444746] font-medium">Year</th>
+                                    <th class="p-3 border-b border-[#444746] font-medium">Description</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-[#444746]">
+                                <tr class="hover:bg-[#282a2c]/50 transition">
+                                    <td class="p-3 font-medium text-[#a8c7fa]">Dune</td>
+                                    <td class="p-3">Frank Herbert</td>
+                                    <td class="p-3">1965</td>
+                                    <td class="p-3 text-[#c4c7c5]">Set on the desert planet Arrakis, centering on Paul Atreides and the spice melange.</td>
+                                </tr>
+                                <tr class="hover:bg-[#282a2c]/50 transition">
+                                    <td class="p-3 font-medium text-[#a8c7fa]">Neuromancer</td>
+                                    <td class="p-3">William Gibson</td>
+                                    <td class="p-3">1984</td>
+                                    <td class="p-3 text-[#c4c7c5]">A foundational cyberpunk novel about a washed-up computer hacker hired for one last run.</td>
+                                </tr>
+                                <tr class="hover:bg-[#282a2c]/50 transition">
+                                    <td class="p-3 font-medium text-[#a8c7fa]">Foundation</td>
+                                    <td class="p-3">Isaac Asimov</td>
+                                    <td class="p-3">1951</td>
+                                    <td class="p-3 text-[#c4c7c5]">Chronicles a band of psychologists aiming to save civilization from a dark age.</td>
+                                </tr>
+                                <tr class="hover:bg-[#282a2c]/50 transition">
+                                    <td class="p-3 font-medium text-[#a8c7fa]">Snow Crash</td>
+                                    <td class="p-3">Neal Stephenson</td>
+                                    <td class="p-3">1992</td>
+                                    <td class="p-3 text-[#c4c7c5]">Explores a corporate-franchised libertarian America and a virtual reality metaverse.</td>
+                                </tr>
+                                <tr class="hover:bg-[#282a2c]/50 transition">
+                                    <td class="p-3 font-medium text-[#a8c7fa]">Hyperion</td>
+                                    <td class="p-3">Dan Simmons</td>
+                                    <td class="p-3">1989</td>
+                                    <td class="p-3 text-[#c4c7c5]">A Canterbury Tales-style narrative of pilgrims journeying to face the mysterious Shrike.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="flex items-center gap-3 pt-2 text-[#c4c7c5]">
+                        <button onclick="shareToast()" class="hover:text-white transition flex items-center gap-1.5"><i class="fa-regular fa-copy"></i> Copy</button>
+                        <button onclick="shareToast()" class="hover:text-white transition flex items-center gap-1.5"><i class="fa-solid fa-file-export"></i> Export to Docs</button>
                     </div>
                 </div>
-                <p class="text-[11px] text-center text-[#c4c7c5] mt-3">
-                    Gemini may display inaccurate info, including about people, so double-check its responses. Your privacy & Gemini Apps.
-                </p>
             </div>
 
         </div>
     </main>
 
+    <!-- Bottom Interactive Prompt Bar / Try Gemini Footer -->
+    <div class="absolute bottom-0 left-0 w-full bg-[#131314]/90 backdrop-blur-md border-t border-[#444746] p-4 flex flex-col items-center z-20">
+        <div class="w-full max-w-3xl flex flex-col gap-2">
+            <div class="bg-[#1e1f20] border border-[#444746] rounded-3xl p-3 flex flex-col gap-2 shadow-lg focus-within:border-[#a8c7fa] transition">
+                <textarea id="followupInput" rows="1" placeholder="Ask a follow-up or try your own prompt..." class="w-full bg-transparent text-[#e3e3e3] placeholder-[#c4c7c5] outline-none resize-none px-3 text-sm max-h-24"></textarea>
+                
+                <div class="flex items-center justify-between px-2">
+                    <span class="text-xs text-[#c4c7c5]">Want to create your own chats?</span>
+                    <button onclick="tryGemini()" class="px-4 py-1.5 rounded-full bg-[#dde3ea] text-[#1f1f1f] hover:bg-white text-xs font-semibold transition">
+                        Start chatting <i class="fa-solid fa-arrow-right ml-1"></i>
+                    </button>
+                </div>
+            </div>
+            <p class="text-[10px] text-center text-[#c4c7c5]">
+                Gemini may display inaccurate info, including about people, so double-check its responses.
+            </p>
+        </div>
+    </div>
+
     <script>
-        let chats = [];
-        let currentChatId = null;
-
-        const promptInput = document.getElementById('promptInput');
-        const sendBtn = document.getElementById('sendBtn');
-        const welcomeView = document.getElementById('welcomeView');
-        const chatStream = document.getElementById('chatStream');
-        const chatHistoryList = document.getElementById('chatHistoryList');
-
-        // Enable send button when typing
-        promptInput.addEventListener('input', () => {
-            sendBtn.disabled = promptInput.value.trim() === '';
-        });
-
-        function autoResize(textarea) {
-            textarea.style.height = 'auto';
-            textarea.style.height = textarea.scrollHeight + 'px';
+        function shareToast() {
+            showToast("Content copied to clipboard successfully!");
         }
 
-        function handleKey(event) {
-            if (event.key === 'Enter' && !event.shiftKey) {
-                event.preventDefault();
-                if (!sendBtn.disabled) submitPrompt();
-            }
-        }
-
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            sidebar.classList.toggle('-translate-x-full');
-        }
-
-        function toggleTheme() {
-            const html = document.documentElement;
-            const icon = document.getElementById('themeIcon');
-            html.classList.toggle('dark');
-            if (html.classList.contains('dark')) {
-                icon.className = 'fa-solid fa-sun';
-            } else {
-                icon.className = 'fa-solid fa-moon';
-            }
-        }
-
-        function resetToHome() {
-            currentChatId = null;
-            welcomeView.classList.remove('hidden');
-            chatStream.classList.add('hidden');
-            chatStream.innerHTML = '';
-            promptInput.value = '';
-            sendBtn.disabled = true;
-        }
-
-        function createNewChat() {
-            resetToHome();
-            toggleSidebar();
-        }
-
-        function sendPromptCard(text) {
-            promptInput.value = text;
-            sendBtn.disabled = false;
-            submitPrompt();
-        }
-
-        function submitPrompt() {
-            const text = promptInput.value.trim();
-            if (!text) return;
-
-            if (!currentChatId) {
-                currentChatId = 'chat_' + Date.now();
-                chats.unshift({ id: currentChatId, title: text.slice(0, 30) + '...', messages: [] });
-                renderChatHistory();
-            }
-
-            welcomeView.classList.add('hidden');
-            chatStream.classList.remove('hidden');
-
-            // Append User Message
-            appendMessage('user', text);
-            promptInput.value = '';
-            promptInput.style.height = 'auto';
-            sendBtn.disabled = true;
-
-            // Simulate Gemini Response with loading / typing effect
+        function tryGemini() {
+            showToast("Redirecting to active Gemini session workspace...");
             setTimeout(() => {
-                const responseText = generateMockResponse(text);
-                appendMessage('gemini', responseText);
-            }, 600);
-        }
-
-        function appendMessage(sender, text) {
-            const messageDiv = document.createElement('div');
-            messageDiv.className = `flex gap-4 w-full ${sender === 'user' ? 'justify-end' : 'justify-start'}`;
-
-            if (sender === 'gemini') {
-                messageDiv.innerHTML = `
-                    <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-purple-500 to-blue-500 flex items-center justify-center text-white text-xs shrink-0 mt-1">
-                        <i class="fa-solid fa-sparkles"></i>
-                    </div>
-                    <div class="flex flex-col gap-2 max-w-[85%] text-sm text-[#e3e3e3] leading-relaxed bg-[#1e1f20] p-4 rounded-2xl">
-                        <div>${formatMarkdown(text)}</div>
-                    </div>
-                `;
-            } else {
-                messageDiv.innerHTML = `
-                    <div class="bg-[#282a2c] text-[#e3e3e3] px-5 py-3 rounded-2xl max-w-[80%] text-sm leading-relaxed">
-                        ${escapeHtml(text)}
-                    </div>
-                `;
-            }
-
-            chatStream.appendChild(messageDiv);
-            chatStream.scrollTop = chatStream.scrollHeight;
-        }
-
-        function generateMockResponse(query) {
-            query = query.toLowerCase();
-            if (query.includes('sci-fi') || query.includes('book')) {
-                return `Sure, here is a list of well-known sci-fi books with descriptions:<br/><br/>
-                <table class="w-full border-collapse my-2 text-left text-xs">
-                    <thead>
-                        <tr class="bg-[#333537] text-[#e3e3e3]">
-                            <th class="p-2 border border-[#444746]">Book</th>
-                            <th class="p-2 border border-[#444746]">Author</th>
-                            <th class="p-2 border border-[#444746]">Year</th>
-                            <th class="p-2 border border-[#444746]">Description</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td class="p-2 border border-[#444746]">Dune</td>
-                            <td class="p-2 border border-[#444746]">Frank Herbert</td>
-                            <td class="p-2 border border-[#444746]">1965</td>
-                            <td class="p-2 border border-[#444746]">Set on the desert planet Arrakis, centering on Paul Atreides.</td>
-                        </tr>
-                        <tr>
-                            <td class="p-2 border border-[#444746]">Neuromancer</td>
-                            <td class="p-2 border border-[#444746]">William Gibson</td>
-                            <td class="p-2 border border-[#444746]">1984</td>
-                            <td class="p-2 border border-[#444746]">A foundational cyberpunk novel about a washed-up computer hacker.</td>
-                        </tr>
-                    </tbody>
-                </table>`;
-            } else if (query.includes('movie') || query.includes('marathon')) {
-                return `How to Set Up the Perfect Movie Marathon Night with Friends:<br/>
-                1. <strong>Choose your theme:</strong> Pick a coherent cinematic universe or trilogy like Lord of the Rings or Back to the Future.<br/>
-                2. <strong>Snacks and Refreshments:</strong> Prepare custom popcorn bowls, pizzas, and themed beverages.<br/>
-                3. <strong>Comfortable Seating:</strong> Arrange cushions, blankets, and bean bags for maximum relaxation.`;
-            } else if (query.includes('fashion') || query.includes('retro')) {
-                return `New fashion trend inspired by retro styles:<br/>
-                <strong>The Neo-Glam Revival</strong> takes inspiration from 1970s and 1980s silhouettes, featuring bold metallic suits, vibrant color blocking, and statement outerwear.`;
-            } else {
-                return `That is an interesting topic! Based on your query about "${query}", here is a helpful breakdown of insights and next steps you can take to explore further. Let me know if you would like to refine this or export it directly to Google Docs or Gmail!`;
-            }
-        }
-
-        function formatMarkdown(text) {
-            return text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-        }
-
-        function escapeHtml(str) {
-            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-        }
-
-        function renderChatHistory() {
-            chatHistoryList.innerHTML = '';
-            chats.forEach(chat => {
-                const item = document.createElement('div');
-                item.className = 'px-3 py-2 rounded-lg hover:bg-[#333537] text-xs text-[#c4c7c5] cursor-pointer truncate transition';
-                item.innerText = chat.title;
-                item.onclick = () => loadChat(chat.id);
-                chatHistoryList.appendChild(item);
-            });
-        }
-
-        function loadChat(chatId) {
-            currentChatId = chatId;
-            const chat = chats.find(c => c.id === chatId);
-            if (chat) {
-                welcomeView.classList.add('hidden');
-                chatStream.classList.remove('hidden');
-                chatStream.innerHTML = '';
-                chat.messages.forEach(msg => appendMessage(msg.sender, msg.text));
-            }
-        }
-
-        function triggerUpload() {
-            // Custom modal / notification instead of alert()
-            showToast("File upload capability simulated successfully.");
-        }
-
-        function openSettings() {
-            showToast("Personal Context & Settings panel.");
+                window.location.reload();
+            }, 1000);
         }
 
         function showToast(message) {
+            const existing = document.getElementById('toastNotification');
+            if (existing) existing.remove();
+
             const toast = document.createElement('div');
-            toast.className = 'fixed bottom-20 left-1/2 -translate-x-1/2 bg-[#282a2c] text-[#e3e3e3] text-xs px-4 py-2 rounded-xl shadow-xl z-50 border border-[#444746] animate-fade-in';
+            toast.id = 'toastNotification';
+            toast.className = 'fixed bottom-24 left-1/2 -translate-x-1/2 bg-[#282a2c] text-[#e3e3e3] text-xs px-4 py-2.5 rounded-xl shadow-2xl z-50 border border-[#444746] transition-all duration-300';
             toast.innerText = message;
             document.body.appendChild(toast);
             setTimeout(() => toast.remove(), 2500);
