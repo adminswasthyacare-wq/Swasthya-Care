@@ -34,7 +34,7 @@
         const db = firebase.firestore();
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
-        const catalogGoogleSheetCsvUrl = "https://docs.google.com/spreadsheets/d/1KJetR16PvkUbaGhb-lHkNS2zGNUJKtKmVcwXGPpoyB0/export?format=csv";
+        const catalogGithubCsvUrl = "https://raw.githubusercontent.com/swasthyacare/Swasthya-Care/refs/heads/main/swasthya_care_catalog_complete.csv";
         const bookingGoogleSheetUrl = "https://docs.google.com/spreadsheets/d/1lFkrSc4hMtbj-Wll09Fhvhjy88_fZHzaqtWjyprZIao/edit?usp=sharing";
 
         const Icon = ({ name, className = "w-5 h-5", ...props }) => {
@@ -345,7 +345,7 @@
 
         function App() {
           const [packages, setPackages] = useState(() => {
-              const saved = localStorage.getItem('swasthya_catalog_v3');
+              const saved = localStorage.getItem('swasthya_catalog_v4');
               if (saved) {
                   try { return JSON.parse(saved); } catch(e) {}
               }
@@ -381,11 +381,11 @@
           const [adminCsvInput, setAdminCsvInput] = useState('');
           const [adminFeedback, setAdminFeedback] = useState('');
 
-          // Secure Email OTP Reset state (No exposed email hints on UI)
+          // Secure Email OTP Reset state
           const [showOtpModal, setShowOtpModal] = useState(false);
-          const [resetEmail, setResetEmail] = useState('');
+          const [resetEmailInput, setResetEmailInput] = useState('');
           const [otpSent, setOtpSent] = useState(false);
-          const [generatedOtp, setGeneratedOtp] = useState('');
+          const [internalSecretOtp, setInternalSecretOtp] = useState('');
           const [otpInput, setOtpInput] = useState('');
           const [newPasswordInput, setNewPasswordInput] = useState('');
           const [otpMessage, setOtpMessage] = useState('');
@@ -411,10 +411,9 @@
           const [customParamInput, setCustomParamInput] = useState({});
           const [collapsedCategories, setCollapsedCategories] = useState({});
 
-          // Load catalog from Google Sheet CSV or Firestore on startup
+          // Fetch catalog from GitHub raw CSV URL on startup
           useEffect(() => {
-              // Try fetching from Google Sheet CSV published URL
-              fetch(catalogGoogleSheetCsvUrl)
+              fetch(catalogGithubCsvUrl)
                   .then(res => res.text())
                   .then(text => {
                       if (text && text.includes(',')) {
@@ -455,33 +454,18 @@
                               }
                               if (parsedPkgs.length > 0) {
                                   setPackages(parsedPkgs);
-                                  localStorage.setItem('swasthya_catalog_v3', JSON.stringify(parsedPkgs));
+                                  localStorage.setItem('swasthya_catalog_v4', JSON.stringify(parsedPkgs));
                               }
                           }
                       }
                   })
-                  .catch(err => console.warn("Google Sheet catalog fetch note:", err));
+                  .catch(err => console.warn("GitHub catalog fetch note:", err));
           }, []);
 
-          useEffect(() => {
-              if (!user) return;
-              try {
-                  const docRef = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('catalog').doc('main_catalog');
-                  docRef.get().then(docSnap => {
-                      if (docSnap.exists && docSnap.data().packages) {
-                          const remotePkgs = docSnap.data().packages;
-                          setPackages(remotePkgs);
-                          localStorage.setItem('swasthya_catalog_v3', JSON.stringify(remotePkgs));
-                      }
-                  }).catch(err => console.warn("Catalog sync warning:", err));
-              } catch(e) {
-                  console.warn("Catalog load note:", e);
-              }
-          }, [user]);
-
+          // Sync catalog to Firestore and localStorage
           const persistCatalog = async (updatedPkgs) => {
               setPackages(updatedPkgs);
-              localStorage.setItem('swasthya_catalog_v3', JSON.stringify(updatedPkgs));
+              localStorage.setItem('swasthya_catalog_v4', JSON.stringify(updatedPkgs));
               try {
                   if (user) {
                       await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('catalog').doc('main_catalog').set({ packages: updatedPkgs });
@@ -1582,7 +1566,7 @@
                                       <input type="password" required value={adminPasswordInput} onChange={e => setAdminPasswordInput(e.target.value)} placeholder="Enter password..." className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl mb-3 text-sm outline-none" />
                                       {adminAuthError && <p className="text-xs text-red-600 font-bold mb-3">Incorrect password.</p>}
                                       <div className="flex items-center justify-between mb-4">
-                                          <button type="button" onClick={() => { setShowOtpModal(true); setResetEmail(''); setOtpSent(false); setOtpMessage(''); }} className="text-xs text-teal-700 font-bold hover:underline flex items-center">
+                                          <button type="button" onClick={() => { setShowOtpModal(true); setResetEmailInput(''); setOtpSent(false); setOtpMessage(''); }} className="text-xs text-teal-700 font-bold hover:underline flex items-center">
                                               <Icon name="mail" className="w-3.5 h-3.5 mr-1" /> Reset Password via Email OTP
                                           </button>
                                       </div>
@@ -1595,16 +1579,16 @@
                                   <form onSubmit={(e) => {
                                       e.preventDefault();
                                       if (!otpSent) {
-                                          if (resetEmail.trim().toLowerCase() === 'admin.swasthyacare@gmail.com') {
+                                          if (resetEmailInput.trim().toLowerCase() === 'admin.swasthyacare@gmail.com') {
                                               const secureOtp = Math.floor(1000 + Math.random() * 9000).toString();
-                                              setGeneratedOtp(secureOtp);
+                                              setInternalSecretOtp(secureOtp);
                                               setOtpSent(true);
-                                              setOtpMessage('OTP has been securely sent from ajaydating1@gmail.com to admin.swasthyacare@gmail.com. Please check your inbox.');
+                                              setOtpMessage('OTP has been securely dispatched from ajaydating1@gmail.com to admin.swasthyacare@gmail.com inbox.');
                                           } else {
-                                              setOtpMessage('Please use correct admin email: admin.swasthyacare@gmail.com');
+                                              setOtpMessage('Please enter the registered admin email address.');
                                           }
                                       } else {
-                                          if (otpInput === generatedOtp && newPasswordInput.trim().length >= 6) {
+                                          if (otpInput === internalSecretOtp && newPasswordInput.trim().length >= 6) {
                                               setAdminPassword(newPasswordInput.trim());
                                               setAdminPasswordInput(newPasswordInput.trim());
                                               setShowOtpModal(false);
@@ -1615,13 +1599,13 @@
                                       }
                                   }}>
                                       <div className="mb-3">
-                                          <label className="block text-xs font-bold text-slate-700 mb-1">Admin Email</label>
-                                          <input type="email" required disabled={otpSent} value={resetEmail} onChange={e => setResetEmail(e.target.value)} placeholder="Enter admin email..." className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-mono" />
+                                          <label className="block text-xs font-bold text-slate-700 mb-1">Admin Email Address</label>
+                                          <input type="email" required disabled={otpSent} value={resetEmailInput} onChange={e => setResetEmailInput(e.target.value)} placeholder="Enter registered admin email..." className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm" />
                                       </div>
                                       {otpSent && (
                                           <>
                                               <div className="mb-3">
-                                                  <label className="block text-xs font-bold text-slate-700 mb-1">Enter OTP received</label>
+                                                  <label className="block text-xs font-bold text-slate-700 mb-1">Enter OTP received in inbox</label>
                                                   <input type="text" required value={otpInput} onChange={e => setOtpInput(e.target.value)} placeholder="4-digit OTP" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm" />
                                               </div>
                                               <div className="mb-3">
@@ -1630,7 +1614,7 @@
                                               </div>
                                           </>
                                       )}
-                                      {otpMessage && <p className={`text-xs font-bold mb-3 ${otpMessage.includes('successfully') || otpMessage.includes('sent') ? 'text-green-600' : 'text-red-600'}`}>{otpMessage}</p>}
+                                      {otpMessage && <p className={`text-xs font-bold mb-3 ${otpMessage.includes('successfully') || otpMessage.includes('dispatched') ? 'text-green-600' : 'text-red-600'}`}>{otpMessage}</p>}
                                       <div className="flex justify-end space-x-2">
                                           <button type="button" onClick={() => setShowOtpModal(false)} className="px-4 py-2 bg-slate-100 rounded-xl text-xs font-bold">Back</button>
                                           <button type="submit" className="px-5 py-2 bg-teal-900 text-yellow-400 rounded-xl text-xs font-bold">{otpSent ? 'Update Password' : 'Send OTP'}</button>
