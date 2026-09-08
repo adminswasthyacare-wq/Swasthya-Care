@@ -4,14 +4,18 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Swasthya Care - Test Today. A Healthier Tomorrow.</title>
+    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- React & ReactDOM -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <!-- Babel Standalone -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <!-- Firebase SDKs -->
+    <!-- Firebase Compat SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; }
@@ -26,7 +30,16 @@
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
-        // Inline SVG Icon components for reliability
+        // Initialize Firebase Compat
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : { apiKey: "demo", projectId: "demo" };
+        if (!firebase.apps.length) {
+            firebase.initializeApp(firebaseConfig);
+        }
+        const auth = firebase.auth();
+        const db = firebase.firestore();
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+
+        // SVG Icon Component
         const Icon = ({ name, className = "w-5 h-5", ...props }) => {
             const icons = {
                 activity: <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>,
@@ -59,6 +72,7 @@
                 chevronDown: <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>,
                 chevronUp: <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="m18 15-6-6-6 6"/></svg>,
                 upload: <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4m14-7-5-5-5 5m5-5v12"/></svg>,
+                download: <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4m7-10v12m0 0l-4-4m4 4l4-4"/></svg>,
                 file: <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6m-4 10H8m4-4H8m8-4H8"/></svg>,
                 save: <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>,
                 mail: <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>,
@@ -82,6 +96,7 @@
             image: "https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&w=600&q=80",
             gender: "All",
             dealType: "Wellness Bundle",
+            modifiedDate: "2026-03-01",
             bodyParts: ["cardiovascular", "kidney", "metabolic", "blood", "respiratory"],
             includes: "Blood Glucose Fasting, ESR, Complete Blood Count, KFT, Lipid Profile, Liver Function Test, Thyroid Profile",
             detailedParameters: [
@@ -105,6 +120,7 @@
             image: "https://images.unsplash.com/photo-1584515979956-d9f6e5d09982?auto=format&fit=crop&w=600&q=80",
             gender: "All",
             dealType: "Lab Atoms",
+            modifiedDate: "2026-03-02",
             bodyParts: ["bone", "blood", "immune"],
             includes: "ASO Titre, CRP, ESR, Rheumatoid Arthritis Factor, Uric Acid, Complete Blood Count",
             detailedParameters: [
@@ -125,6 +141,7 @@
             image: "https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?auto=format&fit=crop&w=600&q=80",
             gender: "All",
             dealType: "Wellness Bundle",
+            modifiedDate: "2026-03-03",
             bodyParts: ["cardiovascular", "kidney", "metabolic", "blood", "liver", "intestine", "respiratory"],
             includes: "BGF, ESR, CBC, HbA1c, Iron Studies, KFT, Lipid Profile, LFT, Thyroid Profile",
             detailedParameters: [
@@ -145,6 +162,7 @@
             image: "https://images.unsplash.com/photo-1516549655169-df83a0774514?auto=format&fit=crop&w=600&q=80",
             gender: "All",
             dealType: "Organ Health",
+            modifiedDate: "2026-03-04",
             bodyParts: ["blood", "metabolic", "immune", "kidney", "cardiovascular"],
             includes: "Anti HCV, BUN, Creatinine, ESR, HBV, HIV, RBS, RPR, TSH, Blood Group, CBC, PT INR",
             detailedParameters: [
@@ -165,6 +183,7 @@
             image: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=600&q=80",
             gender: "All",
             dealType: "Lab Atoms",
+            modifiedDate: "2026-03-05",
             bodyParts: ["bone", "blood", "immune"],
             includes: "ASO Titre, CCP Antibody, CRP, ESR, RA Test, Uric Acid, Complete Blood Count",
             detailedParameters: [
@@ -184,6 +203,7 @@
             image: "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=600&q=80",
             gender: "Female",
             dealType: "Organ Health",
+            modifiedDate: "2026-03-06",
             bodyParts: ["female_reproductive"],
             includes: "HPV-Human Papilloma Virus DNA Detection, PAP Smear Cytology LBC",
             detailedParameters: [
@@ -204,6 +224,7 @@
             popular: true,
             gender: "All",
             dealType: "Wellness Bundle",
+            modifiedDate: "2026-03-06",
             bodyParts: ["cardiovascular", "kidney", "metabolic", "blood", "bone", "respiratory", "thyroid"],
             includes: "BGF, ESR, Vitamin B12, Vitamin D, CBC, HbA1c, Iron Studies, KFT, Lipid, LFT, Thyroid",
             detailedParameters: [
@@ -224,6 +245,7 @@
             image: "https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=600&q=80",
             gender: "Male",
             dealType: "Wellness Bundle",
+            modifiedDate: "2026-03-06",
             bodyParts: ["cardiovascular", "kidney", "metabolic", "blood", "bone", "male_reproductive", "immune", "liver"],
             includes: "BGF, ESR, IgE, Testosterone, B12, D, CBC, HbA1c, Iron, KFT, Lipid Adv, LFT, Thyroid, Urine",
             detailedParameters: [
@@ -243,6 +265,7 @@
             image: "https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=600&q=80",
             gender: "Female",
             dealType: "Wellness Bundle",
+            modifiedDate: "2026-03-06",
             bodyParts: ["cardiovascular", "kidney", "metabolic", "blood", "bone", "female_reproductive", "immune", "thyroid"],
             includes: "BGF, ESR, FSH, IgE, LH, Prolactin, B12, D, CBC, HbA1c, Iron, KFT, Lipid Adv, LFT, Thyroid, Urine",
             detailedParameters: [
@@ -262,6 +285,7 @@
             image: "https://images.unsplash.com/photo-1530497610245-94d3c16cda28?auto=format&fit=crop&w=600&q=80",
             gender: "All",
             dealType: "Wellness Bundle",
+            modifiedDate: "2026-03-06",
             bodyParts: ["cardiovascular", "kidney", "metabolic", "blood", "bone", "immune", "respiratory", "thyroid", "liver"],
             includes: "BGF, CRP, ESR, RA, Vitamin B12, Vitamin D, CBC, HbA1c, Iron, KFT, Lipid Adv, LFT, Thyroid",
             detailedParameters: [
@@ -281,6 +305,7 @@
             image: "https://images.unsplash.com/photo-1579154204601-01588f351e67?auto=format&fit=crop&w=600&q=80",
             gender: "All",
             dealType: "Wellness Bundle",
+            modifiedDate: "2026-03-06",
             bodyParts: ["cardiovascular", "kidney", "metabolic", "blood", "bone", "immune", "liver", "intestine", "respiratory", "thyroid"],
             includes: "Amylase, Apolipoproteins, BGF, ESR, HBV, HsCRP, B12, D, CBC, HbA1c, Iron, KFT, Lipid, LFT, Thyroid, Urine",
             detailedParameters: [
@@ -300,6 +325,7 @@
             image: "https://images.unsplash.com/photo-1615461066841-6116e61058f4?auto=format&fit=crop&w=600&q=80",
             gender: "All",
             dealType: "Lab Atoms",
+            modifiedDate: "2026-03-06",
             bodyParts: ["blood", "immune"],
             includes: "Beta 2 Glycoprotein IgG/IgM, Cardiolipin ACL-IgG/IgM, Lupus Anticoagulant Confirmatory",
             detailedParameters: [
@@ -435,6 +461,39 @@
           };
 
           useEffect(() => {
+              const initAuth = async () => {
+                  try {
+                      if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                          await auth.signInWithCustomToken(__initial_auth_token);
+                      } else {
+                          await auth.signInAnonymously();
+                      }
+                  } catch(e) {
+                      console.warn("Auth initialization warning:", e);
+                  }
+              };
+              initAuth();
+              const unsubscribe = auth.onAuthStateChanged(setUser);
+              return () => unsubscribe();
+          }, []);
+
+          useEffect(() => {
+              if (!user || view !== 'admin') return;
+              try {
+                  const unsubscribe = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('bookings')
+                      .onSnapshot((snapshot) => {
+                          const b = [];
+                          snapshot.forEach(doc => b.push({ id: doc.id, ...doc.data() }));
+                          b.sort((x, y) => (y.timestamp || 0) - (x.timestamp || 0));
+                          setBookings(b);
+                      }, (error) => console.error("Firestore Error: ", error));
+                  return () => unsubscribe();
+              } catch(e) {
+                  console.warn("Firestore snapshot warning:", e);
+              }
+          }, [user, view]);
+
+          useEffect(() => {
               const timer = setTimeout(() => setLoaded(true), 100);
               return () => clearTimeout(timer);
           }, []);
@@ -529,7 +588,7 @@
                   }
               }
               setPackages(updatedPackages);
-              setAdminFeedback(`Successfully imported/updated ${importedCount} packages from Excel/CSV! ✓`);
+              setAdminFeedback(`Successfully imported/updated ${importedCount} packages from CSV! ✓`);
           };
 
           const handleFileUpload = (e) => {
@@ -552,42 +611,22 @@
               reader.readAsArrayBuffer(file);
           };
 
-          const copyBookingsToClipboardForGoogleSheets = () => {
-              if (bookings.length === 0) {
-                  setAdminFeedback("No bookings available to copy.");
-                  return;
-              }
-              let tsvContent = "BookingDate\tPrimaryPatientName\tAge\tGender\tContact\tEmail\tAddress\tPreferredSlot\tTotalAmount\tAssignedTestsAndMembers\n";
-              bookings.forEach(b => {
-                  const date = new Date(b.timestamp).toLocaleString();
-                  const name = b.primaryBooking?.name || '';
-                  const age = b.primaryBooking?.age || '';
-                  const gender = b.primaryBooking?.gender || '';
-                  const contact = b.primaryBooking?.contact || '';
-                  const email = b.primaryBooking?.email || '';
-                  const addr = `${b.primaryBooking?.houseNo || ''}, ${b.primaryBooking?.street || ''}, ${b.primaryBooking?.city || ''} - ${b.primaryBooking?.pincode || ''}`;
-                  const slot = `${b.primaryBooking?.preferredDate || ''} (${b.primaryBooking?.preferredTime || ''})`;
-                  const amount = b.totalAmount || 0;
-                  
-                  let testsSummary = [];
-                  const primaryCart = b.patientAssignments?.['primary'] || b.cart || [];
-                  testsSummary.push(`[Primary: ${name}] -> ${primaryCart.map(id => packages.find(p => p.id === Number(id))?.name || id).join(', ')}`);
-                  
-                  if (b.familyMembers) {
-                      b.familyMembers.forEach(m => {
-                          const mCart = b.patientAssignments?.[m.id] || [];
-                          testsSummary.push(`[Family: ${m.name || 'Member'}] -> ${mCart.map(id => packages.find(p => p.id === Number(id))?.name || id).join(', ')}`);
-                      });
-                  }
-                  tsvContent += `${date}\t${name}\t${age}\t${gender}\t${contact}\t${email}\t${addr}\t${slot}\t${amount}\t"${testsSummary.join(' | ')}"\n`;
+          const downloadCsvCatalog = () => {
+              let csvContent = "PackageName,DealType,MRP,Price,Gender,TestsCount,ParametersCount\n";
+              packages.forEach(p => {
+                  const testsCount = p.detailedParameters ? p.detailedParameters.length : 1;
+                  const paramsCount = p.detailedParameters ? p.detailedParameters.reduce((acc, c) => acc + (c.items ? c.items.length : 0), 1) : 1;
+                  csvContent += `"${p.name}","${p.dealType || 'Lab Atoms'}",${p.mrp},${p.price},"${p.gender || 'All'}",${testsCount},${paramsCount}\n`;
               });
-              
-              navigator.clipboard.writeText(tsvContent).then(() => {
-                  setAdminFeedback("Bookings copied to clipboard! Open your Google Sheet and press Ctrl+V to populate instantly. ✓");
-                  window.open(googleSheetUrl, '_blank');
-              }).catch(err => {
-                  setAdminFeedback("Clipboard write failed. Please check browser permissions.");
-              });
+              const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+              const url = URL.createObjectURL(blob);
+              const link = document.createElement("a");
+              link.setAttribute("href", url);
+              link.setAttribute("download", "swasthya_care_catalog.csv");
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+              setAdminFeedback("CSV Catalog downloaded successfully! ✓");
           };
 
           const handleSort = (key) => {
@@ -806,6 +845,14 @@
                   totalAmount, timestamp: Date.now(), status: 'New'
               };
 
+              try {
+                  if (user) {
+                      await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('bookings').add(bookingData);
+                  }
+              } catch (err) {
+                  console.warn("Firestore save note:", err);
+              }
+
               setBookings(prev => [bookingData, ...prev]);
 
               let msg = `*New Booking from Swasthya Care*\n\n`;
@@ -870,7 +917,7 @@
                           </div>
                       )}
 
-                      {}
+                      {/* Menu View */}
                       {view === 'menu' && (
                           <div className="max-w-7xl mx-auto px-4 py-10 sm:px-6 lg:px-8">
                               <div className={`text-center mb-12 transition-all duration-1000 transform ${loaded ? 'translate-y-0 opacity-100' : '-translate-y-12 opacity-0'}`}>
@@ -1036,7 +1083,7 @@
                                                   <div className="p-6 flex flex-col flex-grow">
                                                       <div className="flex items-center space-x-2 mb-2">
                                                           <div className={`p-2 rounded-lg ${pkg.color}`}>
-                                                              <Icon name={pkg.iconName} className="w-5 h-5" />
+                                                              <Icon name={pkg.iconName || 'activity'} className="w-5 h-5" />
                                                           </div>
                                                           <h3 className="text-lg font-bold text-slate-800 leading-tight">{pkg.name}</h3>
                                                       </div>
@@ -1095,7 +1142,7 @@
                           </div>
                       )}
 
-                      {}
+                      {/* Checkout View */}
                       {view === 'checkout' && (
                           <div className="max-w-4xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
                               <button onClick={() => setView('menu')} className="flex items-center text-teal-700 hover:text-teal-900 font-semibold mb-8 group">
@@ -1250,7 +1297,7 @@
                           </div>
                       )}
 
-                      {}
+                      {/* Success View */}
                       {view === 'success' && (
                           <div className="max-w-2xl mx-auto px-4 py-20 text-center animate-in zoom-in duration-500">
                               <div className="inline-flex items-center justify-center w-24 h-24 bg-teal-100 rounded-full mb-8">
@@ -1264,25 +1311,156 @@
                           </div>
                       )}
 
+                      {}
                       {view === 'admin' && (
                           <div className="max-w-7xl mx-auto px-4 py-12">
-                              <div className="flex justify-between items-center mb-8">
+                              <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
                                   <h2 className="text-3xl font-extrabold text-teal-950 flex items-center">
                                       <Icon name="lock" className="w-8 h-8 mr-3 text-teal-700" /> Lab Admin Dashboard
                                   </h2>
                                   <div className="flex items-center space-x-3">
-                                      <button onClick={copyBookingsToClipboardForGoogleSheets} className="bg-emerald-700 text-white px-4 py-2.5 rounded-xl font-bold text-xs flex items-center shadow">
-                                          <Icon name="copy" className="w-4 h-4 mr-2" /> Copy Data for Google Sheets
-                                      </button>
-                                      <button onClick={() => setView('menu')} className="bg-slate-200 text-slate-800 px-4 py-2.5 rounded-xl font-bold text-xs">Exit Admin</button>
+                                      <a
+                                          href={googleSheetUrl}
+                                          target="_blank"
+                                          rel="noreferrer"
+                                          className="bg-emerald-700 hover:bg-emerald-800 text-white px-5 py-2.5 rounded-xl font-bold text-xs flex items-center shadow transition-colors"
+                                      >
+                                          <Icon name="external" className="w-4 h-4 mr-2" /> Open Google Sheet to View Bookings List
+                                      </a>
+                                      <button onClick={() => setView('menu')} className="bg-slate-200 text-slate-800 px-4 py-2.5 rounded-xl font-bold text-xs hover:bg-slate-300 transition-colors">Exit Admin</button>
                                   </div>
                               </div>
 
+                              {/* CSV Upload & Download Manager */}
                               <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-6 md:p-8 mb-8">
-                                  <h3 className="text-lg font-extrabold text-teal-950 mb-4">Bulk CSV Test & Pricing Manager</h3>
-                                  <textarea rows="3" value={adminCsvInput} onChange={e => setAdminCsvInput(e.target.value)} placeholder="PackageName,DealType,MRP,Price,Gender" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-mono text-xs mb-4" />
-                                  <button onClick={() => handleCsvImport(adminCsvInput)} className="px-6 py-2 bg-teal-900 text-yellow-400 rounded-xl font-bold text-xs shadow">Sync Catalog</button>
+                                  <div className="flex justify-between items-center mb-4">
+                                      <h3 className="text-lg font-extrabold text-teal-950">Bulk CSV Test & Pricing Manager</h3>
+                                      <button
+                                          onClick={downloadCsvCatalog}
+                                          className="bg-teal-50 hover:bg-teal-100 border border-teal-200 text-teal-900 px-4 py-2 rounded-xl text-xs font-bold flex items-center transition-colors shadow-sm"
+                                      >
+                                          <Icon name="download" className="w-4 h-4 mr-1.5 text-teal-700" /> Download Catalog CSV
+                                      </button>
+                                  </div>
+                                  <div className="mb-4">
+                                      <label className="block text-xs font-bold text-slate-700 mb-2">Upload CSV File</label>
+                                      <input 
+                                          type="file" 
+                                          accept=".csv, .txt" 
+                                          onChange={handleFileUpload}
+                                          className="block w-full text-xs text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100 cursor-pointer border border-slate-200 rounded-xl bg-slate-50 p-2"
+                                      />
+                                  </div>
+                                  <textarea rows="3" value={adminCsvInput} onChange={e => setAdminCsvInput(e.target.value)} placeholder="PackageName,DealType,MRP,Price,Gender" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-mono text-xs mb-4 outline-none focus:ring-1 focus:ring-teal-500" />
+                                  <button onClick={() => handleCsvImport(adminCsvInput)} className="px-6 py-2.5 bg-teal-900 hover:bg-teal-800 text-yellow-400 rounded-xl font-bold text-xs shadow transition-colors">Sync Catalog</button>
                                   {adminFeedback && <p className="mt-3 text-xs font-bold text-teal-800">{adminFeedback}</p>}
+                              </div>
+
+                              {/* Active Catalog & Inventory Table with Multi-Delete & Sorting */}
+                              <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden mb-12">
+                                  <div className="p-6 border-b bg-slate-50 flex flex-col md:flex-row justify-between items-center gap-4">
+                                      <div>
+                                          <h3 className="font-extrabold text-teal-950 text-lg">Catalog & Test Inventory ({packages.length} Packages)</h3>
+                                          <p className="text-xs text-slate-500">Click column headers to sort • Filter tests • Select multiple to delete</p>
+                                      </div>
+                                      <div className="flex flex-wrap items-center gap-2">
+                                          <input
+                                              type="text"
+                                              value={adminSearchFilter}
+                                              onChange={e => setAdminSearchFilter(e.target.value)}
+                                              placeholder="Filter tests..."
+                                              className="px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-medium outline-none focus:ring-1 focus:ring-teal-500"
+                                          />
+                                          <select value={adminTypeFilter} onChange={e => setAdminTypeFilter(e.target.value)} className="bg-white border border-slate-200 text-xs font-bold text-teal-900 rounded-xl px-3 py-1.5 outline-none cursor-pointer">
+                                              <option value="all">All Deal Types</option>
+                                              <option value="Lab Atoms">Lab Atoms</option>
+                                              <option value="Organ Health">Organ Health</option>
+                                              <option value="Wellness Bundle">Wellness Bundle</option>
+                                          </select>
+                                          {selectedInventoryIds.length > 0 && (
+                                              <button
+                                                  onClick={() => {
+                                                      setPackages(packages.filter(p => !selectedInventoryIds.includes(p.id)));
+                                                      setSelectedInventoryIds([]);
+                                                      setAdminFeedback(`Successfully deleted ${selectedInventoryIds.length} packages.`);
+                                                  }}
+                                                  className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition-colors shadow"
+                                              >
+                                                  Delete Selected ({selectedInventoryIds.length})
+                                              </button>
+                                          )}
+                                      </div>
+                                  </div>
+                                  <div className="overflow-x-auto">
+                                      <table className="w-full text-left text-sm">
+                                          <thead className="bg-teal-900 text-white select-none">
+                                              <tr>
+                                                  <th className="p-4 w-10 text-center">
+                                                      <input 
+                                                          type="checkbox" 
+                                                          checked={selectedInventoryIds.length === packages.length && packages.length > 0}
+                                                          onChange={() => {
+                                                              if (selectedInventoryIds.length === packages.length) setSelectedInventoryIds([]);
+                                                              else setSelectedInventoryIds(packages.map(p => p.id));
+                                                          }}
+                                                          className="rounded text-teal-600 focus:ring-teal-500 w-4 h-4 cursor-pointer"
+                                                      />
+                                                  </th>
+                                                  <th className="p-4 font-semibold cursor-pointer hover:text-yellow-300" onClick={() => handleSort('name')}>
+                                                      Package Name {sortConfig.key === 'name' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : ''}
+                                                  </th>
+                                                  <th className="p-4 font-semibold cursor-pointer hover:text-yellow-300" onClick={() => handleSort('dealType')}>
+                                                      Deal Type {sortConfig.key === 'dealType' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : ''}
+                                                  </th>
+                                                  <th className="p-4 font-semibold cursor-pointer hover:text-yellow-300" onClick={() => handleSort('mrp')}>
+                                                      MRP (₹) {sortConfig.key === 'mrp' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : ''}
+                                                  </th>
+                                                  <th className="p-4 font-semibold cursor-pointer hover:text-yellow-300" onClick={() => handleSort('price')}>
+                                                      Price (₹) {sortConfig.key === 'price' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : ''}
+                                                  </th>
+                                                  <th className="p-4 font-semibold text-right">Actions</th>
+                                              </tr>
+                                          </thead>
+                                          <tbody className="divide-y divide-slate-100">
+                                              {sortedInventory.map(pkg => {
+                                                  const isChecked = selectedInventoryIds.includes(pkg.id);
+                                                  const calcTests = pkg.detailedParameters ? pkg.detailedParameters.length : 1;
+                                                  const calcParams = pkg.detailedParameters ? pkg.detailedParameters.reduce((acc, c) => acc + (c.items ? c.items.length : 0), 1) : 1;
+                                                  return (
+                                                      <tr key={pkg.id} className={`hover:bg-slate-50 transition-colors ${isChecked ? 'bg-teal-50/60' : ''}`}>
+                                                          <td className="p-4 text-center">
+                                                              <input 
+                                                                  type="checkbox" 
+                                                                  checked={isChecked}
+                                                                  onChange={() => setSelectedInventoryIds(prev => prev.includes(pkg.id) ? prev.filter(id => id !== pkg.id) : [...prev, pkg.id])}
+                                                                  className="rounded text-teal-600 focus:ring-teal-500 w-4 h-4 cursor-pointer"
+                                                              />
+                                                          </td>
+                                                          <td className="p-4 font-bold text-teal-900">
+                                                              {pkg.name}
+                                                              <span className="block text-[10px] text-slate-400 font-normal">{calcTests} Tests • {calcParams} Parameters</span>
+                                                          </td>
+                                                          <td className="p-4">
+                                                              <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold border bg-teal-100 text-teal-900 border-teal-200">
+                                                                  {pkg.dealType || 'Lab Atoms'}
+                                                              </span>
+                                                          </td>
+                                                          <td className="p-4 text-slate-500 line-through">₹{pkg.mrp}</td>
+                                                          <td className="p-4 font-extrabold text-emerald-700">₹{pkg.price}</td>
+                                                          <td className="p-4 text-right space-x-2">
+                                                              <button onClick={() => setEditingPackage({ ...pkg, detailedParameters: pkg.detailedParameters || [] })} className="text-teal-700 hover:text-teal-900 p-2 rounded-lg hover:bg-teal-50 transition-colors inline-block" title="Edit Parameters">
+                                                                  <Icon name="info" className="w-4 h-4" />
+                                                              </button>
+                                                              <button onClick={() => setPackages(packages.filter(p => p.id !== pkg.id))} className="text-red-500 hover:text-red-700 p-2 rounded-lg hover:bg-red-50 transition-colors inline-block" title="Delete">
+                                                                  <Icon name="trash" className="w-4 h-4" />
+                                                              </button>
+                                                          </td>
+                                                      </tr>
+                                                  );
+                                              })}
+                                          </tbody>
+                                      </table>
+                                  </div>
                               </div>
                           </div>
                       )}
@@ -1293,26 +1471,221 @@
                       © 2026 Swasthya Care Diagnostics. NABL & CAP Accredited Laboratories.
                   </footer>
 
-                  {/* Admin Password Modal */}
+                  {}
+                  {/* Admin Password & Email OTP Reset Modal */}
                   {adminModalOpen && (
                       <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
                           <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl">
-                              <h3 className="font-extrabold text-lg mb-4 text-teal-950">Lab Admin Login</h3>
+                              <h3 className="font-extrabold text-lg mb-4 text-teal-950 flex items-center">
+                                  <Icon name="lock" className="w-5 h-5 mr-2 text-teal-700" /> Lab Admin Login
+                              </h3>
+                              {!showOtpModal ? (
+                                  <form onSubmit={(e) => {
+                                      e.preventDefault();
+                                      if (adminPasswordInput === adminPassword) {
+                                          setAdminModalOpen(false);
+                                          setView('admin');
+                                          setAdminAuthError(false);
+                                      } else {
+                                          setAdminAuthError(true);
+                                      }
+                                  }}>
+                                      <input type="password" required value={adminPasswordInput} onChange={e => setAdminPasswordInput(e.target.value)} placeholder="Enter password..." className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl mb-3 text-sm outline-none" />
+                                      {adminAuthError && <p className="text-xs text-red-600 font-bold mb-3">Incorrect password.</p>}
+                                      <div className="flex items-center justify-between mb-4">
+                                          <button type="button" onClick={() => { setShowOtpModal(true); setResetEmail(''); setOtpSent(false); setOtpMessage(''); }} className="text-xs text-teal-700 font-bold hover:underline flex items-center">
+                                              <Icon name="mail" className="w-3.5 h-3.5 mr-1" /> Reset Password via Email OTP
+                                          </button>
+                                      </div>
+                                      <div className="flex justify-end space-x-2">
+                                          <button type="button" onClick={() => setAdminModalOpen(false)} className="px-4 py-2 bg-slate-100 rounded-xl text-xs font-bold">Cancel</button>
+                                          <button type="submit" className="px-5 py-2 bg-teal-900 text-yellow-400 rounded-xl text-xs font-bold">Login</button>
+                                      </div>
+                                  </form>
+                              ) : (
+                                  <form onSubmit={(e) => {
+                                      e.preventDefault();
+                                      if (!otpSent) {
+                                          if (resetEmail.trim().toLowerCase() === 'admin.swasthyacare@gmail.com') {
+                                              setOtpSent(true);
+                                              setOtpMessage('OTP sent to admin.swasthyacare@gmail.com (Hint: 1234) ✓');
+                                          } else {
+                                              setOtpMessage('Please use admin.swasthyacare@gmail.com');
+                                          }
+                                      } else {
+                                          if (otpInput === '1234' && newPasswordInput.trim().length >= 6) {
+                                              setAdminPassword(newPasswordInput.trim());
+                                              setAdminPasswordInput(newPasswordInput.trim());
+                                              setShowOtpModal(false);
+                                              setOtpMessage('Password updated successfully! You can now log in.');
+                                          } else {
+                                              setOtpMessage('Invalid OTP or password too short (min 6 chars).');
+                                          }
+                                      }
+                                  }}>
+                                      <div className="mb-3">
+                                          <label className="block text-xs font-bold text-slate-700 mb-1">Admin Email</label>
+                                          <input type="email" required disabled={otpSent} value={resetEmail} onChange={e => setResetEmail(e.target.value)} placeholder="admin.swasthyacare@gmail.com" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-mono" />
+                                      </div>
+                                      {otpSent && (
+                                          <>
+                                              <div className="mb-3">
+                                                  <label className="block text-xs font-bold text-slate-700 mb-1">Enter OTP (Hint: 1234)</label>
+                                                  <input type="text" required value={otpInput} onChange={e => setOtpInput(e.target.value)} placeholder="4-digit OTP" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm" />
+                                              </div>
+                                              <div className="mb-3">
+                                                  <label className="block text-xs font-bold text-slate-700 mb-1">New Password</label>
+                                                  <input type="password" required value={newPasswordInput} onChange={e => setNewPasswordInput(e.target.value)} placeholder="New password" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm" />
+                                              </div>
+                                          </>
+                                      )}
+                                      {otpMessage && <p className={`text-xs font-bold mb-3 ${otpMessage.includes('✓') ? 'text-green-600' : 'text-red-600'}`}>{otpMessage}</p>}
+                                      <div className="flex justify-end space-x-2">
+                                          <button type="button" onClick={() => setShowOtpModal(false)} className="px-4 py-2 bg-slate-100 rounded-xl text-xs font-bold">Back</button>
+                                          <button type="submit" className="px-5 py-2 bg-teal-900 text-yellow-400 rounded-xl text-xs font-bold">{otpSent ? 'Update Password' : 'Send OTP'}</button>
+                                      </div>
+                                  </form>
+                              )}
+                          </div>
+                      </div>
+                  )}
+
+                  {/* Package Parameters Detail Modal */}
+                  {selectedPackageModal && (
+                      <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+                          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 md:p-8 shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto flex flex-col">
+                              <div className="flex justify-between items-start mb-6 border-b pb-4">
+                                  <div>
+                                      <span className="text-xs uppercase font-extrabold tracking-wider text-teal-700 bg-teal-50 px-2.5 py-1 rounded-full">
+                                          {selectedPackageModal.detailedParameters ? selectedPackageModal.detailedParameters.length : 1} Tests Included
+                                      </span>
+                                      <h3 className="text-2xl font-extrabold text-teal-950 mt-2">{selectedPackageModal.name}</h3>
+                                  </div>
+                                  <button onClick={() => setSelectedPackageModal(null)} className="text-slate-400 hover:text-slate-600 bg-slate-100 p-2 rounded-full"><Icon name="x" className="w-5 h-5" /></button>
+                              </div>
+                              <div className="flex-1 space-y-4">
+                                  {selectedPackageModal.detailedParameters && selectedPackageModal.detailedParameters.map((cat, idx) => (
+                                      <div key={idx} className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                                          <h5 className="font-extrabold text-teal-900 text-sm mb-2 uppercase">{cat.category}</h5>
+                                          <ul className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                                              {cat.items.map((item, i) => (
+                                                  <li key={i} className="text-xs text-slate-600 flex items-center">
+                                                      <span className="w-1.5 h-1.5 bg-teal-600 rounded-full mr-2"></span>
+                                                      {item}
+                                                  </li>
+                                              ))}
+                                          </ul>
+                                      </div>
+                                  ))}
+                              </div>
+                              <div className="mt-6 border-t pt-4 flex justify-end">
+                                  <button onClick={() => setSelectedPackageModal(null)} className="bg-slate-900 text-white px-6 py-2.5 rounded-xl font-bold text-xs">Close</button>
+                              </div>
+                          </div>
+                      </div>
+                  )}
+
+                  {/* Edit Package & Parameters Modal */}
+                  {editingPackage && (
+                      <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+                          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 md:p-8 shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto flex flex-col">
+                              <div className="flex justify-between items-center mb-6 border-b pb-4 shrink-0">
+                                  <h3 className="text-xl font-extrabold text-teal-950">Edit Test & Parameters</h3>
+                                  <button onClick={() => setEditingPackage(null)} className="text-slate-400 hover:text-slate-600"><Icon name="x" className="w-5 h-5" /></button>
+                              </div>
                               <form onSubmit={(e) => {
                                   e.preventDefault();
-                                  if (adminPasswordInput === adminPassword) {
-                                      setAdminModalOpen(false);
-                                      setView('admin');
-                                      setAdminAuthError(false);
-                                  } else {
-                                      setAdminAuthError(true);
-                                  }
-                              }}>
-                                  <input type="password" required value={adminPasswordInput} onChange={e => setAdminPasswordInput(e.target.value)} placeholder="Enter password..." className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl mb-3 text-sm" />
-                                  {adminAuthError && <p className="text-xs text-red-600 font-bold mb-3">Incorrect password.</p>}
-                                  <div className="flex justify-end space-x-2">
-                                      <button type="button" onClick={() => setAdminModalOpen(false)} className="px-4 py-2 bg-slate-100 rounded-xl text-xs font-bold">Cancel</button>
-                                      <button type="submit" className="px-5 py-2 bg-teal-900 text-yellow-400 rounded-xl text-xs font-bold">Login</button>
+                                  const todayStr = new Date().toISOString().split('T')[0];
+                                  const finalizedPkg = { ...editingPackage, modifiedDate: todayStr };
+                                  setPackages(packages.map(p => p.id === editingPackage.id ? finalizedPkg : p));
+                                  setEditingPackage(null);
+                                  setAdminFeedback(`Successfully updated "${editingPackage.name}" ✓`);
+                              }} className="space-y-4 flex-1">
+                                  <div>
+                                      <label className="block text-xs font-bold text-slate-700 mb-1">Package Name</label>
+                                      <input type="text" required value={editingPackage.name} onChange={e => setEditingPackage({...editingPackage, name: e.target.value})} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold" />
+                                  </div>
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                      <div>
+                                          <label className="block text-xs font-bold text-slate-700 mb-1">Deal Type</label>
+                                          <select value={editingPackage.dealType || 'Lab Atoms'} onChange={e => setEditingPackage({ ...editingPackage, dealType: e.target.value })} className="w-full p-2.5 bg-white border border-slate-200 rounded-xl text-sm font-bold">
+                                              <option value="Lab Atoms">Lab Atoms</option>
+                                              <option value="Organ Health">Organ Health</option>
+                                              <option value="Wellness Bundle">Wellness Bundle</option>
+                                          </select>
+                                      </div>
+                                      <div>
+                                          <label className="block text-xs font-bold text-slate-700 mb-1">Gender</label>
+                                          <select value={editingPackage.gender} onChange={e => setEditingPackage({...editingPackage, gender: e.target.value})} className="w-full p-2.5 bg-white border border-slate-200 rounded-xl text-sm">
+                                              <option value="All">All</option>
+                                              <option value="Male">Male</option>
+                                              <option value="Female">Female</option>
+                                          </select>
+                                      </div>
+                                  </div>
+                                  <div className="grid grid-cols-2 gap-4">
+                                      <div>
+                                          <label className="block text-xs font-bold text-slate-700 mb-1">MRP (₹)</label>
+                                          <input type="number" required value={editingPackage.mrp} onChange={e => setEditingPackage({...editingPackage, mrp: Number(e.target.value)})} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm" />
+                                      </div>
+                                      <div>
+                                          <label className="block text-xs font-bold text-slate-700 mb-1">Price (₹)</label>
+                                          <input type="number" required value={editingPackage.price} onChange={e => setEditingPackage({...editingPackage, price: Number(e.target.value)})} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-emerald-700" />
+                                      </div>
+                                  </div>
+
+                                  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3">
+                                      <label className="block text-xs font-bold text-teal-950 uppercase">Add Test Categories & Parameters:</label>
+                                      <div className="flex gap-2">
+                                          <select value={selectedStandardAtom} onChange={e => setSelectedStandardAtom(e.target.value)} className="flex-1 p-2 bg-white border border-slate-200 rounded-xl text-xs font-medium outline-none">
+                                              <option value="">Select standard medical profile...</option>
+                                              {pathologyMedicalStandards.map((item, idx) => (
+                                                  <option key={idx} value={item.name}>{item.name} ({item.items.length} parameters)</option>
+                                              ))}
+                                          </select>
+                                          <button type="button" onClick={() => {
+                                              if (!selectedStandardAtom) return;
+                                              const existingParams = [...(editingPackage.detailedParameters || [])];
+                                              const found = pathologyMedicalStandards.find(s => s.name === selectedStandardAtom);
+                                              if (found) existingParams.push({ category: found.name, items: [...found.items] });
+                                              setEditingPackage({ ...editingPackage, detailedParameters: existingParams });
+                                              setSelectedStandardAtom('');
+                                          }} className="bg-teal-900 text-yellow-400 px-4 py-2 rounded-xl text-xs font-bold">Add</button>
+                                      </div>
+
+                                      <div className="mt-3 space-y-3">
+                                          {editingPackage.detailedParameters && editingPackage.detailedParameters.map((cat, cIdx) => (
+                                              <div key={cIdx} className="bg-white p-3 rounded-xl border border-slate-200 space-y-2">
+                                                  <div className="flex justify-between items-center">
+                                                      <span className="font-extrabold text-xs text-teal-950 uppercase">{cat.category}</span>
+                                                      <button type="button" onClick={() => {
+                                                          const newDetailed = editingPackage.detailedParameters.filter((_, idx) => idx !== cIdx);
+                                                          setEditingPackage({ ...editingPackage, detailedParameters: newDetailed });
+                                                      }} className="text-red-500 text-xs font-bold">Remove</button>
+                                                  </div>
+                                                  <div className="flex flex-wrap gap-1.5">
+                                                      {cat.items && cat.items.map((item, iIdx) => (
+                                                          <span key={iIdx} className="inline-flex items-center bg-teal-50 text-teal-900 text-[11px] font-medium px-2 py-0.5 rounded-lg border border-teal-100">
+                                                              {item}
+                                                              <button type="button" onClick={() => {
+                                                                  const updatedCatItems = cat.items.filter((_, i) => i !== iIdx);
+                                                                  const updatedDetailed = [...editingPackage.detailedParameters];
+                                                                  updatedDetailed[cIdx] = { ...cat, items: updatedCatItems };
+                                                                  setEditingPackage({ ...editingPackage, detailedParameters: updatedDetailed });
+                                                              }} className="ml-1.5 text-slate-400 hover:text-red-600 font-bold">×</button>
+                                                          </span>
+                                                      ))}
+                                                  </div>
+                                              </div>
+                                          ))}
+                                      </div>
+                                  </div>
+
+                                  <div className="mt-6 border-t pt-4 flex justify-end space-x-3">
+                                      <button type="button" onClick={() => setEditingPackage(null)} className="px-4 py-2 bg-slate-100 rounded-xl text-xs font-bold">Cancel</button>
+                                      <button type="submit" className="px-6 py-2 bg-teal-900 text-yellow-400 rounded-xl text-xs font-bold shadow flex items-center">
+                                          <Icon name="save" className="w-4 h-4 mr-1.5" /> Save Changes
+                                      </button>
                                   </div>
                               </form>
                           </div>
