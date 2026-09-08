@@ -36,6 +36,7 @@
 
         const catalogGithubCsvUrl = "https://raw.githubusercontent.com/swasthyacare/Swasthya-Care/refs/heads/main/swasthya_care_catalog_complete.csv";
         const bookingGoogleSheetUrl = "https://docs.google.com/spreadsheets/d/1lFkrSc4hMtbj-Wll09Fhvhjy88_fZHzaqtWjyprZIao/edit?usp=sharing";
+        const googleFormResponseUrl = "https://docs.google.com/forms/d/e/1FAIpQLSc_3k5J4pFkGwa0UQiWCwnGtkvmKK2ODnnWf4tNYL7v8cfy-g/formResponse";
 
         const Icon = ({ name, className = "w-5 h-5", ...props }) => {
             const icons = {
@@ -345,7 +346,7 @@
 
         function App() {
           const [packages, setPackages] = useState(() => {
-              const saved = localStorage.getItem('swasthya_catalog_v4');
+              const saved = localStorage.getItem('swasthya_catalog_v5');
               if (saved) {
                   try { return JSON.parse(saved); } catch(e) {}
               }
@@ -454,7 +455,7 @@
                               }
                               if (parsedPkgs.length > 0) {
                                   setPackages(parsedPkgs);
-                                  localStorage.setItem('swasthya_catalog_v4', JSON.stringify(parsedPkgs));
+                                  localStorage.setItem('swasthya_catalog_v5', JSON.stringify(parsedPkgs));
                               }
                           }
                       }
@@ -465,7 +466,7 @@
           // Sync catalog to Firestore and localStorage
           const persistCatalog = async (updatedPkgs) => {
               setPackages(updatedPkgs);
-              localStorage.setItem('swasthya_catalog_v4', JSON.stringify(updatedPkgs));
+              localStorage.setItem('swasthya_catalog_v5', JSON.stringify(updatedPkgs));
               try {
                   if (user) {
                       await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('catalog').doc('main_catalog').set({ packages: updatedPkgs });
@@ -707,7 +708,7 @@
               document.body.appendChild(link);
               link.click();
               document.body.removeChild(link);
-              setAdminFeedback("Complete CSV Catalog (with tests & parameters) downloaded successfully! ✓");
+              setAdminFeedback("Complete CSV Catalog downloaded successfully! ✓");
           };
 
           const handleSort = (key) => {
@@ -935,6 +936,62 @@
               }
 
               setBookings(prev => [bookingData, ...prev]);
+
+              try {
+                  const params = new URLSearchParams();
+                  params.append('entry.2081743895', primaryBooking.name);
+                  params.append('entry.1185613474', primaryBooking.age);
+                  params.append('entry.355616063', primaryBooking.gender);
+                  params.append('entry.117677843', primaryBooking.email);
+                  params.append('entry.879891554', primaryBooking.contact);
+                  const primaryTestsText = (patientAssignments['primary'] || []).map(id => packages.find(p => p.id === Number(id))?.name).join(', ');
+                  params.append('entry.1980597789', primaryTestsText);
+
+                  params.append('entry.301212135', primaryBooking.houseNo);
+                  params.append('entry.1663718205', primaryBooking.street);
+                  params.append('entry.1465751361', primaryBooking.city);
+                  params.append('entry.2062256884', primaryBooking.state);
+                  params.append('entry.1781117451', primaryBooking.pincode);
+
+                  params.append('entry.1799869280', primaryBooking.preferredDate);
+                  params.append('entry.1153238212', primaryBooking.preferredTime);
+
+                  const memberGateKeys = ['entry.69207541', 'entry.1709397952', 'entry.854885706', 'entry.467354812', 'entry.744811517', 'entry.242827812', 'entry.335678217', 'entry.1515140096'];
+                  const memberDetails = [
+                      { name: 'entry.136734234', age: 'entry.1242533497', sex: 'entry.89146318', tests: 'entry.1114817707' },
+                      { name: 'entry.2042604664', age: 'entry.965352541', sex: 'entry.307476274', tests: 'entry.1155658005' },
+                      { name: 'entry.2141818384', age: 'entry.1461594350', sex: 'entry.308075364', tests: 'entry.95612194' },
+                      { name: 'entry.54367789', age: 'entry.631924319', sex: 'entry.7525418', tests: 'entry.455344632' },
+                      { name: 'entry.2146259557', age: 'entry.1220619560', sex: 'entry.1845517565', tests: 'entry.1042378442' },
+                      { name: 'entry.2127545071', age: 'entry.533527972', sex: 'entry.691091223', tests: 'entry.2135669199' },
+                      { name: 'entry.1620058562', age: 'entry.718406955', sex: 'entry.1645240053', tests: 'entry.1682151942' },
+                      { name: 'entry.1337392333', age: 'entry.999997455', sex: 'entry.1725532128', tests: 'entry.1643975040' }
+                  ];
+
+                  for (let i = 0; i < memberDetails.length; i++) {
+                      const m = familyMembers[i];
+                      const gateKey = memberGateKeys[i];
+                      if (gateKey) {
+                          params.append(gateKey, m ? 'Yes' : 'No');
+                      }
+                      if (m) {
+                          const keys = memberDetails[i];
+                          params.append(keys.name, m.name || '');
+                          params.append(keys.age, m.age || '');
+                          params.append(keys.sex, m.gender || '');
+                          const mTestsText = (patientAssignments[m.id] || []).map(id => packages.find(p => p.id === Number(id))?.name).join(', ');
+                          params.append(keys.tests, mTestsText);
+                      }
+                  }
+
+                  fetch(googleFormResponseUrl, {
+                      method: 'POST',
+                      mode: 'no-cors',
+                      body: params
+                  }).catch(err => console.warn('Background Google Form submission note:', err));
+              } catch(e) {
+                  console.warn('Form dispatch note:', e);
+              }
 
               let msg = `*New Booking from Swasthya Care*\n\n`;
               msg += `*Primary Patient / Billing Name:*\nName: ${primaryBooking.name}\nAge: ${primaryBooking.age}\nSex: ${primaryBooking.gender}\nEmail: ${primaryBooking.email}\nContact: ${primaryBooking.contact}\n`;
