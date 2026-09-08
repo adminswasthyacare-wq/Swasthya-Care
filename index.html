@@ -1,196 +1,1360 @@
-<!doctype html>
-<html lang="en-GB" dir="ltr" class="dark">
+<!DOCTYPE html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gemini - Shared Conversation</title>
+    <title>Swasthya Care - Test Today. A Healthier Tomorrow.</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    colors: {
-                        geminiDark: '#131314',
-                        geminiSurface: '#1e1f20',
-                        geminiSurfaceHigh: '#282a2c',
-                        geminiBorder: '#444746',
-                        geminiBlue: '#a8c7fa',
-                    }
-                }
-            }
-        }
-    </script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500;700&family=Google+Sans+Text:wght@400;500&display=swap" rel="stylesheet">
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: 'Google Sans', 'Google Sans Text', sans-serif;
-        }
-        ::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #444746;
-            border-radius: 9999px;
-        }
-        ::-webkit-scrollbar-thumb:hover {
-            background: #747775;
-        }
+        body { font-family: 'Inter', sans-serif; }
+        @keyframes zoomIn { from { transform: scale(0.9); opacity: 0.7; } to { transform: scale(1.1); opacity: 1; } }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        @keyframes ping { 0% { transform: scale(1); opacity: 1; } 75%, 100% { transform: scale(1.5); opacity: 0; } }
     </style>
 </head>
-<body class="bg-[#131314] text-[#e3e3e3] h-screen w-screen flex flex-col overflow-hidden m-0">
+<body class="bg-slate-50 font-sans text-slate-800 selection:bg-teal-200 flex flex-col min-h-screen">
+    <div id="root"></div>
 
-    <!-- Top Shared Header -->
-    <header class="flex items-center justify-between px-6 py-4 bg-[#1e1f20] border-b border-[#444746] z-10">
-        <div class="flex items-center gap-3">
-            <div class="flex items-center gap-2 cursor-pointer" onclick="window.location.reload()">
-                <div class="w-7 h-7 rounded-full bg-gradient-to-tr from-purple-500 to-blue-500 flex items-center justify-center text-white text-xs shadow-md">
-                    <i class="fa-solid fa-sparkles"></i>
-                </div>
-                <span class="text-lg font-medium text-[#e3e3e3] tracking-wide">Gemini</span>
-                <span class="text-xs bg-[#282a2c] text-[#a8c7fa] px-2 py-0.5 rounded-md font-semibold">Shared chat</span>
-            </div>
-        </div>
-        <div class="flex items-center gap-3">
-            <button onclick="shareToast()" class="flex items-center gap-2 bg-[#282a2c] hover:bg-[#333537] px-4 py-2 rounded-full text-sm font-medium transition text-[#e3e3e3] border border-[#444746]">
-                <i class="fa-solid fa-share-nodes text-[#a8c7fa]"></i> Share
-            </button>
-            <button onclick="tryGemini()" class="flex items-center gap-2 bg-[#d3e3fd] hover:bg-white text-[#062e6f] px-5 py-2 rounded-full text-sm font-medium transition shadow-sm">
-                Try Gemini
-            </button>
-        </div>
-    </header>
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
 
-    <!-- Main Scrollable Conversation View -->
-    <main class="flex-1 overflow-y-auto flex flex-col items-center pb-24 px-4 md:px-0">
-        
-        <div class="w-full max-w-3xl flex flex-col gap-8 mt-8">
-            
-            <!-- Conversation Title Banner -->
-            <div class="bg-[#1e1f20] border border-[#444746] p-5 rounded-2xl flex flex-col gap-2">
-                <div class="flex items-center gap-2 text-xs text-[#c4c7c5]">
-                    <i class="fa-solid fa-globe text-[#a8c7fa]"></i> Shared from Gemini • 5 sci-fi books & descriptions
-                </div>
-                <h1 class="text-xl font-medium text-[#e3e3e3]">
-                    List of well-known sci-fi books with descriptions in a table format
-                </h1>
-            </div>
+        // Inline SVG Icon components for reliability
+        const Icon = ({ name, className = "w-5 h-5", ...props }) => {
+            const icons = {
+                activity: <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>,
+                microscope: <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M6 18h8M3 22h18M14 22a7 7 0 1 0 0-14h-1m-4 3h4M9 3h2v5H9z"/></svg>,
+                droplet: <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>,
+                heartPulse: <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.04 3 5.5l7 7Z"/></svg>,
+                stethoscope: <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M4.8 2.3A.3.3 0 0 1 5 2h4a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V3c0-.1 0-.2.1-.3M14 6h2a2 2 0 0 1 2 2v2a6 6 0 0 1-12 0V8a2 2 0 0 1 2-2h2m2 14v-4m0 4a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/></svg>,
+                syringe: <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="m18 2 4 4M17 7l-3-3M19 9l-7 7H9v-3l7-7M3 21l3-3M2 22h2"/></svg>,
+                clipboard: <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>,
+                dna: <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M2 15c6.67 0 10-10 13-10M2 9c6.67 0 10 10 13 10m-3-10h8M5 15h8M8 6h8M6 18h8"/></svg>,
+                shield: <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>,
+                award: <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="8" r="6"/><path d="M15.477 12.89 17 22l-5-3-5 3 1.523-9.11"/></svg>,
+                cart: <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/><path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/></svg>,
+                message: <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>,
+                x: <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></svg>,
+                arrow: <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>,
+                user: <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>,
+                users: <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-3-3.87M9 21v-2a4 4 0 0 1 3-3.87M16 3.13a4 4 0 0 1 0 7.75M8 3.13a4 4 0 0 0 0 7.75"/></svg>,
+                plus: <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>,
+                minus: <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M5 12h14"/></svg>,
+                trash: <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>,
+                pin: <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>,
+                phone: <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg>,
+                check: <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>,
+                lock: <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>,
+                calendar: <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><path d="M16 2v4M8 2v4m-5 4h18"/></svg>,
+                clock: <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>,
+                search: <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>,
+                info: <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4m0-4h.01"/></svg>,
+                chevronDown: <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>,
+                chevronUp: <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="m18 15-6-6-6 6"/></svg>,
+                upload: <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4m14-7-5-5-5 5m5-5v12"/></svg>,
+                file: <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6m-4 10H8m4-4H8m8-4H8"/></svg>,
+                save: <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>,
+                mail: <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>,
+                copy: <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>,
+                external: <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>,
+                receipt: <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M8 8h8M8 12h8M8 16h6"/></svg>
+            };
+            return icons[name] || null;
+        };
 
-            <!-- User Prompt Message -->
-            <div class="flex gap-4 w-full justify-end">
-                <div class="bg-[#282a2c] text-[#e3e3e3] px-5 py-3 rounded-2xl max-w-[85%] text-sm leading-relaxed border border-[#444746]">
-                    Give me a list of 5 well-known sci-fi books and show the results in a table with descriptions
-                </div>
-            </div>
+        const initialPackages = [
+          {
+            id: 1,
+            name: "Swasthya Mitra BASIC",
+            tests: 7,
+            parameters: 45,
+            mrp: 1800,
+            price: 610,
+            iconName: "activity",
+            color: "text-teal-600 bg-teal-50",
+            image: "https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&w=600&q=80",
+            gender: "All",
+            dealType: "Wellness Bundle",
+            bodyParts: ["cardiovascular", "kidney", "metabolic", "blood", "respiratory"],
+            includes: "Blood Glucose Fasting, ESR, Complete Blood Count, KFT, Lipid Profile, Liver Function Test, Thyroid Profile",
+            detailedParameters: [
+              { category: "Lipid Profile (9)", items: ["Total Cholesterol", "Triglycerides", "HDL Cholesterol", "LDL Cholesterol", "VLDL Cholesterol", "Total Cholesterol/HDL Ratio", "LDL/HDL Ratio", "HDL/LDL Ratio", "Non-HDL Cholesterol"] },
+              { category: "Liver Function Test (11)", items: ["Bilirubin Total", "Bilirubin Direct", "Bilirubin Indirect", "SGOT (AST)", "SGPT (ALT)", "SGPT/SGOT Ratio", "Alkaline Phosphatase", "Total Protein", "Albumin", "Globulin", "Albumin/Globulin Ratio"] },
+              { category: "Kidney Function Test (6)", items: ["Blood Urea Nitrogen (BUN)", "Serum Creatinine", "BUN/Creatinine Ratio", "Uric Acid", "Calcium", "Phosphorus"] },
+              { category: "Complete Blood Count (14)", items: ["Hemoglobin", "Total RBC", "Packed Cell Volume (PCV)", "Mean Corpuscular Volume (MCV)", "MCH", "MCHC", "Total WBC", "Differential Count", "Platelet Count"] },
+              { category: "Thyroid Profile (3)", items: ["Triiodothyronine (T3)", "Thyroxine (T4)", "Thyroid Stimulating Hormone (TSH)"] },
+              { category: "Blood Sugar & Inflammation (2)", items: ["Blood Glucose Fasting (BGF)", "Erythrocyte Sedimentation Rate (ESR)"] }
+            ]
+          },
+          {
+            id: 2,
+            name: "Arthritis Panel Basic",
+            tests: 6,
+            parameters: 38,
+            mrp: 1950,
+            price: 650,
+            iconName: "heartPulse",
+            color: "text-rose-600 bg-rose-50",
+            image: "https://images.unsplash.com/photo-1584515979956-d9f6e5d09982?auto=format&fit=crop&w=600&q=80",
+            gender: "All",
+            dealType: "Lab Atoms",
+            bodyParts: ["bone", "blood", "immune"],
+            includes: "ASO Titre, CRP, ESR, Rheumatoid Arthritis Factor, Uric Acid, Complete Blood Count",
+            detailedParameters: [
+              { category: "Inflammation & Arthritis Markers (4)", items: ["ASO Titre Quantitative", "C-Reactive Protein (CRP)", "Rheumatoid Factor (RA)", "Serum Uric Acid"] },
+              { category: "General Blood & ESR (18)", items: ["Complete Blood Count (CBC - 16 parameters)", "Erythrocyte Sedimentation Rate (ESR)", "Blood Glucose Random"] },
+              { category: "Bone Mineral Markers (16)", items: ["Serum Calcium", "Serum Phosphorus", "Vitamin D Total", "Parathyroid Hormone (Intact PTH)"] }
+            ]
+          },
+          {
+            id: 3,
+            name: "Swasthya Mitra ADVANCE",
+            tests: 9,
+            parameters: 62,
+            mrp: 2400,
+            price: 750,
+            iconName: "microscope",
+            color: "text-blue-600 bg-blue-50",
+            image: "https://images.unsplash.com/photo-1532187863486-abf9dbad1b69?auto=format&fit=crop&w=600&q=80",
+            gender: "All",
+            dealType: "Wellness Bundle",
+            bodyParts: ["cardiovascular", "kidney", "metabolic", "blood", "liver", "intestine", "respiratory"],
+            includes: "BGF, ESR, CBC, HbA1c, Iron Studies, KFT, Lipid Profile, LFT, Thyroid Profile",
+            detailedParameters: [
+              { category: "Diabetes Screening (2)", items: ["Blood Glucose Fasting", "HbA1c (Glycated Hemoglobin)"] },
+              { category: "Iron Deficiency Panel (3)", items: ["Serum Iron", "Total Iron Binding Capacity (TIBC)", "Transferrin Saturation"] },
+              { category: "Comprehensive Profiles (57)", items: ["Lipid Profile (9)", "Liver Function Test (11)", "Kidney Function Test (6)", "Complete Blood Count (14)", "Thyroid Profile (3)", "Electrolytes & ESR (14)"] }
+            ]
+          },
+          {
+            id: 4,
+            name: "PreOperative Panel",
+            tests: 12,
+            parameters: 75,
+            mrp: 2500,
+            price: 750,
+            iconName: "syringe",
+            color: "text-purple-600 bg-purple-50",
+            image: "https://images.unsplash.com/photo-1516549655169-df83a0774514?auto=format&fit=crop&w=600&q=80",
+            gender: "All",
+            dealType: "Organ Health",
+            bodyParts: ["blood", "metabolic", "immune", "kidney", "cardiovascular"],
+            includes: "Anti HCV, BUN, Creatinine, ESR, HBV, HIV, RBS, RPR, TSH, Blood Group, CBC, PT INR",
+            detailedParameters: [
+              { category: "Infectious Disease Screening (3)", items: ["HIV I & II Antibodies", "HBsAg (Hepatitis B Surface Antigen)", "Anti-HCV Antibody"] },
+              { category: "Coagulation & Blood Group (3)", items: ["Prothrombin Time (PT/INR)", "Bleeding Time & Clotting Time", "ABO Blood Group & Rh Typing"] },
+              { category: "Metabolic & Organ Screening (69)", items: ["Complete Blood Count (14)", "Kidney Function (BUN, Creatinine, Electrolytes)", "Random Blood Sugar", "Thyroid Screening (TSH)", "VDRL/RPR test"] }
+            ]
+          },
+          {
+            id: 5,
+            name: "Arthritis Panel Advance",
+            tests: 7,
+            parameters: 48,
+            mrp: 2900,
+            price: 950,
+            iconName: "activity",
+            color: "text-orange-600 bg-orange-50",
+            image: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?auto=format&fit=crop&w=600&q=80",
+            gender: "All",
+            dealType: "Lab Atoms",
+            bodyParts: ["bone", "blood", "immune"],
+            includes: "ASO Titre, CCP Antibody, CRP, ESR, RA Test, Uric Acid, Complete Blood Count",
+            detailedParameters: [
+              { category: "Advanced Autoimmune Markers (2)", items: ["Anti-Cyclic Citrullinated Peptide (Anti-CCP)", "Rheumatoid Arthritis (RA) Factor Quantitative"] },
+              { category: "Inflammation & Bone Health (46)", items: ["ASO Titre", "C-Reactive Protein (High Sensitivity)", "Serum Uric Acid", "Complete Blood Count (14)", "Calcium, Magnesium, Phosphorus"] }
+            ]
+          },
+          {
+            id: 6,
+            name: "Cervical Screening",
+            tests: 2,
+            parameters: 12,
+            mrp: 4500,
+            price: 1900,
+            iconName: "dna",
+            color: "text-pink-600 bg-pink-50",
+            image: "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&w=600&q=80",
+            gender: "Female",
+            dealType: "Organ Health",
+            bodyParts: ["female_reproductive"],
+            includes: "HPV-Human Papilloma Virus DNA Detection, PAP Smear Cytology LBC",
+            detailedParameters: [
+              { category: "HPV DNA Assay (10)", items: ["High Risk HPV Genotypes 16 & 18", "Other High Risk HPV Types", "Internal Control Validation"] },
+              { category: "Cytology (2)", items: ["PAP Smear Liquid Based Cytology (LBC)", "Cellular Adequacy & Microscopic Findings"] }
+            ]
+          },
+          {
+            id: 7,
+            name: "Swasthya Mitra PREMIUM",
+            tests: 11,
+            parameters: 80,
+            mrp: 3200,
+            price: 975,
+            iconName: "award",
+            color: "text-amber-600 bg-amber-50",
+            image: "https://images.unsplash.com/photo-1584308666744-24d5c474f2ae?auto=format&fit=crop&w=600&q=80",
+            popular: true,
+            gender: "All",
+            dealType: "Wellness Bundle",
+            bodyParts: ["cardiovascular", "kidney", "metabolic", "blood", "bone", "respiratory", "thyroid"],
+            includes: "BGF, ESR, Vitamin B12, Vitamin D, CBC, HbA1c, Iron Studies, KFT, Lipid, LFT, Thyroid",
+            detailedParameters: [
+              { category: "Vitamins & Nutritional Status (2)", items: ["Vitamin B12 (Cyanocobalamin)", "25-Hydroxy Vitamin D3"] },
+              { category: "Diabetes & Iron Panel (5)", items: ["Fasting Blood Glucose", "HbA1c", "Serum Iron", "TIBC", "Transferrin Saturation"] },
+              { category: "Core Health Panels (73)", items: ["Lipid Profile", "Liver Function Test", "Kidney Function Test", "Complete Blood Count", "Thyroid Profile", "Electrolytes"] }
+            ]
+          },
+          {
+            id: 8,
+            name: "Gym Health - Male",
+            tests: 14,
+            parameters: 92,
+            mrp: 3800,
+            price: 1250,
+            iconName: "shield",
+            color: "text-cyan-600 bg-cyan-50",
+            image: "https://images.unsplash.com/photo-1517838277536-f5f99be501cd?auto=format&fit=crop&w=600&q=80",
+            gender: "Male",
+            dealType: "Wellness Bundle",
+            bodyParts: ["cardiovascular", "kidney", "metabolic", "blood", "bone", "male_reproductive", "immune", "liver"],
+            includes: "BGF, ESR, IgE, Testosterone, B12, D, CBC, HbA1c, Iron, KFT, Lipid Adv, LFT, Thyroid, Urine",
+            detailedParameters: [
+              { category: "Hormonal & Fitness Markers (2)", items: ["Total Testosterone", "Immunoglobulin E (IgE Total)"] },
+              { category: "Vitamins & Complete Organ Profiling (90)", items: ["Vitamin B12", "Vitamin D", "Lipid Profile Advanced", "Liver Function Test", "Kidney Function Test", "Complete Blood Count", "Thyroid Profile", "Urine Routine (14 params)"] }
+            ]
+          },
+          {
+            id: 9,
+            name: "Gym Health - Female",
+            tests: 16,
+            parameters: 98,
+            mrp: 3950,
+            price: 1300,
+            iconName: "shield",
+            color: "text-emerald-600 bg-emerald-50",
+            image: "https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=600&q=80",
+            gender: "Female",
+            dealType: "Wellness Bundle",
+            bodyParts: ["cardiovascular", "kidney", "metabolic", "blood", "bone", "female_reproductive", "immune", "thyroid"],
+            includes: "BGF, ESR, FSH, IgE, LH, Prolactin, B12, D, CBC, HbA1c, Iron, KFT, Lipid Adv, LFT, Thyroid, Urine",
+            detailedParameters: [
+              { category: "Female Reproductive Hormones (3)", items: ["Follicle Stimulating Hormone (FSH)", "Luteinizing Hormone (LH)", "Prolactin"] },
+              { category: "Comprehensive Panels (95)", items: ["Vitamin B12 & D", "Complete Blood Count", "Liver, Kidney & Lipid Profiles", "Thyroid Panel", "Urine Routine Analysis"] }
+            ]
+          },
+          {
+            id: 10,
+            name: "Swasthya Mitra Super",
+            tests: 13,
+            parameters: 88,
+            mrp: 3400,
+            price: 1125,
+            iconName: "stethoscope",
+            color: "text-indigo-600 bg-indigo-50",
+            image: "https://images.unsplash.com/photo-1530497610245-94d3c16cda28?auto=format&fit=crop&w=600&q=80",
+            gender: "All",
+            dealType: "Wellness Bundle",
+            bodyParts: ["cardiovascular", "kidney", "metabolic", "blood", "bone", "immune", "respiratory", "thyroid", "liver"],
+            includes: "BGF, CRP, ESR, RA, Vitamin B12, Vitamin D, CBC, HbA1c, Iron, KFT, Lipid Adv, LFT, Thyroid",
+            detailedParameters: [
+              { category: "Inflammation & Vitamins (4)", items: ["C-Reactive Protein (CRP)", "Rheumatoid Factor", "Vitamin B12", "Vitamin D Total"] },
+              { category: "Advanced Clinical Biochemistry (84)", items: ["Advanced Lipid Profile", "Liver Function Test", "Kidney Function Test", "Complete Blood Count", "Thyroid Function Test", "Iron Deficiency Panel"] }
+            ]
+          },
+          {
+            id: 11,
+            name: "Swasthya COMPLETE",
+            tests: 17,
+            parameters: 110,
+            mrp: 4200,
+            price: 1450,
+            iconName: "clipboard",
+            color: "text-teal-700 bg-teal-100",
+            image: "https://images.unsplash.com/photo-1579154204601-01588f351e67?auto=format&fit=crop&w=600&q=80",
+            gender: "All",
+            dealType: "Wellness Bundle",
+            bodyParts: ["cardiovascular", "kidney", "metabolic", "blood", "bone", "immune", "liver", "intestine", "respiratory", "thyroid"],
+            includes: "Amylase, Apolipoproteins, BGF, ESR, HBV, HsCRP, B12, D, CBC, HbA1c, Iron, KFT, Lipid, LFT, Thyroid, Urine",
+            detailedParameters: [
+              { category: "Cardiac & Pancreatic Markers (3)", items: ["Apolipoprotein A1 & B (ApoA1/ApoB ratio)", "Serum Amylase", "High Sensitivity CRP (hs-CRP)"] },
+              { category: "Full Spectrum Diagnostics (107)", items: ["Complete Blood Count", "Liver, Kidney & Lipid Profiles", "Thyroid Profile", "Vitamins B12 & D", "Hepatitis B Screen", "Urine Routine Analysis"] }
+            ]
+          },
+          {
+            id: 12,
+            name: "SWASTHYA APLA Panel",
+            tests: 5,
+            parameters: 30,
+            mrp: 7500,
+            price: 3650,
+            iconName: "droplet",
+            color: "text-red-600 bg-red-50",
+            image: "https://images.unsplash.com/photo-1615461066841-6116e61058f4?auto=format&fit=crop&w=600&q=80",
+            gender: "All",
+            dealType: "Lab Atoms",
+            bodyParts: ["blood", "immune"],
+            includes: "Beta 2 Glycoprotein IgG/IgM, Cardiolipin ACL-IgG/IgM, Lupus Anticoagulant Confirmatory",
+            detailedParameters: [
+              { category: "Antiphospholipid Antibody Suite (5)", items: ["Beta-2-Glycoprotein 1 (IgG & IgM)", "Cardiolipin Antibodies (ACL IgG & IgM)", "Lupus Anticoagulant Confirmatory Assay"] },
+              { category: "Clinical Validation (25)", items: ["Coagulation Profile", "Platelet Function Evaluation"] }
+            ]
+          }
+        ];
 
-            <!-- Gemini Response Message -->
-            <div class="flex gap-4 w-full justify-start">
-                <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-purple-500 to-blue-500 flex items-center justify-center text-white text-xs shrink-0 mt-1">
-                    <i class="fa-solid fa-sparkles"></i>
-                </div>
-                <div class="flex flex-col gap-3 max-w-[90%] text-sm text-[#e3e3e3] leading-relaxed bg-[#1e1f20] p-5 rounded-2xl border border-[#444746]">
-                    <p>Sure, here is a list of 5 well-known sci-fi books in a table with descriptions:</p>
-                    
-                    <!-- Table Component -->
-                    <div class="overflow-x-auto my-2 border border-[#444746] rounded-xl">
-                        <table class="w-full border-collapse text-left text-xs">
-                            <thead>
-                                <tr class="bg-[#282a2c] text-[#e3e3e3]">
-                                    <th class="p-3 border-b border-[#444746] font-medium">Book</th>
-                                    <th class="p-3 border-b border-[#444746] font-medium">Author</th>
-                                    <th class="p-3 border-b border-[#444746] font-medium">Year</th>
-                                    <th class="p-3 border-b border-[#444746] font-medium">Description</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-[#444746]">
-                                <tr class="hover:bg-[#282a2c]/50 transition">
-                                    <td class="p-3 font-medium text-[#a8c7fa]">Dune</td>
-                                    <td class="p-3">Frank Herbert</td>
-                                    <td class="p-3">1965</td>
-                                    <td class="p-3 text-[#c4c7c5]">Set on the desert planet Arrakis, centering on Paul Atreides and the spice melange.</td>
-                                </tr>
-                                <tr class="hover:bg-[#282a2c]/50 transition">
-                                    <td class="p-3 font-medium text-[#a8c7fa]">Neuromancer</td>
-                                    <td class="p-3">William Gibson</td>
-                                    <td class="p-3">1984</td>
-                                    <td class="p-3 text-[#c4c7c5]">A foundational cyberpunk novel about a washed-up computer hacker hired for one last run.</td>
-                                </tr>
-                                <tr class="hover:bg-[#282a2c]/50 transition">
-                                    <td class="p-3 font-medium text-[#a8c7fa]">Foundation</td>
-                                    <td class="p-3">Isaac Asimov</td>
-                                    <td class="p-3">1951</td>
-                                    <td class="p-3 text-[#c4c7c5]">Chronicles a band of psychologists aiming to save civilization from a dark age.</td>
-                                </tr>
-                                <tr class="hover:bg-[#282a2c]/50 transition">
-                                    <td class="p-3 font-medium text-[#a8c7fa]">Snow Crash</td>
-                                    <td class="p-3">Neal Stephenson</td>
-                                    <td class="p-3">1992</td>
-                                    <td class="p-3 text-[#c4c7c5]">Explores a corporate-franchised libertarian America and a virtual reality metaverse.</td>
-                                </tr>
-                                <tr class="hover:bg-[#282a2c]/50 transition">
-                                    <td class="p-3 font-medium text-[#a8c7fa]">Hyperion</td>
-                                    <td class="p-3">Dan Simmons</td>
-                                    <td class="p-3">1989</td>
-                                    <td class="p-3 text-[#c4c7c5]">A Canterbury Tales-style narrative of pilgrims journeying to face the mysterious Shrike.</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
+        const pathologyMedicalStandards = [
+          { name: "LIVER & KIDNEY FUNCTION TEST", items: ["Bilirubin Total", "Bilirubin Direct", "SGOT (AST)", "SGPT (ALT)", "Alkaline Phosphatase", "Total Protein", "Albumin", "Globulin", "Blood Urea Nitrogen (BUN)", "Serum Creatinine", "Uric Acid", "Serum Calcium", "Serum Phosphorus", "Sodium", "Potassium", "Chloride"] },
+          { name: "HbA1c", items: ["HbA1c (Glycated Hemoglobin)", "Estimated Average Glucose (eAG)"] },
+          { name: "HEMOGRAM", items: ["Hemoglobin", "Total RBC", "PCV", "MCV", "MCH", "MCHC", "Total WBC", "Neutrophils", "Lymphocytes", "Monocytes", "Eosinophils", "Basophils", "Platelet Count"] },
+          { name: "VITAMIN D25", items: ["25-Hydroxy Vitamin D3"] },
+          { name: "Lipid Profile", items: ["Total Cholesterol", "Triglycerides", "HDL Cholesterol", "LDL Cholesterol", "VLDL Cholesterol", "Total/HDL Ratio", "Non-HDL Cholesterol"] },
+          { name: "Thyroid Profile", items: ["Triiodothyronine (T3)", "Thyroxine (T4)", "Thyroid Stimulating Hormone (TSH)"] },
+          { name: "Vitamin B12", items: ["Cyanocobalamin"] },
+          { name: "Urine Routine Analysis", items: ["Color", "Transparency", "pH", "Specific Gravity", "Protein", "Glucose", "Ketones", "Blood", "WBCs", "RBCs"] }
+        ];
 
-                    <div class="flex items-center gap-3 pt-2 text-[#c4c7c5]">
-                        <button onclick="shareToast()" class="hover:text-white transition flex items-center gap-1.5"><i class="fa-regular fa-copy"></i> Copy</button>
-                        <button onclick="shareToast()" class="hover:text-white transition flex items-center gap-1.5"><i class="fa-solid fa-file-export"></i> Export to Docs</button>
-                    </div>
-                </div>
-            </div>
+        function App() {
+          const [packages, setPackages] = useState(initialPackages);
+          const [view, setView] = useState('menu');
+          const [loaded, setLoaded] = useState(false);
+          const [user, setUser] = useState(null);
+          const [bookings, setBookings] = useState([]);
+          
+          const targetWhatsappNumber = "917665857270";
+          const googleSheetUrl = "https://docs.google.com/spreadsheets/d/167GCKx0Lo8pAbdj2WxWDAtPEEzH_IF9ByeSdyrfwtqc/edit?usp=drive_link";
+          const [cart, setCart] = useState([]);
+          
+          const [packageMembers, setPackageMembers] = useState({});
+          const [openMemberDropdown, setOpenMemberDropdown] = useState(null);
+          const [celebratingPkgId, setCelebratingPkgId] = useState(null);
 
-        </div>
-    </main>
+          const [chatOpen, setChatOpen] = useState(false);
+          const [messages, setMessages] = useState([{ role: 'model', text: 'Hi! I am the Swasthya AI Assistant. How can I help you choose a health package today?' }]);
+          const [inputValue, setInputValue] = useState('');
+          const [isAILoading, setIsAILoading] = useState(false);
+          const chatEndRef = useRef(null);
 
-    <!-- Bottom Interactive Prompt Bar / Try Gemini Footer -->
-    <div class="absolute bottom-0 left-0 w-full bg-[#131314]/90 backdrop-blur-md border-t border-[#444746] p-4 flex flex-col items-center z-20">
-        <div class="w-full max-w-3xl flex flex-col gap-2">
-            <div class="bg-[#1e1f20] border border-[#444746] rounded-3xl p-3 flex flex-col gap-2 shadow-lg focus-within:border-[#a8c7fa] transition">
-                <textarea id="followupInput" rows="1" placeholder="Ask a follow-up or try your own prompt..." class="w-full bg-transparent text-[#e3e3e3] placeholder-[#c4c7c5] outline-none resize-none px-3 text-sm max-h-24"></textarea>
-                
-                <div class="flex items-center justify-between px-2">
-                    <span class="text-xs text-[#c4c7c5]">Want to create your own chats?</span>
-                    <button onclick="tryGemini()" class="px-4 py-1.5 rounded-full bg-[#dde3ea] text-[#1f1f1f] hover:bg-white text-xs font-semibold transition">
-                        Start chatting <i class="fa-solid fa-arrow-right ml-1"></i>
-                    </button>
-                </div>
-            </div>
-            <p class="text-[10px] text-center text-[#c4c7c5]">
-                Gemini may display inaccurate info, including about people, so double-check its responses.
-            </p>
-        </div>
-    </div>
+          const [activeBodyPart, setActiveBodyPart] = useState(null);
+          const [selectedBodyPartsFilter, setSelectedBodyPartsFilter] = useState([]);
+          const [testSearchQuery, setTestSearchQuery] = useState('');
+          const [activeCategoryTab, setActiveCategoryTab] = useState('all');
+          const [animatingTab, setAnimatingTab] = useState(null);
 
-    <script>
-        function shareToast() {
-            showToast("Content copied to clipboard successfully!");
+          const [selectedPackageModal, setSelectedPackageModal] = useState(null);
+          const [adminModalOpen, setAdminModalOpen] = useState(false);
+          const [adminPassword, setAdminPassword] = useState('Bapuji&M22kinazar');
+          const [adminPasswordInput, setAdminPasswordInput] = useState('');
+          const [adminAuthError, setAdminAuthError] = useState(false);
+          const [adminCsvInput, setAdminCsvInput] = useState('');
+          const [adminFeedback, setAdminFeedback] = useState('');
+
+          const [showOtpModal, setShowOtpModal] = useState(false);
+          const [resetEmail, setResetEmail] = useState('');
+          const [otpSent, setOtpSent] = useState(false);
+          const [otpInput, setOtpInput] = useState('');
+          const [newPasswordInput, setNewPasswordInput] = useState('');
+          const [otpMessage, setOtpMessage] = useState('');
+
+          const [primaryBooking, setPrimaryBooking] = useState({
+            name: '', age: '', gender: '', email: '', contact: '', houseNo: '', street: '', city: '', state: '', pincode: '', mapLocation: '', preferredDate: '', preferredTime: ''
+          });
+          const [locationStatus, setLocationStatus] = useState('');
+          const [familyMembers, setFamilyMembers] = useState([]);
+          const [patientAssignments, setPatientAssignments] = useState({});
+          const [showPriceBreakup, setShowPriceBreakup] = useState(false);
+
+          const [sortConfig, setSortConfig] = useState({ key: 'name', direction: 'asc' });
+          const [selectedInventoryIds, setSelectedInventoryIds] = useState([]);
+          const [editingPackage, setEditingPackage] = useState(null);
+          const [adminTypeFilter, setAdminTypeFilter] = useState('all');
+          const [adminSearchFilter, setAdminSearchFilter] = useState('');
+          const [adminDateFilter, setAdminDateFilter] = useState('all');
+
+          const [selectedStandardAtom, setSelectedStandardAtom] = useState('');
+          const [selectedAtomQuickParam, setSelectedAtomQuickParam] = useState({});
+          const [collapsedCategories, setCollapsedCategories] = useState({});
+
+          const getMinBookingDate = () => {
+              const now = new Date();
+              if (now.getHours() >= 17) {
+                  const tomorrow = new Date(now);
+                  tomorrow.setDate(tomorrow.getDate() + 1);
+                  return tomorrow.toISOString().split('T')[0];
+              }
+              return now.toISOString().split('T')[0];
+          };
+
+          const getLocation = () => {
+              setLocationStatus('Requesting browser location permission...');
+              if (!navigator.geolocation) {
+                  setLocationStatus('Geolocation is not supported by your browser.');
+                  return;
+              }
+              navigator.geolocation.getCurrentPosition(
+                  async (position) => {
+                      const lat = position.coords.latitude;
+                      const lng = position.coords.longitude;
+                      const link = `https://maps.google.com/?q=${lat},${lng}`;
+                      setLocationStatus('Location acquired! Fetching address...');
+                      try {
+                          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`, {
+                              headers: { 'Accept-Language': 'en' }
+                          });
+                          const data = await res.json();
+                          if (data && data.address) {
+                              const addr = data.address;
+                              setPrimaryBooking(prev => ({
+                                  ...prev,
+                                  street: addr.road || addr.suburb || addr.neighbourhood || prev.street,
+                                  city: addr.city || addr.town || addr.village || addr.state_district || prev.city,
+                                  state: addr.state || prev.state,
+                                  pincode: addr.postcode || prev.pincode,
+                                  mapLocation: link
+                              }));
+                              setLocationStatus('Location detected & address filled successfully ✓');
+                              return;
+                          }
+                      } catch (err) {
+                          console.warn("Reverse geocode warning:", err);
+                      }
+                      setPrimaryBooking(prev => ({ ...prev, mapLocation: link }));
+                      setLocationStatus('GPS Coordinates captured successfully ✓');
+                  },
+                  (error) => {
+                      setLocationStatus('Location permission denied or unavailable. Please fill manually.');
+                  },
+                  { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+              );
+          };
+
+          useEffect(() => {
+              const timer = setTimeout(() => setLoaded(true), 100);
+              return () => clearTimeout(timer);
+          }, []);
+
+          useEffect(() => {
+              if (chatEndRef.current) {
+                  chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
+              }
+          }, [messages, isAILoading]);
+
+          const handleTabClick = (tabKey) => {
+              setAnimatingTab(tabKey);
+              setTimeout(() => {
+                  setActiveCategoryTab(tabKey);
+                  setAnimatingTab(null);
+              }, 900);
+          };
+
+          const getMemberCount = (pkgId) => packageMembers[pkgId] || 1;
+
+          const getPricingForMembers = (pkg, membersCount) => {
+              const basePrice = pkg.price;
+              const baseMrp = pkg.mrp || Math.round(basePrice * 2.5);
+              if (membersCount === 1) return { price: basePrice, mrp: baseMrp };
+
+              let totalPrice = 0;
+              let totalMrp = baseMrp * membersCount;
+
+              for (let i = 1; i <= membersCount; i++) {
+                  if (i === 1) totalPrice += basePrice;
+                  else if (i === 2) totalPrice += Math.round(basePrice * (1 - 0.1495));
+                  else if (i === 3) totalPrice += Math.round(basePrice * (1 - 0.0723));
+                  else if (i >= 4) totalPrice += Math.round(basePrice * (1 - 0.0486));
+              }
+              return { price: totalPrice, mrp: totalMrp };
+          };
+
+          const getEncouragingBanner = (pkg, currentMembers) => {
+              if (currentMembers === 1) {
+                  const nextPrice = Math.round(getPricingForMembers(pkg, 2).price / 2);
+                  return `💡 Add 1 more family member → Pay ₹${nextPrice}/person!`;
+              } else if (currentMembers === 2) {
+                  const nextPrice = Math.round(getPricingForMembers(pkg, 3).price / 3);
+                  return `🎉 Family savings unlocked! + Add 1 more → Pay ₹${nextPrice}/person!`;
+              } else if (currentMembers === 3) {
+                  const nextPrice = Math.round(getPricingForMembers(pkg, 4).price / 4);
+                  return `🌟 Almost maximum value! + Add 1 more → Pay ₹${nextPrice}/person!`;
+              } else {
+                  const finalPerPerson = Math.round(getPricingForMembers(pkg, 4).price / 4);
+                  return `✨ Maximum Family Tier Active! Best Value: ₹${finalPerPerson}/person!`;
+              }
+          };
+
+          const handleCsvImport = (csvText) => {
+              const lines = csvText.split('\n').filter(l => l.trim().length > 0);
+              if (lines.length <= 1) {
+                  setAdminFeedback('Please provide valid CSV header and rows.');
+                  return;
+              }
+              const updatedPackages = [...packages];
+              let importedCount = 0;
+              const todayStr = new Date().toISOString().split('T')[0];
+
+              for (let i = 1; i < lines.length; i++) {
+                  const row = lines[i].split(',').map(item => item.trim().replace(/^"|"$/g, ''));
+                  if (row.length >= 5) {
+                      const name = row[0];
+                      const dealType = row[1] || 'Lab Atoms';
+                      const mrp = Number(row[2]) || 2000;
+                      const price = Number(row[3]) || 750;
+                      const gender = row[4] || 'All';
+
+                      const existingIdx = updatedPackages.findIndex(p => p.name.toLowerCase() === name.toLowerCase());
+                      if (existingIdx >= 0) {
+                          updatedPackages[existingIdx] = {
+                              ...updatedPackages[existingIdx],
+                              dealType, mrp, price, gender, modifiedDate: todayStr
+                          };
+                      } else {
+                          updatedPackages.push({
+                              id: Date.now() + i,
+                              name, dealType, mrp, price, gender,
+                              modifiedDate: todayStr,
+                              bodyParts: ["cardiovascular", "kidney", "blood"],
+                              iconName: "activity",
+                              color: "text-teal-600 bg-teal-50",
+                              image: "https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&w=600&q=80",
+                              detailedParameters: [{ category: "HEMOGRAM", items: ["Hemoglobin", "WBC", "Platelet Count"] }]
+                          });
+                      }
+                      importedCount++;
+                  }
+              }
+              setPackages(updatedPackages);
+              setAdminFeedback(`Successfully imported/updated ${importedCount} packages from Excel/CSV! ✓`);
+          };
+
+          const handleFileUpload = (e) => {
+              const file = e.target.files[0];
+              if (!file) return;
+              const reader = new FileReader();
+              reader.onload = (evt) => {
+                  const buffer = evt.target.result;
+                  let text = '';
+                  try {
+                      const decoderUtf8 = new TextDecoder('utf-8', { fatal: true });
+                      text = decoderUtf8.decode(buffer);
+                  } catch (err) {
+                      const decoderFallback = new TextDecoder('windows-1252');
+                      text = decoderFallback.decode(buffer);
+                  }
+                  setAdminCsvInput(text);
+                  handleCsvImport(text);
+              };
+              reader.readAsArrayBuffer(file);
+          };
+
+          const copyBookingsToClipboardForGoogleSheets = () => {
+              if (bookings.length === 0) {
+                  setAdminFeedback("No bookings available to copy.");
+                  return;
+              }
+              let tsvContent = "BookingDate\tPrimaryPatientName\tAge\tGender\tContact\tEmail\tAddress\tPreferredSlot\tTotalAmount\tAssignedTestsAndMembers\n";
+              bookings.forEach(b => {
+                  const date = new Date(b.timestamp).toLocaleString();
+                  const name = b.primaryBooking?.name || '';
+                  const age = b.primaryBooking?.age || '';
+                  const gender = b.primaryBooking?.gender || '';
+                  const contact = b.primaryBooking?.contact || '';
+                  const email = b.primaryBooking?.email || '';
+                  const addr = `${b.primaryBooking?.houseNo || ''}, ${b.primaryBooking?.street || ''}, ${b.primaryBooking?.city || ''} - ${b.primaryBooking?.pincode || ''}`;
+                  const slot = `${b.primaryBooking?.preferredDate || ''} (${b.primaryBooking?.preferredTime || ''})`;
+                  const amount = b.totalAmount || 0;
+                  
+                  let testsSummary = [];
+                  const primaryCart = b.patientAssignments?.['primary'] || b.cart || [];
+                  testsSummary.push(`[Primary: ${name}] -> ${primaryCart.map(id => packages.find(p => p.id === Number(id))?.name || id).join(', ')}`);
+                  
+                  if (b.familyMembers) {
+                      b.familyMembers.forEach(m => {
+                          const mCart = b.patientAssignments?.[m.id] || [];
+                          testsSummary.push(`[Family: ${m.name || 'Member'}] -> ${mCart.map(id => packages.find(p => p.id === Number(id))?.name || id).join(', ')}`);
+                      });
+                  }
+                  tsvContent += `${date}\t${name}\t${age}\t${gender}\t${contact}\t${email}\t${addr}\t${slot}\t${amount}\t"${testsSummary.join(' | ')}"\n`;
+              });
+              
+              navigator.clipboard.writeText(tsvContent).then(() => {
+                  setAdminFeedback("Bookings copied to clipboard! Open your Google Sheet and press Ctrl+V to populate instantly. ✓");
+                  window.open(googleSheetUrl, '_blank');
+              }).catch(err => {
+                  setAdminFeedback("Clipboard write failed. Please check browser permissions.");
+              });
+          };
+
+          const handleSort = (key) => {
+              let direction = 'asc';
+              if (sortConfig.key === key && sortConfig.direction === 'asc') direction = 'desc';
+              setSortConfig({ key, direction });
+          };
+
+          const filteredInventory = packages.filter(p => {
+              if (adminTypeFilter !== 'all' && p.dealType !== adminTypeFilter) return false;
+              if (adminSearchFilter && !p.name.toLowerCase().includes(adminSearchFilter.toLowerCase())) return false;
+              if (adminDateFilter !== 'all') {
+                  const modDate = new Date(p.modifiedDate || '2026-03-01');
+                  const now = new Date('2026-03-07');
+                  const diffDays = (now - modDate) / (1000 * 60 * 60 * 24);
+                  if (adminDateFilter === 'last7' && diffDays > 7) return false;
+                  if (adminDateFilter === 'last30' && diffDays > 30) return false;
+              }
+              return true;
+          });
+
+          const sortedInventory = [...filteredInventory].sort((a, b) => {
+              let aVal = a[sortConfig.key];
+              let bVal = b[sortConfig.key];
+              if (typeof aVal === 'string') { aVal = aVal.toLowerCase(); bVal = bVal.toLowerCase(); }
+              if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
+              if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
+              return 0;
+          });
+
+          const formatMarkdown = (text) => {
+              let formattedText = text
+                  .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                  .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                  .replace(/### (.*?)\n/g, '<strong class="block mt-2 mb-1 text-md text-teal-800">$1</strong>\n')
+                  .replace(/## (.*?)\n/g, '<strong class="block mt-2 mb-1 text-lg text-teal-900">$1</strong>\n')
+                  .replace(/# (.*?)\n/g, '<strong class="block mt-2 mb-1 text-xl text-teal-950">$1</strong>\n')
+                  .replace(/(^|\n)\*\s/g, '$1• ');
+              return { __html: formattedText };
+          };
+
+          const renderModelMessage = (text) => {
+              const parts = text.split(/\[ADD:(\d+)\]/g);
+              return parts.map((part, index) => {
+                  if (index % 2 === 1) {
+                      const pkgId = Number(part);
+                      const pkg = packages.find(p => p.id === pkgId);
+                      if (!pkg) return null;
+                      const inCart = cart.includes(pkgId);
+                      const calculatedTests = pkg.detailedParameters ? pkg.detailedParameters.length : 1;
+                      const calculatedParams = pkg.detailedParameters ? pkg.detailedParameters.reduce((acc, cat) => acc + (cat.items ? cat.items.length : 0), 1) : 1;
+                      return (
+                          <button
+                              key={index}
+                              onClick={() => toggleCart(pkgId)}
+                              className={`mt-3 mb-2 flex items-center justify-center w-full py-2.5 text-xs font-bold rounded-xl transition-all shadow-sm ${
+                                  inCart 
+                                  ? 'bg-teal-700 hover:bg-teal-800 text-white border border-teal-800' 
+                                  : 'bg-yellow-400 hover:bg-yellow-500 text-teal-950 border border-yellow-500'
+                              }`}
+                          >
+                              <Icon name="cart" className="w-4 h-4 mr-1.5" />
+                              {inCart ? `Added ${pkg.name} ✓` : `Add ${pkg.name} to Cart - ₹${pkg.price} (${calculatedTests} Tests, ${calculatedParams} Params)`}
+                          </button>
+                      );
+                  }
+                  return <div key={index} dangerouslySetInnerHTML={formatMarkdown(part)} />;
+              });
+          };
+
+          const handleSendMessage = async (text, isSystem = false) => {
+              if (!text.trim()) return;
+              const newUserMessage = { role: 'user', text };
+              setMessages(prev => [...prev, newUserMessage]);
+              if (!isSystem) setInputValue('');
+              setIsAILoading(true);
+              try {
+                  const chatHistory = messages.map(msg => ({
+                      role: msg.role === 'model' ? 'model' : 'user',
+                      parts: [{ text: msg.text }]
+                  }));
+                  chatHistory.push({ role: 'user', parts: [{ text: text }] });
+                  const systemPrompt = `You are Swasthya AI, a friendly and expert health assistant for a diagnostic lab called 'Swasthya Care'.
+                  Your primary job is to help users select the best health checkup plans based on their symptoms, age, gender, or specific test requirements.
+                  Here is the strict catalog of available packages in JSON format:
+                  ${JSON.stringify(packages)}
+                  Guidelines:
+                  1. ONLY recommend packages from the provided catalog. Do not invent packages or tests.
+                  2. ALWAYS mention the price (₹), total tests, and parameter count when recommending a package.
+                  3. If the user's gender is unknown or not specified, prioritize recommending universal 'All' gender wellness packages.
+                  4. Keep your responses concise, warm, and directly helpful.
+                  5. CRITICAL: Whenever you recommend a package, you MUST append the exact tag [ADD:id] (where id is package id) on a new line immediately after describing that package. Example: [ADD:1]`;
+
+                  const payload = {
+                      contents: chatHistory,
+                      systemInstruction: { parts: [{ text: systemPrompt }] }
+                  };
+                  const apiKey = ""; 
+                  const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+                  const response = await fetch(apiUrl, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify(payload)
+                  });
+                  const result = await response.json();
+                  const aiReply = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+                  if (aiReply) {
+                      setMessages(prev => [...prev, { role: 'model', text: aiReply }]);
+                  } else {
+                      setMessages(prev => [...prev, { role: 'model', text: "I'm currently updating my medical database. Please try asking again in a moment!" }]);
+                  }
+              } catch (error) {
+                  setMessages(prev => [...prev, { role: 'model', text: "Sorry, I'm experiencing a brief network anomaly. Let's try that again." }]);
+              } finally {
+                  setIsAILoading(false);
+              }
+          };
+
+          const toggleCart = (pkgId) => {
+              const isAdding = !cart.includes(pkgId);
+              setCart(prev => isAdding ? [...prev, pkgId] : prev.filter(id => id !== pkgId));
+          };
+
+          const toggleBodyPartFilter = (part) => {
+              setSelectedBodyPartsFilter(prev => 
+                  prev.includes(part) ? prev.filter(p => p !== part) : [...prev, part]
+              );
+          };
+
+          const addFamilyMember = () => {
+              const newMember = { id: Date.now(), name: '', age: '', gender: '', email: '' };
+              setFamilyMembers([...familyMembers, newMember]);
+          };
+
+          const removeFamilyMember = (id) => {
+              setFamilyMembers(familyMembers.filter(member => member.id !== id));
+              setPatientAssignments(prev => {
+                  const copy = { ...prev };
+                  delete copy[id];
+                  return copy;
+              });
+          };
+
+          const updateFamilyMember = (id, field, value) => {
+              setFamilyMembers(familyMembers.map(member => member.id === id ? { ...member, [field]: value } : member));
+          };
+
+          const calculateTotal = () => {
+              let total = 0;
+              cart.forEach(id => {
+                  const pkg = packages.find(p => p.id === Number(id));
+                  if (pkg) {
+                      const count = getMemberCount(pkg.id);
+                      const pricing = getPricingForMembers(pkg, count);
+                      total += pricing.price;
+                  }
+              });
+              return total;
+          };
+
+          const getRequiredFamilyMembersCount = () => {
+              let maxRequired = 0;
+              cart.forEach(id => {
+                  const pkg = packages.find(p => p.id === Number(id));
+                  if (pkg && pkg.dealType === 'Wellness Bundle') {
+                      const count = getMemberCount(id);
+                      const extra = count - 1;
+                      if (extra > maxRequired) maxRequired = extra;
+                  }
+              });
+              return maxRequired;
+          };
+
+          const requiredFamilySlots = getRequiredFamilyMembersCount();
+
+          const areAllSlotsAssigned = () => {
+              const primaryList = patientAssignments['primary'] || [];
+              if (primaryList.length === 0) return false;
+              for (let i = 0; i < requiredFamilySlots; i++) {
+                  const member = familyMembers[i];
+                  if (!member) return false;
+                  const mList = patientAssignments[member.id] || [];
+                  if (mList.length === 0) return false;
+              }
+              return true;
+          };
+
+          const getGenderConflict = (userGender, selectedPackageIds) => {
+              if (!userGender || !selectedPackageIds || selectedPackageIds.length === 0) return null;
+              for (const pid of selectedPackageIds) {
+                  const pkg = packages.find(p => p.id === Number(pid));
+                  if (pkg && pkg.gender !== "All" && userGender !== pkg.gender) {
+                      return `⚠️ Cannot assign "${pkg.name}". This package is strictly for ${pkg.gender} patients.`;
+                  }
+              }
+              return null;
+          };
+
+          const submitBooking = async (e) => {
+              e.preventDefault();
+              if (primaryBooking.preferredDate && primaryBooking.preferredTime) {
+                  const todayStr = new Date().toISOString().split('T')[0];
+                  if (primaryBooking.preferredDate === todayStr) {
+                      const startHour = parseInt(primaryBooking.preferredTime.split(':')[0], 10);
+                      const nowHour = new Date().getHours();
+                      if (startHour <= nowHour + 4) {
+                          alert("Please select a time slot at least 4 hours from current time.");
+                          return;
+                      }
+                  }
+              }
+
+              const totalAmount = calculateTotal();
+              const bookingData = {
+                  primaryBooking, cart, packageMembers, familyMembers, patientAssignments,
+                  totalAmount, timestamp: Date.now(), status: 'New'
+              };
+
+              setBookings(prev => [bookingData, ...prev]);
+
+              let msg = `*New Booking from Swasthya Care*\n\n`;
+              msg += `*Primary Patient / Billing Name:*\nName: ${primaryBooking.name}\nAge: ${primaryBooking.age}\nSex: ${primaryBooking.gender}\nEmail: ${primaryBooking.email}\nContact: ${primaryBooking.contact}\n`;
+              msg += `*Preferred Date & Time:* ${primaryBooking.preferredDate || 'Not specified'} at ${primaryBooking.preferredTime || 'Not specified'}\n`;
+              msg += `*Address:* ${primaryBooking.houseNo}, ${primaryBooking.street}, ${primaryBooking.city}, ${primaryBooking.state} - ${primaryBooking.pincode}\n`;
+              if (primaryBooking.mapLocation) msg += `*Google Maps Link:* ${primaryBooking.mapLocation}\n`;
+              
+              msg += `\n*Assigned Tests & Packages:*\n`;
+              const primaryAssigned = patientAssignments['primary'] || [];
+              msg += `• Primary Patient (${primaryBooking.name}): ${primaryAssigned.map(id => packages.find(p => p.id === Number(id))?.name || id).join(', ')}\n`;
+              
+              familyMembers.forEach((m, idx) => {
+                  if (idx < requiredFamilySlots) {
+                      const mAssigned = patientAssignments[m.id] || [];
+                      msg += `• Family Member ${idx+1} (${m.name || 'Unnamed'}): ${mAssigned.map(id => packages.find(p => p.id === Number(id))?.name || id).join(', ')}\n`;
+                  }
+              });
+
+              msg += `\n*Total Amount Payable: ₹${totalAmount}*\n`;
+              const waLink = `https://wa.me/${targetWhatsappNumber}?text=${encodeURIComponent(msg)}`;
+              window.open(waLink, '_blank');
+              setView('success');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+          };
+
+          return (
+              <div className="min-h-screen bg-slate-50 font-sans text-slate-800 selection:bg-teal-200 flex flex-col">
+                  {/* Background blobs */}
+                  <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+                      <div className="absolute top-0 right-0 w-1/3 h-1/3 bg-teal-100 rounded-bl-full opacity-50 blur-3xl mix-blend-multiply"></div>
+                      <div className="absolute bottom-0 left-0 w-1/2 h-1/2 bg-yellow-100 rounded-tr-full opacity-40 blur-3xl mix-blend-multiply"></div>
+                  </div>
+
+                  <div className="relative z-10 flex-grow">
+                      {/* Top Header */}
+                      <header className="bg-white/95 backdrop-blur-md shadow-sm sticky top-0 z-50 border-b border-slate-200">
+                          <div className="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+                              <div className="flex items-center cursor-pointer transition-transform hover:scale-105" onClick={() => { setView('menu'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
+                                  <img src="https://cdn1.healthians.com/img/healthians-logo.svg" alt="Healthians Logo" className="h-10 md:h-12 object-contain" />
+                              </div>
+                              <div className="flex items-center">
+                                  <span className="text-[10px] md:text-xs font-extrabold text-slate-500 uppercase tracking-wider mr-3 hidden sm:inline-block">Accredited By</span>
+                                  <div className="flex items-center space-x-2 md:space-x-3">
+                                      <img src="https://cdn1.healthians.com/img/lab_images/nabl.jpg" alt="NABL" className="h-10 md:h-14 w-auto object-contain bg-white p-1 rounded border border-slate-200" />
+                                      <img src="https://helma-mumbai.healthians.com/stationery/mailer-assets/68fb2c63f2840.png" alt="CAP" className="h-10 md:h-14 w-auto object-contain bg-white p-1 rounded border border-slate-200" />
+                                  </div>
+                              </div>
+                          </div>
+                      </header>
+
+                      {/* Floating Checkout Button */}
+                      {view === 'menu' && cart.length > 0 && (
+                          <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-40 animate-in slide-in-from-bottom-8 duration-500">
+                              <button onClick={() => { setView('checkout'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="flex items-center space-x-3 bg-teal-900 text-white px-6 py-3 rounded-full shadow-[0_8px_30px_rgb(0,0,0,0.3)] border-2 border-yellow-400 hover:bg-teal-800 hover:scale-105 transition-all">
+                                  <div className="relative flex items-center justify-center">
+                                      <Icon name="cart" className="w-5 h-5 text-yellow-400" />
+                                      <span className="absolute -top-3 -right-3 bg-yellow-400 text-teal-950 text-[10px] font-extrabold rounded-full w-5 h-5 flex items-center justify-center border-2 border-teal-900">{cart.length}</span>
+                                  </div>
+                                  <span className="font-bold text-sm tracking-wide">Proceed to Checkout</span>
+                              </button>
+                          </div>
+                      )}
+
+                      {}
+                      {view === 'menu' && (
+                          <div className="max-w-7xl mx-auto px-4 py-10 sm:px-6 lg:px-8">
+                              <div className={`text-center mb-12 transition-all duration-1000 transform ${loaded ? 'translate-y-0 opacity-100' : '-translate-y-12 opacity-0'}`}>
+                                  <div className="flex justify-center mb-4 cursor-pointer" onClick={(e) => { if (e.detail === 3) { setAdminModalOpen(true); setAdminPasswordInput(''); setAdminAuthError(false); } }}>
+                                      <img src="https://i.ibb.co/T5w8drb/tmp-6c91eb22-fc8e-420d-beee-e9d1f6dd2b09.png" alt="Swasthya Care" className="h-40 sm:h-48 md:h-56 lg:h-64 object-contain drop-shadow-sm select-none" />
+                                  </div>
+                                  <p className="text-lg md:text-xl text-slate-600 max-w-2xl mx-auto font-medium mt-6">
+                                      Invest in your well-being with our comprehensive, AI-curated health checkup plans.
+                                  </p>
+
+                                  <div className="mt-8 max-w-xl mx-auto relative">
+                                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                          <Icon name="search" className="h-5 w-5 text-teal-600" />
+                                      </div>
+                                      <input
+                                          type="text"
+                                          value={testSearchQuery}
+                                          onChange={(e) => setTestSearchQuery(e.target.value)}
+                                          placeholder="Search blood test (e.g. Lipid, Thyroid, CBC, Glucose, ESR)..."
+                                          className="w-full pl-11 pr-4 py-3 bg-white border border-teal-200 rounded-full shadow-sm focus:ring-2 focus:ring-teal-500 outline-none text-slate-700 font-medium"
+                                      />
+                                      {testSearchQuery && (
+                                          <button onClick={() => setTestSearchQuery('')} className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-slate-600 font-bold">Clear</button>
+                                      )}
+                                  </div>
+                              </div>
+
+                              {/* Physiological Map layout */}
+                              <div className={`mb-16 bg-white rounded-3xl shadow-sm border border-slate-100 p-8 flex flex-col md:flex-row items-center gap-12 transition-all duration-1000 transform ${loaded ? 'translate-y-0 opacity-100' : 'translate-y-12 opacity-0'}`}>
+                                  <div className="w-full md:w-5/12 flex justify-left relative">
+                                      <div className="relative w-64 h-[480px] select-none bg-slate-50 rounded-2xl p-4 border border-slate-200 shadow-inner flex flex-col items-center justify-center">
+                                          <svg viewBox="0 0 300 480" className="w-full h-full drop-shadow-xl relative z-10 pointer-events-none" xmlns="http://www.w3.org/2000/svg">
+                                              <path d="M150 15 C175 15 185 35 185 60 C185 85 170 95 170 110 C200 117 225 133 230 170 L245 310 C248 325 228 325 220 310 L205 190 L198 345 C205 400 200 445 200 455 C200 465 170 465 165 450 L155 315 L145 315 L135 450 C130 465 100 465 100 455 C100 445 95 400 102 345 L95 190 L80 310 C72 325 52 325 55 310 L70 170 C75 133 100 117 130 110 C130 95 115 85 115 60 C115 35 125 15 150 15 Z" fill="#f8fafc" stroke="#cbd5e1" strokeWidth="2" />
+                                              <g className="cursor-pointer transition-all duration-300 pointer-events-auto" onMouseEnter={() => setActiveBodyPart('thyroid')} onMouseLeave={() => setActiveBodyPart(null)} onClick={() => toggleBodyPartFilter('thyroid')}>
+                                                  <path d="M146 105 L154 105 L156 118 L144 118 Z" fill="#0284c7" opacity="0.8" />
+                                              </g>
+                                              <g className="cursor-pointer transition-all duration-300 pointer-events-auto" onMouseEnter={() => setActiveBodyPart('cardiovascular')} onMouseLeave={() => setActiveBodyPart(null)} onClick={() => toggleBodyPartFilter('cardiovascular')}>
+                                                  <path d="M148 180 C144 176 138 192 142 190 C146 198 150 206 150 206 C150 206 154 198 158 190 C162 182 156 176 152 180 C150 184 149 184 148 180 Z" fill="#e11d48" opacity="0.9" />
+                                              </g>
+                                              <g className="cursor-pointer transition-all duration-300 pointer-events-auto" onMouseEnter={() => setActiveBodyPart('kidney')} onMouseLeave={() => setActiveBodyPart(null)} onClick={() => toggleBodyPartFilter('kidney')}>
+                                                  <path d="M128 242 C120 242 116 256 123 264 C129 264 133 252 128 242 Z" fill="#7e22ce" opacity="0.85" />
+                                                  <path d="M172 242 C180 242 184 256 177 264 C171 264 167 252 172 242 Z" fill="#7e22ce" opacity="0.85" />
+                                              </g>
+                                          </svg>
+                                          {activeBodyPart && (
+                                              <div className="absolute top-4 bg-teal-900 text-white px-3 py-1 rounded-lg shadow text-xs font-bold capitalize z-10">
+                                                  {activeBodyPart.replace('_', ' ')}
+                                              </div>
+                                          )}
+                                      </div>
+                                  </div>
+
+                                  <div className="w-full md:w-7/12">
+                                      <h2 className="text-2xl font-extrabold text-teal-950 mb-2">Physiological Systems Map</h2>
+                                      <p className="text-slate-600 mb-6 text-sm">Select multiple systems below to filter packages based on clinical diagnostic panels.</p>
+                                      
+                                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                                          {[
+                                              { id: 'thyroid', label: 'Thyroid Gland' },
+                                              { id: 'respiratory', label: 'Respiratory system' },
+                                              { id: 'cardiovascular', label: 'Cardiovascular' },
+                                              { id: 'kidney', label: 'Kidney system' },
+                                              { id: 'liver', label: 'Liver' },
+                                              { id: 'intestine', label: 'Intestine' },
+                                              { id: 'bone', label: 'Bone (Joints)' },
+                                              { id: 'immune', label: 'Immune system' },
+                                              { id: 'metabolic', label: 'Metabolic system' },
+                                              { id: 'male_reproductive', label: 'Male Reproductive' },
+                                              { id: 'female_reproductive', label: 'Female Reproductive' },
+                                              { id: 'blood', label: 'Blood Profile' }
+                                          ].map(sys => {
+                                              const isSelected = selectedBodyPartsFilter.includes(sys.id);
+                                              return (
+                                                  <button
+                                                      key={sys.id}
+                                                      onClick={() => toggleBodyPartFilter(sys.id)}
+                                                      onMouseEnter={() => setActiveBodyPart(sys.id)}
+                                                      onMouseLeave={() => setActiveBodyPart(null)}
+                                                      className={`p-3 rounded-xl border text-left transition-all text-xs font-bold flex items-center justify-between ${
+                                                          isSelected ? 'bg-teal-900 text-white border-teal-900 shadow-md' : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-teal-50'
+                                                      }`}
+                                                  >
+                                                      <span>{sys.label}</span>
+                                                      {isSelected && <Icon name="check" className="w-3.5 h-3.5 text-yellow-400 shrink-0 ml-1" />}
+                                                  </button>
+                                              );
+                                          })}
+                                      </div>
+                                      {selectedBodyPartsFilter.length > 0 && (
+                                          <div className="mt-6 flex items-center justify-between bg-teal-50 p-3 rounded-xl border border-teal-200">
+                                              <span className="text-xs font-bold text-teal-900">Active Filters: {selectedBodyPartsFilter.length} system(s) selected</span>
+                                              <button onClick={() => setSelectedBodyPartsFilter([])} className="text-xs bg-red-100 hover:bg-red-200 text-red-800 px-3 py-1 rounded-lg font-bold transition-colors">Clear All Filters</button>
+                                          </div>
+                                      )}
+                                  </div>
+                              </div>
+
+                              {/* Navigation Tabs */}
+                              <div className="mb-10 flex flex-wrap items-center justify-center gap-3">
+                                  {[
+                                      { key: 'all', label: '🔬 All Lab Tests' },
+                                      { key: 'atoms', label: '🧬 Lab Atoms' },
+                                      { key: 'health', label: '❤️ Organ Health' },
+                                      { key: 'bundles', label: '🧍 Wellness Bundles' }
+                                  ].map(tab => (
+                                      <button
+                                          key={tab.key}
+                                          onClick={() => handleTabClick(tab.key)}
+                                          className={`px-5 py-3 rounded-2xl font-bold text-sm transition-all shadow-sm flex items-center space-x-2 relative overflow-hidden ${
+                                              activeCategoryTab === tab.key ? 'bg-teal-900 text-yellow-400 border-2 border-yellow-400 shadow-md scale-105' : 'bg-white text-slate-700 border border-slate-200 hover:bg-teal-50'
+                                          }`}
+                                      >
+                                          <span>{tab.label}</span>
+                                      </button>
+                                  ))}
+                              </div>
+
+                              {/* Packages Grid */}
+                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                                  {packages
+                                      .filter(pkg => {
+                                          if (activeCategoryTab === 'atoms' && pkg.dealType !== 'Lab Atoms') return false;
+                                          if (activeCategoryTab === 'health' && pkg.dealType !== 'Organ Health') return false;
+                                          if (activeCategoryTab === 'bundles' && pkg.dealType !== 'Wellness Bundle') return false;
+                                          const matchesBodyFilter = selectedBodyPartsFilter.length > 0 ? selectedBodyPartsFilter.some(part => pkg.bodyParts.includes(part)) : true;
+                                          const matchesSearchQuery = testSearchQuery ? pkg.name.toLowerCase().includes(testSearchQuery.toLowerCase()) : true;
+                                          const isHighlighted = activeBodyPart ? pkg.bodyParts.includes(activeBodyPart) : true;
+                                          return matchesBodyFilter && matchesSearchQuery && isHighlighted;
+                                      })
+                                      .map((pkg, index) => {
+                                          const isBundle = pkg.dealType === 'Wellness Bundle';
+                                          const currentMembers = getMemberCount(pkg.id);
+                                          const pricing = getPricingForMembers(pkg, currentMembers);
+                                          const isCelebrating = celebratingPkgId === pkg.id;
+                                          const calculatedTests = pkg.detailedParameters ? pkg.detailedParameters.length : 1;
+                                          const calculatedParams = pkg.detailedParameters ? pkg.detailedParameters.reduce((acc, cat) => acc + (cat.items ? cat.items.length : 0), 1) : 1;
+
+                                          return (
+                                              <div key={pkg.id} className="bg-white rounded-2xl shadow-sm border border-slate-100 flex flex-col h-full overflow-hidden group transition-all duration-500 hover:shadow-xl hover:border-teal-300 relative">
+                                                  {isCelebrating && (
+                                                      <div className="absolute inset-0 z-40 pointer-events-none flex items-center justify-center bg-yellow-500/10 backdrop-blur-[1px]">
+                                                          <div className="text-4xl animate-bounce">🎆</div>
+                                                      </div>
+                                                  )}
+                                                  <div className="relative h-40 overflow-hidden bg-slate-100">
+                                                      <img src={pkg.image} alt={pkg.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                                                      <div className="absolute top-3 right-3 flex flex-col items-end gap-1">
+                                                          {pkg.gender !== 'All' && (
+                                                              <span className={`text-[10px] uppercase font-extrabold px-2.5 py-1 rounded-full shadow ${pkg.gender === 'Female' ? 'bg-pink-600 text-white' : 'bg-blue-600 text-white'}`}>
+                                                                  {pkg.gender} Only
+                                                              </span>
+                                                          )}
+                                                      </div>
+                                                      <div className="absolute bottom-3 left-3 bg-white/95 backdrop-blur-sm px-2.5 py-1 rounded-lg text-xs font-bold text-teal-900 shadow">
+                                                          {calculatedTests} Tests
+                                                      </div>
+                                                      <button onClick={() => setSelectedPackageModal(pkg)} className="absolute bottom-3 right-3 bg-teal-900/95 hover:bg-teal-950 backdrop-blur-sm px-2.5 py-1 rounded-lg text-xs font-bold text-yellow-400 shadow transition-transform hover:scale-105 flex items-center space-x-1">
+                                                          <span>{calculatedParams} Parameters</span>
+                                                          <Icon name="info" className="w-3 h-3 ml-0.5 text-yellow-400" />
+                                                      </button>
+                                                  </div>
+
+                                                  <div className="p-6 flex flex-col flex-grow">
+                                                      <div className="flex items-center space-x-2 mb-2">
+                                                          <div className={`p-2 rounded-lg ${pkg.color}`}>
+                                                              <Icon name={pkg.iconName} className="w-5 h-5" />
+                                                          </div>
+                                                          <h3 className="text-lg font-bold text-slate-800 leading-tight">{pkg.name}</h3>
+                                                      </div>
+                                                      <p className="text-xs text-slate-500 mb-4 flex-grow leading-relaxed">
+                                                          {pkg.detailedParameters ? pkg.detailedParameters.map(c => c.category).join(', ') : 'Clinical Diagnostic Package'}
+                                                      </p>
+
+                                                      {isBundle && (
+                                                          <div className="mb-4 relative">
+                                                              <div className="flex items-center space-x-2">
+                                                                  <button type="button" onClick={() => setOpenMemberDropdown(openMemberDropdown === pkg.id ? null : pkg.id)} className="flex-1 flex items-center justify-between bg-teal-50 border border-teal-200 text-teal-900 px-3 py-2 rounded-xl text-xs font-bold shadow-sm">
+                                                                      <span>{currentMembers} Member{currentMembers > 1 ? 's' : ''}</span>
+                                                                      <Icon name="chevronDown" className="w-4 h-4 text-teal-700" />
+                                                                  </button>
+                                                              </div>
+                                                              {openMemberDropdown === pkg.id && (
+                                                                  <div className="absolute bottom-full mb-2 left-0 right-0 bg-white rounded-2xl shadow-2xl border border-slate-200 p-2 z-30">
+                                                                      {[1, 2, 3, 4].map(num => {
+                                                                          const pOpt = getPricingForMembers(pkg, num);
+                                                                          const isSelected = currentMembers === num;
+                                                                          return (
+                                                                              <div key={num} onClick={() => { setPackageMembers({ ...packageMembers, [pkg.id]: num }); setOpenMemberDropdown(null); if (num === 4) { setCelebratingPkgId(pkg.id); setTimeout(() => setCelebratingPkgId(null), 1800); } }} className={`flex items-center justify-between p-2.5 rounded-xl cursor-pointer ${isSelected ? 'bg-teal-50 border border-teal-300' : 'hover:bg-slate-50'}`}>
+                                                                                  <span className="text-xs font-bold text-slate-800">{num} Member{num > 1 ? 's' : ''}</span>
+                                                                                  <span className="text-xs font-extrabold text-teal-800">₹{pOpt.price}</span>
+                                                                              </div>
+                                                                          );
+                                                                      })}
+                                                                  </div>
+                                                              )}
+                                                              <div className="mt-2 text-center py-1.5 px-2 bg-amber-50 border border-amber-200 rounded-lg text-[11px] font-bold text-amber-800">
+                                                                  {getEncouragingBanner(pkg, currentMembers)}
+                                                              </div>
+                                                          </div>
+                                                      )}
+
+                                                      <div className="mt-auto">
+                                                          <div className="flex items-center space-x-3 mb-4">
+                                                              <span className="text-sm font-bold text-slate-400 line-through">₹{pricing.mrp}</span>
+                                                              <span className="text-2xl font-extrabold text-emerald-700">₹{pricing.price}</span>
+                                                          </div>
+                                                          <div className="grid grid-cols-2 gap-2">
+                                                              <button onClick={() => toggleCart(pkg.id)} className={`flex items-center justify-center w-full py-2 text-xs font-bold rounded-lg transition-colors shadow-sm ${cart.includes(pkg.id) ? 'bg-teal-700 text-white' : 'bg-yellow-400 hover:bg-yellow-500 text-teal-950'}`}>
+                                                                  <Icon name="cart" className="w-3.5 h-3.5 mr-1" />
+                                                                  {cart.includes(pkg.id) ? 'Added ✓' : 'Add to Cart'}
+                                                              </button>
+                                                              <button onClick={() => { setChatOpen(true); handleSendMessage(`Tell me more about ${pkg.name}.`, true); }} className="flex items-center justify-center w-full py-2 text-xs font-bold bg-slate-100 hover:bg-teal-50 text-teal-800 border border-slate-200 rounded-lg">
+                                                                  <Icon name="message" className="w-3.5 h-3.5 mr-1" /> Ask AI
+                                                              </button>
+                                                          </div>
+                                                      </div>
+                                                  </div>
+                                              </div>
+                                          );
+                                      })}
+                              </div>
+                          </div>
+                      )}
+
+                      {}
+                      {view === 'checkout' && (
+                          <div className="max-w-4xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
+                              <button onClick={() => setView('menu')} className="flex items-center text-teal-700 hover:text-teal-900 font-semibold mb-8 group">
+                                  <Icon name="arrow" className="w-5 h-5 mr-2 transform rotate-180" /> Back to Packages
+                              </button>
+
+                              <div className="bg-white rounded-3xl shadow-lg border border-slate-100 overflow-hidden">
+                                  <div className="bg-teal-900 p-6 md:p-8 text-white">
+                                      <h2 className="text-3xl font-extrabold mb-2 text-yellow-400">Complete Your Booking</h2>
+                                      <p className="text-teal-100">Assign tests to family members and fill patient & address details.</p>
+                                  </div>
+
+                                  <form onSubmit={submitBooking} className="p-6 md:p-8">
+                                      <div className="mb-10">
+                                          <h3 className="text-xl font-bold text-slate-800 mb-6">Primary Patient Details & Address</h3>
+                                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                              <div>
+                                                  <label className="block text-sm font-semibold text-slate-700 mb-1">Full Name (Billing Name) *</label>
+                                                  <input required type="text" value={primaryBooking.name} onChange={e => setPrimaryBooking({...primaryBooking, name: e.target.value})} className="w-full p-2.5 bg-slate-50 border border-teal-200 rounded-lg outline-none" placeholder="John Doe" />
+                                              </div>
+                                              <div className="grid grid-cols-2 gap-4">
+                                                  <div>
+                                                      <label className="block text-sm font-semibold text-slate-700 mb-1">Age *</label>
+                                                      <input required type="number" min="1" max="120" value={primaryBooking.age} onChange={e => setPrimaryBooking({...primaryBooking, age: e.target.value})} className="w-full p-2.5 bg-slate-50 border border-teal-200 rounded-lg outline-none" placeholder="Years" />
+                                                  </div>
+                                                  <div>
+                                                      <label className="block text-sm font-semibold text-slate-700 mb-1">Sex *</label>
+                                                      <select required value={primaryBooking.gender} onChange={e => setPrimaryBooking({...primaryBooking, gender: e.target.value})} className="w-full p-2.5 bg-slate-50 border border-teal-200 rounded-lg outline-none">
+                                                          <option value="">Select</option>
+                                                          <option value="Male">Male</option>
+                                                          <option value="Female">Female</option>
+                                                          <option value="Other">Other</option>
+                                                      </select>
+                                                  </div>
+                                              </div>
+                                              <div>
+                                                  <label className="block text-sm font-semibold text-slate-700 mb-1">Email ID *</label>
+                                                  <input required type="email" value={primaryBooking.email} onChange={e => setPrimaryBooking({...primaryBooking, email: e.target.value})} className="w-full p-2.5 bg-slate-50 border border-teal-200 rounded-lg outline-none" placeholder="email@example.com" />
+                                              </div>
+                                              <div>
+                                                  <label className="block text-sm font-semibold text-slate-700 mb-1">Contact No *</label>
+                                                  <input required type="tel" value={primaryBooking.contact} onChange={e => setPrimaryBooking({...primaryBooking, contact: e.target.value})} className="w-full p-2.5 bg-slate-50 border border-teal-200 rounded-lg outline-none" placeholder="10-digit mobile" />
+                                              </div>
+
+                                              {/* Primary Patient Test Assignment */}
+                                              <div className="md:col-span-2 bg-teal-50/70 p-4 rounded-xl border border-teal-200 space-y-3">
+                                                  <label className="block text-xs font-bold text-teal-950 uppercase">Assign Tests for Primary Patient ({primaryBooking.name || 'Primary'}):</label>
+                                                  <div className="flex flex-wrap gap-2">
+                                                      {cart.map(id => {
+                                                          const pkg = packages.find(p => p.id === id);
+                                                          if (!pkg) return null;
+                                                          const assignedList = patientAssignments['primary'] || [];
+                                                          const isAssigned = assignedList.includes(id);
+                                                          return (
+                                                              <button
+                                                                  key={id}
+                                                                  type="button"
+                                                                  onClick={() => {
+                                                                      const current = patientAssignments['primary'] || [];
+                                                                      const updated = isAssigned ? current.filter(x => x !== id) : [...current, id];
+                                                                      setPatientAssignments({ ...patientAssignments, primary: updated });
+                                                                  }}
+                                                                  className={`px-3 py-1.5 rounded-lg text-xs font-bold border flex items-center space-x-1.5 ${isAssigned ? 'bg-teal-900 text-yellow-400 border-teal-900' : 'bg-white text-slate-700 border-slate-200'}`}
+                                                              >
+                                                                  <span>{pkg.name}</span>
+                                                                  {isAssigned && <Icon name="check" className="w-3 h-3 text-yellow-400" />}
+                                                              </button>
+                                                          );
+                                                      })}
+                                                  </div>
+                                              </div>
+
+                                              {/* Address & GPS */}
+                                              <div className="md:col-span-2 border-t border-slate-200 pt-4 mt-2">
+                                                  <div className="flex justify-between items-center mb-4">
+                                                      <label className="block text-sm font-bold text-teal-900">Home Address for Sample Collection *</label>
+                                                      <button type="button" onClick={getLocation} className="text-xs bg-teal-50 border border-teal-200 text-teal-800 font-bold py-1.5 px-3 rounded-lg flex items-center">
+                                                          <Icon name="pin" className="w-3 h-3 mr-1 text-red-500" /> Auto-detect My Location
+                                                      </button>
+                                                  </div>
+                                                  {locationStatus && <p className="text-xs font-bold mb-3 text-teal-700">{locationStatus}</p>}
+                                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                      <input required type="text" value={primaryBooking.houseNo} onChange={e => setPrimaryBooking({...primaryBooking, houseNo: e.target.value})} className="w-full p-2.5 bg-slate-50 border border-teal-200 rounded-lg outline-none text-sm" placeholder="House / Flat No." />
+                                                      <input required type="text" value={primaryBooking.street} onChange={e => setPrimaryBooking({...primaryBooking, street: e.target.value})} className="w-full p-2.5 bg-slate-50 border border-teal-200 rounded-lg outline-none text-sm" placeholder="Street / Locality" />
+                                                      <input required type="text" value={primaryBooking.city} onChange={e => setPrimaryBooking({...primaryBooking, city: e.target.value})} className="w-full p-2.5 bg-slate-50 border border-teal-200 rounded-lg outline-none text-sm" placeholder="City" />
+                                                      <div className="grid grid-cols-2 gap-2">
+                                                          <input required type="text" value={primaryBooking.state} onChange={e => setPrimaryBooking({...primaryBooking, state: e.target.value})} className="w-full p-2.5 bg-slate-50 border border-teal-200 rounded-lg outline-none text-sm" placeholder="State" />
+                                                          <input required type="text" value={primaryBooking.pincode} onChange={e => setPrimaryBooking({...primaryBooking, pincode: e.target.value})} className="w-full p-2.5 bg-slate-50 border border-teal-200 rounded-lg outline-none text-sm" placeholder="Pincode" />
+                                                      </div>
+                                                  </div>
+                                              </div>
+
+                                              {/* Date & Time Slot */}
+                                              <div className="md:col-span-2 bg-teal-50/50 p-4 rounded-xl border border-teal-100">
+                                                  <div className="mb-4">
+                                                      <label className="block text-xs font-bold text-teal-900 mb-1">Preferred Collection Date *</label>
+                                                      <input required type="date" min={getMinBookingDate()} value={primaryBooking.preferredDate} onChange={e => setPrimaryBooking({...primaryBooking, preferredDate: e.target.value})} className="w-full p-2.5 bg-white border border-teal-200 rounded-lg text-sm" />
+                                                  </div>
+                                                  <label className="block text-xs font-bold text-teal-900 mb-2">Select Time Slot *</label>
+                                                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                                                      {["07:00 AM - 08:00 AM", "08:00 AM - 09:00 AM", "09:00 AM - 10:00 AM", "10:00 AM - 11:00 AM", "11:00 AM - 12:00 PM", "12:00 PM - 13:00 PM", "14:00 PM - 15:00 PM", "16:00 PM - 17:00 PM"].map(slot => (
+                                                          <button key={slot} type="button" onClick={() => setPrimaryBooking({...primaryBooking, preferredTime: slot})} className={`py-2 px-3 text-xs font-bold rounded-lg border ${primaryBooking.preferredTime === slot ? 'bg-teal-900 text-yellow-400 border-teal-900' : 'bg-white text-slate-700 border-slate-200'}`}>
+                                                              {slot}
+                                                          </button>
+                                                      ))}
+                                                  </div>
+                                              </div>
+                                          </div>
+                                      </div>
+
+                                      {/* Family Members Section */}
+                                      <div className="mb-10">
+                                          <div className="flex justify-between items-center mb-6">
+                                              <h3 className="text-xl font-bold text-slate-800">Additional Family Members</h3>
+                                              <button type="button" onClick={addFamilyMember} className="flex items-center text-sm font-bold text-teal-700 bg-teal-50 px-3 py-2 rounded-lg border border-teal-200">
+                                                  <Icon name="plus" className="w-4 h-4 mr-1" /> Add Family Member
+                                              </button>
+                                          </div>
+
+                                          {familyMembers.map((member, index) => (
+                                              <div key={member.id} className="relative bg-white border border-teal-100 rounded-xl p-5 shadow-sm space-y-4 mb-4">
+                                                  <button type="button" onClick={() => removeFamilyMember(member.id)} className="absolute top-4 right-4 text-red-400 hover:text-red-600">
+                                                      <Icon name="trash" className="w-5 h-5" />
+                                                  </button>
+                                                  <h4 className="font-bold text-teal-800">Family Member {index + 1}</h4>
+                                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                      <input required type="text" value={member.name} onChange={e => updateFamilyMember(member.id, 'name', e.target.value)} className="w-full p-2 border border-teal-200 rounded-md text-sm" placeholder="Member Name" />
+                                                      <div className="grid grid-cols-2 gap-2">
+                                                          <input required type="number" min="1" max="120" value={member.age} onChange={e => updateFamilyMember(member.id, 'age', e.target.value)} className="w-full p-2 border border-teal-200 rounded-md text-sm" placeholder="Age" />
+                                                          <select required value={member.gender} onChange={e => updateFamilyMember(member.id, 'gender', e.target.value)} className="w-full p-2 border border-teal-200 rounded-md text-sm">
+                                                              <option value="">Sex</option>
+                                                              <option value="Male">Male</option>
+                                                              <option value="Female">Female</option>
+                                                          </select>
+                                                      </div>
+                                                  </div>
+                                              </div>
+                                          ))}
+                                      </div>
+
+                                      <div className="bg-teal-900 rounded-xl p-6 flex flex-col md:flex-row justify-between items-center text-white">
+                                          <div>
+                                              <p className="text-teal-200 font-medium">Total Amount Payable</p>
+                                              <p className="text-3xl font-extrabold text-yellow-400">₹{calculateTotal()}</p>
+                                          </div>
+                                          <button type="submit" disabled={cart.length === 0} className="w-full md:w-auto mt-4 md:mt-0 bg-yellow-400 hover:bg-yellow-500 text-teal-950 font-bold text-lg py-3 px-8 rounded-full shadow-lg">
+                                              Confirm Booking
+                                          </button>
+                                      </div>
+                                  </form>
+                              </div>
+                          </div>
+                      )}
+
+                      {}
+                      {view === 'success' && (
+                          <div className="max-w-2xl mx-auto px-4 py-20 text-center animate-in zoom-in duration-500">
+                              <div className="inline-flex items-center justify-center w-24 h-24 bg-teal-100 rounded-full mb-8">
+                                  <Icon name="check" className="w-12 h-12 text-teal-600" />
+                              </div>
+                              <h2 className="text-4xl font-extrabold text-teal-950 mb-4">Booking Confirmed!</h2>
+                              <p className="text-lg text-slate-600 mb-8">Thank you, <span className="font-bold text-teal-800">{primaryBooking.name}</span>. Your home sample collection has been scheduled.</p>
+                              <button onClick={() => { setView('menu'); setCart([]); setFamilyMembers([]); }} className="bg-teal-900 text-white px-8 py-3 rounded-full font-bold hover:bg-teal-800 shadow-md">
+                                  Return to Home
+                              </button>
+                          </div>
+                      )}
+
+                      {view === 'admin' && (
+                          <div className="max-w-7xl mx-auto px-4 py-12">
+                              <div className="flex justify-between items-center mb-8">
+                                  <h2 className="text-3xl font-extrabold text-teal-950 flex items-center">
+                                      <Icon name="lock" className="w-8 h-8 mr-3 text-teal-700" /> Lab Admin Dashboard
+                                  </h2>
+                                  <div className="flex items-center space-x-3">
+                                      <button onClick={copyBookingsToClipboardForGoogleSheets} className="bg-emerald-700 text-white px-4 py-2.5 rounded-xl font-bold text-xs flex items-center shadow">
+                                          <Icon name="copy" className="w-4 h-4 mr-2" /> Copy Data for Google Sheets
+                                      </button>
+                                      <button onClick={() => setView('menu')} className="bg-slate-200 text-slate-800 px-4 py-2.5 rounded-xl font-bold text-xs">Exit Admin</button>
+                                  </div>
+                              </div>
+
+                              <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-6 md:p-8 mb-8">
+                                  <h3 className="text-lg font-extrabold text-teal-950 mb-4">Bulk CSV Test & Pricing Manager</h3>
+                                  <textarea rows="3" value={adminCsvInput} onChange={e => setAdminCsvInput(e.target.value)} placeholder="PackageName,DealType,MRP,Price,Gender" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-mono text-xs mb-4" />
+                                  <button onClick={() => handleCsvImport(adminCsvInput)} className="px-6 py-2 bg-teal-900 text-yellow-400 rounded-xl font-bold text-xs shadow">Sync Catalog</button>
+                                  {adminFeedback && <p className="mt-3 text-xs font-bold text-teal-800">{adminFeedback}</p>}
+                              </div>
+                          </div>
+                      )}
+                  </div>
+
+                  {/* Footer */}
+                  <footer className="w-full bg-white border-t border-slate-200 mt-auto py-6 px-6 text-center text-xs text-slate-500">
+                      © 2026 Swasthya Care Diagnostics. NABL & CAP Accredited Laboratories.
+                  </footer>
+
+                  {/* Admin Password Modal */}
+                  {adminModalOpen && (
+                      <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+                          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl">
+                              <h3 className="font-extrabold text-lg mb-4 text-teal-950">Lab Admin Login</h3>
+                              <form onSubmit={(e) => {
+                                  e.preventDefault();
+                                  if (adminPasswordInput === adminPassword) {
+                                      setAdminModalOpen(false);
+                                      setView('admin');
+                                      setAdminAuthError(false);
+                                  } else {
+                                      setAdminAuthError(true);
+                                  }
+                              }}>
+                                  <input type="password" required value={adminPasswordInput} onChange={e => setAdminPasswordInput(e.target.value)} placeholder="Enter password..." className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl mb-3 text-sm" />
+                                  {adminAuthError && <p className="text-xs text-red-600 font-bold mb-3">Incorrect password.</p>}
+                                  <div className="flex justify-end space-x-2">
+                                      <button type="button" onClick={() => setAdminModalOpen(false)} className="px-4 py-2 bg-slate-100 rounded-xl text-xs font-bold">Cancel</button>
+                                      <button type="submit" className="px-5 py-2 bg-teal-900 text-yellow-400 rounded-xl text-xs font-bold">Login</button>
+                                  </div>
+                              </form>
+                          </div>
+                      </div>
+                  )}
+
+                  {/* Floating AI Chat Assistant */}
+                  <div className="fixed bottom-6 right-6 z-50">
+                      {!chatOpen && (
+                          <button onClick={() => setChatOpen(true)} className="bg-teal-700 text-white p-4 rounded-full shadow-2xl hover:bg-teal-800 transition-transform hover:scale-110 flex items-center justify-center border-2 border-teal-600">
+                              <Icon name="message" className="w-7 h-7" />
+                          </button>
+                      )}
+                      {chatOpen && (
+                          <div className="bg-white w-80 md:w-96 rounded-2xl shadow-2xl border border-slate-200 flex flex-col h-[500px]">
+                              <div className="bg-teal-900 text-white p-4 flex justify-between items-center">
+                                  <h3 className="font-bold text-yellow-400">Swasthya AI Assistant</h3>
+                                  <button onClick={() => setChatOpen(false)} className="text-teal-200 hover:text-white"><Icon name="x" className="w-5 h-5" /></button>
+                              </div>
+                              <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50">
+                                  {messages.map((msg, idx) => (
+                                      <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                          <div className={`max-w-[85%] rounded-2xl p-3 text-sm shadow-sm ${msg.role === 'user' ? 'bg-teal-600 text-white' : 'bg-white border text-slate-700'}`}>
+                                              {msg.role === 'user' ? msg.text : renderModelMessage(msg.text)}
+                                          </div>
+                                      </div>
+                                  ))}
+                                  {isAILoading && <div className="text-xs text-slate-400 italic">Thinking...</div>}
+                                  <div ref={chatEndRef} />
+                              </div>
+                              <form onSubmit={e => { e.preventDefault(); handleSendMessage(inputValue); }} className="p-3 bg-white border-t flex">
+                                  <input type="text" value={inputValue} onChange={e => setInputValue(e.target.value)} placeholder="Ask about tests or symptoms..." className="flex-1 p-2 bg-slate-50 border rounded-l-xl text-sm outline-none" />
+                                  <button type="submit" className="bg-teal-700 text-white px-4 rounded-r-xl font-bold text-sm">Send</button>
+                              </form>
+                          </div>
+                      )}
+                  </div>
+              </div>
+          );
         }
 
-        function tryGemini() {
-            showToast("Redirecting to active Gemini session workspace...");
-            setTimeout(() => {
-                window.location.reload();
-            }, 1000);
-        }
-
-        function showToast(message) {
-            const existing = document.getElementById('toastNotification');
-            if (existing) existing.remove();
-
-            const toast = document.createElement('div');
-            toast.id = 'toastNotification';
-            toast.className = 'fixed bottom-24 left-1/2 -translate-x-1/2 bg-[#282a2c] text-[#e3e3e3] text-xs px-4 py-2.5 rounded-xl shadow-2xl z-50 border border-[#444746] transition-all duration-300';
-            toast.innerText = message;
-            document.body.appendChild(toast);
-            setTimeout(() => toast.remove(), 2500);
-        }
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
     </script>
 </body>
 </html>
