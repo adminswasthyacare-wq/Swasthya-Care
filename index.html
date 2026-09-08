@@ -4,18 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Swasthya Care - Test Today. A Healthier Tomorrow.</title>
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- React & ReactDOM -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <!-- Babel Standalone -->
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script crossorigin src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <!-- Firebase Compat SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; }
@@ -30,7 +26,6 @@
     <script type="text/babel">
         const { useState, useEffect, useRef } = React;
 
-        // Initialize Firebase Compat securely
         const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : { apiKey: "demo", projectId: "demo" };
         if (!firebase.apps.length) {
             firebase.initializeApp(firebaseConfig);
@@ -39,7 +34,6 @@
         const db = firebase.firestore();
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
-        // SVG Icon Component
         const Icon = ({ name, className = "w-5 h-5", ...props }) => {
             const icons = {
                 activity: <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>,
@@ -404,8 +398,6 @@
           const [adminDateFilter, setAdminDateFilter] = useState('all');
 
           const [selectedStandardAtom, setSelectedStandardAtom] = useState('');
-          const [newCategoryName, setNewCategoryName] = useState('');
-          const [newCustomParamInput, setNewCustomParamInput] = useState({});
           const [selectedAtomQuickParam, setSelectedAtomQuickParam] = useState({});
           const [collapsedCategories, setCollapsedCategories] = useState({});
 
@@ -443,7 +435,7 @@
                                   street: addr.road || addr.suburb || addr.neighbourhood || prev.street,
                                   city: addr.city || addr.town || addr.village || addr.state_district || prev.city,
                                   state: addr.state || prev.state,
-                                  pincode: addr.postcode || prev.pincode,
+                                  pincode: addr.postcode || prev.postcode || prev.pincode,
                                   mapLocation: link
                               }));
                               setLocationStatus('Location detected & address filled successfully ✓');
@@ -484,10 +476,10 @@
               try {
                   const unsubscribe = db.collection('artifacts').doc(appId).collection('public').doc('data').collection('bookings')
                       .onSnapshot((snapshot) => {
-                          const b = [];
-                          snapshot.forEach(doc => b.push({ id: doc.id, ...doc.data() }));
-                          b.sort((x, y) => (y.timestamp || 0) - (x.timestamp || 0));
-                          setBookings(b);
+                          const bookingsList = [];
+                          snapshot.forEach(doc => bookingsList.push({ id: doc.id, ...doc.data() }));
+                          bookingsList.sort((x, y) => (y.timestamp || 0) - (x.timestamp || 0));
+                          setBookings(bookingsList);
                       }, (error) => console.error("Firestore Error: ", error));
                   return () => unsubscribe();
               } catch(e) {
@@ -560,7 +552,6 @@
               const todayStr = new Date().toISOString().split('T')[0];
 
               for (let i = 1; i < lines.length; i++) {
-                  // Simple CSV parser respecting potential quotes
                   const row = lines[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(item => item.trim().replace(/^"|"$/g, ''));
                   if (row.length >= 5) {
                       const name = row[0];
@@ -568,7 +559,7 @@
                       const mrp = Number(row[2]) || 2000;
                       const price = Number(row[3]) || 750;
                       const gender = row[4] || 'All';
-                      const detailsStr = row[5] || ''; // Format: Category:P1,P2 | Cat2:P3
+                      const detailsStr = row[5] || '';
 
                       let parsedDetailed = [{ category: "GENERAL PARAMETERS", items: ["Hemoglobin", "Glucose"] }];
                       if (detailsStr) {
@@ -605,7 +596,7 @@
                   }
               }
               setPackages(updatedPackages);
-              setAdminFeedback(`Successfully imported/updated ${importedCount} packages from CSV with tests & parameters! ✓`);
+              setAdminFeedback(`Successfully imported/updated ${importedCount} packages from CSV with complete tests & parameters! ✓`);
           };
 
           const handleFileUpload = (e) => {
@@ -693,7 +684,7 @@
                       if (!pkg) return null;
                       const inCart = cart.includes(pkgId);
                       const calculatedTests = pkg.detailedParameters ? pkg.detailedParameters.length : 1;
-                      const calculatedParams = pkg.detailedParameters ? pkg.detailedParameters.reduce((acc, cat) => acc + (cat.items ? cat.items.length : 0), 1) : 1;
+                      const calculatedParameters = pkg.detailedParameters ? pkg.detailedParameters.reduce((acc, cat) => acc + (cat.items ? cat.items.length : 0), 1) : 1;
                       return (
                           <button
                               key={index}
@@ -705,7 +696,7 @@
                               }`}
                           >
                               <Icon name="cart" className="w-4 h-4 mr-1.5" />
-                              {inCart ? `Added ${pkg.name} ✓` : `Add ${pkg.name} to Cart - ₹${pkg.price} (${calculatedTests} Tests, ${calculatedParams} Params)`}
+                              {inCart ? `Added ${pkg.name} ✓` : `Add ${pkg.name} to Cart - ₹${pkg.price} (${calculatedTests} Tests, ${calculatedParameters} Params)`}
                           </button>
                       );
                   }
@@ -1062,7 +1053,7 @@
                                           const pricing = getPricingForMembers(pkg, currentMembers);
                                           const isCelebrating = celebratingPkgId === pkg.id;
                                           const calculatedTests = pkg.detailedParameters ? pkg.detailedParameters.length : 1;
-                                          const calculatedParams = pkg.detailedParameters ? pkg.detailedParameters.reduce((acc, cat) => acc + (cat.items ? cat.items.length : 0), 1) : 1;
+                                          const calculatedParameters = pkg.detailedParameters ? pkg.detailedParameters.reduce((acc, cat) => acc + (cat.items ? cat.items.length : 0), 1) : 1;
 
                                           return (
                                               <div key={pkg.id} className="bg-white rounded-2xl shadow-sm border border-slate-100 flex flex-col h-full overflow-hidden group transition-all duration-500 hover:shadow-xl hover:border-teal-300 relative">
@@ -1084,7 +1075,7 @@
                                                           {calculatedTests} Tests
                                                       </div>
                                                       <button onClick={() => setSelectedPackageModal(pkg)} className="absolute bottom-3 right-3 bg-teal-900/95 hover:bg-teal-950 backdrop-blur-sm px-2.5 py-1 rounded-lg text-xs font-bold text-yellow-400 shadow transition-transform hover:scale-105 flex items-center space-x-1">
-                                                          <span>{calculatedParams} Parameters</span>
+                                                          <span>{calculatedParameters} Parameters</span>
                                                           <Icon name="info" className="w-3 h-3 ml-0.5 text-yellow-400" />
                                                       </button>
                                                   </div>
@@ -1360,7 +1351,7 @@
                               <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden mb-12">
                                   <div className="p-6 border-b bg-slate-50 flex flex-col md:flex-row justify-between items-center gap-4">
                                       <div>
-                                          <h3 className="font-extrabold text-teal-950 text-lg">Catalog & Test Inventory ({packages.length} Packages)</h3>
+                                          <h3 className="font-extrabold text-teal-950 text-lg">Catalog & Test Inventory ({sortedInventory.length} Packages)</h3>
                                           <p className="text-xs text-slate-500">Click column headers to sort • Filter tests • Select multiple to delete</p>
                                       </div>
                                       <div className="flex flex-wrap items-center gap-2">
@@ -1511,9 +1502,9 @@
                                       if (!otpSent) {
                                           if (resetEmail.trim().toLowerCase() === 'admin.swasthyacare@gmail.com') {
                                               setOtpSent(true);
-                                              setOtpMessage('OTP sent to registered admin email. (Hint: 1234) ✓');
+                                              setOtpMessage('OTP sent to registered admin email successfully. (Hint: 1234) ✓');
                                           } else {
-                                              setOtpMessage('Please use admin.swasthyacare@gmail.com');
+                                              setOtpMessage('Please use correct admin email address.');
                                           }
                                       } else {
                                           if (otpInput === '1234' && newPasswordInput.trim().length >= 6) {
@@ -1528,7 +1519,7 @@
                                   }}>
                                       <div className="mb-3">
                                           <label className="block text-xs font-bold text-slate-700 mb-1">Admin Email</label>
-                                          <input type="email" required disabled={otpSent} value={resetEmail} onChange={e => setResetEmail(e.target.value)} placeholder="admin.swasthyacare@gmail.com" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-mono" />
+                                          <input type="email" required disabled={otpSent} value={resetEmail} onChange={e => setResetEmail(e.target.value)} placeholder="Enter admin email..." className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-mono" />
                                       </div>
                                       {otpSent && (
                                           <>
@@ -1609,10 +1600,25 @@
                                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                       <div>
                                           <label className="block text-xs font-bold text-slate-700 mb-1">Deal Type</label>
-                                          <select value={editingPackage.dealType || 'Lab Atoms'} onChange={e => setEditingPackage({ ...editingPackage, dealType: e.target.value })} className="w-full p-2.5 bg-white border border-slate-200 rounded-xl text-sm font-bold">
+                                          <select 
+                                              value={['Lab Atoms', 'Organ Health', 'Wellness Bundle'].includes(editingPackage.dealType) ? editingPackage.dealType : 'OTHER_DEAL'} 
+                                              onChange={e => {
+                                                  const val = e.target.value;
+                                                  if (val === 'OTHER_DEAL') {
+                                                      const customDeal = prompt("Enter custom deal type:");
+                                                      if (customDeal && customDeal.trim()) {
+                                                          setEditingPackage({ ...editingPackage, dealType: customDeal.trim() });
+                                                      }
+                                                  } else {
+                                                      setEditingPackage({ ...editingPackage, dealType: val });
+                                                  }
+                                              }} 
+                                              className="w-full p-2.5 bg-white border border-slate-200 rounded-xl text-sm font-bold"
+                                          >
                                               <option value="Lab Atoms">Lab Atoms</option>
                                               <option value="Organ Health">Organ Health</option>
                                               <option value="Wellness Bundle">Wellness Bundle</option>
+                                              <option value="OTHER_DEAL">+ Other (Type custom deal type)...</option>
                                           </select>
                                       </div>
                                       <div>
@@ -1636,42 +1642,52 @@
                                   </div>
 
                                   <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3">
-                                      <label className="block text-xs font-bold text-teal-950 uppercase">Add Test Categories & Parameters:</label>
+                                      <label className="block text-xs font-bold text-teal-950 uppercase">Add Test / Category Profile:</label>
                                       
-                                      {/* Option to create a custom test category */}
-                                      <div className="flex gap-2 mb-2">
-                                          <input 
-                                              type="text" 
-                                              value={newCategoryName} 
-                                              onChange={e => setNewCategoryName(e.target.value)} 
-                                              placeholder="New Test Category Name (e.g. CUSTOM PANEL)" 
-                                              className="flex-1 p-2 bg-white border border-slate-200 rounded-xl text-xs outline-none"
-                                          />
-                                          <button type="button" onClick={() => {
-                                              if (!newCategoryName.trim()) return;
-                                              const existing = [...(editingPackage.detailedParameters || [])];
-                                              existing.push({ category: newCategoryName.trim().toUpperCase(), items: ["General Parameter"] });
-                                              setEditingPackage({ ...editingPackage, detailedParameters: existing });
-                                              setNewCategoryName('');
-                                          }} className="bg-teal-900 text-yellow-400 px-4 py-2 rounded-xl text-xs font-bold">+ Add Category</button>
-                                      </div>
-
                                       <div className="flex gap-2">
                                           <select value={selectedStandardAtom} onChange={e => setSelectedStandardAtom(e.target.value)} className="flex-1 p-2 bg-white border border-slate-200 rounded-xl text-xs font-medium outline-none">
-                                              <option value="">Or select standard medical profile...</option>
+                                              <option value="">Select test profile from catalog / Lab Atoms...</option>
+                                              <option value="OTHER_TEST" className="font-bold text-teal-700">+ Other (Type custom test)...</option>
+                                              {packages.filter(p => p.dealType === 'Lab Atoms').map(p => (
+                                                  <option key={p.id} value={p.name}>{p.name} (Lab Atom Profile)</option>
+                                              ))}
                                               {pathologyMedicalStandards.map((item, idx) => (
-                                                  <option key={idx} value={item.name}>{item.name} ({item.items.length} parameters)</option>
+                                                  <option key={idx} value={item.name}>{item.name} (Standard Medical Standard)</option>
                                               ))}
                                           </select>
                                           <button type="button" onClick={() => {
-                                              if (!selectedStandardAtom) return;
+                                              if (!selectedStandardAtom || selectedStandardAtom === 'OTHER_TEST') return;
                                               const existingParams = [...(editingPackage.detailedParameters || [])];
-                                              const found = pathologyMedicalStandards.find(s => s.name === selectedStandardAtom);
-                                              if (found) existingParams.push({ category: found.name, items: [...found.items] });
+                                              const matchingPkg = packages.find(p => p.name === selectedStandardAtom);
+                                              if (matchingPkg && matchingPkg.detailedParameters) {
+                                                  matchingPkg.detailedParameters.forEach(cat => existingParams.push({ category: cat.category, items: [...cat.items] }));
+                                              } else {
+                                                  const found = pathologyMedicalStandards.find(s => s.name === selectedStandardAtom);
+                                                  if (found) existingParams.push({ category: found.name, items: [...found.items] });
+                                              }
                                               setEditingPackage({ ...editingPackage, detailedParameters: existingParams });
                                               setSelectedStandardAtom('');
-                                          }} className="bg-teal-900 text-yellow-400 px-4 py-2 rounded-xl text-xs font-bold">Add Profile</button>
+                                          }} className="bg-teal-900 text-yellow-400 px-4 py-2 rounded-xl text-xs font-bold">Add Test</button>
                                       </div>
+
+                                      {selectedStandardAtom === 'OTHER_TEST' && (
+                                          <div className="flex gap-2 mt-2">
+                                              <input 
+                                                  type="text" 
+                                                  id="inlineCustomTestInput" 
+                                                  placeholder="Type custom test / category name..." 
+                                                  className="flex-1 p-2 bg-white border border-slate-200 rounded-xl text-xs outline-none"
+                                              />
+                                              <button type="button" onClick={() => {
+                                                  const val = document.getElementById('inlineCustomTestInput').value;
+                                                  if (!val || !val.trim()) return;
+                                                  const existingParams = [...(editingPackage.detailedParameters || [])];
+                                                  existingParams.push({ category: val.trim().toUpperCase(), items: ["General Parameter"] });
+                                                  setEditingPackage({ ...editingPackage, detailedParameters: existingParams });
+                                                  setSelectedStandardAtom('');
+                                              }} className="bg-teal-900 text-yellow-400 px-4 py-2 rounded-xl text-xs font-bold">Add Custom</button>
+                                          </div>
+                                      )}
 
                                       <div className="mt-3 space-y-3">
                                           {editingPackage.detailedParameters && editingPackage.detailedParameters.map((cat, cIdx) => (
@@ -1681,7 +1697,7 @@
                                                       <button type="button" onClick={() => {
                                                           const newDetailed = editingPackage.detailedParameters.filter((_, idx) => idx !== cIdx);
                                                           setEditingPackage({ ...editingPackage, detailedParameters: newDetailed });
-                                                      }} className="text-red-500 text-xs font-bold">Remove Category</button>
+                                                      }} className="text-red-500 text-xs font-bold">Remove Test</button>
                                                   </div>
                                                   <div className="flex flex-wrap gap-1.5">
                                                       {cat.items && cat.items.map((item, iIdx) => (
@@ -1697,24 +1713,54 @@
                                                       ))}
                                                   </div>
 
-                                                  {/* Option to add custom parameter or standard parameter to this category */}
-                                                  <div className="flex gap-2 pt-2 border-t border-slate-100">
-                                                      <input 
-                                                          type="text" 
-                                                          value={newCustomParamInput[cIdx] || ''} 
-                                                          onChange={e => setNewCustomParamInput({ ...newCustomParamInput, [cIdx]: e.target.value })}
-                                                          placeholder="Add custom parameter name..." 
-                                                          className="flex-1 p-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs outline-none"
-                                                      />
-                                                      <button type="button" onClick={() => {
-                                                          const val = (newCustomParamInput[cIdx] || '').trim();
-                                                          if (!val) return;
-                                                          const updatedCatItems = [...(cat.items || []), val];
-                                                          const updatedDetailed = [...editingPackage.detailedParameters];
-                                                          updatedDetailed[cIdx] = { ...cat, items: updatedCatItems };
-                                                          setEditingPackage({ ...editingPackage, detailedParameters: updatedDetailed });
-                                                          setNewCustomParamInput({ ...newCustomParamInput, [cIdx]: '' });
-                                                      }} className="bg-teal-800 text-white px-3 py-1.5 rounded-lg text-xs font-bold">+ Add Param</button>
+                                                  <div className="flex flex-col gap-2 pt-2 border-t border-slate-100">
+                                                      <select
+                                                          value={selectedAtomQuickParam[cIdx] || ''}
+                                                          onChange={e => {
+                                                              const val = e.target.value;
+                                                              if (!val) return;
+                                                              if (val === 'OTHER_CUSTOM') {
+                                                                  setSelectedAtomQuickParam({ ...selectedAtomQuickParam, [cIdx]: 'OTHER_CUSTOM' });
+                                                                  return;
+                                                              }
+                                                              const updatedCatItems = [...(cat.items || []), val];
+                                                              const updatedDetailed = [...editingPackage.detailedParameters];
+                                                              updatedDetailed[cIdx] = { ...cat, items: updatedCatItems };
+                                                              setEditingPackage({ ...editingPackage, detailedParameters: updatedDetailed });
+                                                              setSelectedAtomQuickParam({ ...selectedAtomQuickParam, [cIdx]: '' });
+                                                          }}
+                                                          className="w-full p-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs outline-none cursor-pointer"
+                                                      >
+                                                          <option value="">+ Add parameter from standard list...</option>
+                                                          <option value="OTHER_CUSTOM" className="font-bold text-teal-700">+ Other (Type custom parameter)...</option>
+                                                          {pathologyMedicalStandards.map((std, sIdx) => (
+                                                              <optgroup key={sIdx} label={std.name}>
+                                                                  {std.items.map((subItem, subIdx) => (
+                                                                      <option key={subIdx} value={subItem}>{subItem}</option>
+                                                                  ))}
+                                                              </optgroup>
+                                                          ))}
+                                                      </select>
+
+                                                      {selectedAtomQuickParam[cIdx] === 'OTHER_CUSTOM' && (
+                                                          <div className="flex gap-2">
+                                                              <input 
+                                                                  type="text" 
+                                                                  id={`inlineCustomParamInput-${cIdx}`} 
+                                                                  placeholder="Type custom parameter name..." 
+                                                                  className="flex-1 p-1.5 bg-white border border-slate-200 rounded-lg text-xs outline-none"
+                                                              />
+                                                              <button type="button" onClick={() => {
+                                                                  const val = document.getElementById(`inlineCustomParamInput-${cIdx}`).value;
+                                                                  if (!val || !val.trim()) return;
+                                                                  const updatedCatItems = [...(cat.items || []), val.trim()];
+                                                                  const updatedDetailed = [...editingPackage.detailedParameters];
+                                                                  updatedDetailed[cIdx] = { ...cat, items: updatedCatItems };
+                                                                  setEditingPackage({ ...editingPackage, detailedParameters: updatedDetailed });
+                                                                  setSelectedAtomQuickParam({ ...selectedAtomQuickParam, [cIdx]: '' });
+                                                              }} className="bg-teal-900 text-yellow-400 px-3 py-1.5 rounded-lg text-xs font-bold">Add Custom</button>
+                                                          </div>
+                                                      )}
                                                   </div>
                                               </div>
                                           ))}
