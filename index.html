@@ -71,11 +71,6 @@
                 chevronUp: <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="m18 15-6-6-6 6"/></svg>,
                 upload: <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4m14-7-5-5-5 5m5-5v12"/></svg>,
                 download: <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4m7-10v12m0 0l-4-4m4 4l4-4"/></svg>,
-                file: <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6m-4 10H8m4-4H8m8-4H8"/></svg>,
-                save: <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>,
-                mail: <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>,
-                copy: <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>,
-                external: <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>,
                 receipt: <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M8 8h8M8 12h8M8 16h6"/></svg>
             };
             return icons[name] || null;
@@ -346,7 +341,7 @@
 
         function App() {
           const [packages, setPackages] = useState(() => {
-              const saved = localStorage.getItem('swasthya_catalog_v5');
+              const saved = localStorage.getItem('swasthya_catalog_v7');
               if (saved) {
                   try { return JSON.parse(saved); } catch(e) {}
               }
@@ -383,14 +378,13 @@
           const [adminFeedback, setAdminFeedback] = useState('');
 
           const [showOtpModal, setShowOtpModal] = useState(false);
-          const [resetEmailInput, setResetEmailInput] = useState('');
           const [otpSent, setOtpSent] = useState(false);
           const [otpInput, setOtpInput] = useState('');
           const [newPasswordInput, setNewPasswordInput] = useState('');
           const [otpMessage, setOtpMessage] = useState('');
 
           const [primaryBooking, setPrimaryBooking] = useState({
-            name: '', age: '', gender: 'Male', email: '', contact: '', houseNo: '', street: '', city: '', state: '', pincode: '', mapLocation: '', preferredDate: '', preferredTime: ''
+            name: '', age: '', gender: '', email: '', contact: '', houseNo: '', street: '', city: '', state: '', pincode: '', mapLocation: '', preferredDate: '', preferredTime: ''
           });
           const [locationStatus, setLocationStatus] = useState('');
           const [familyMembers, setFamilyMembers] = useState([]);
@@ -404,10 +398,10 @@
           const [adminSearchFilter, setAdminSearchFilter] = useState('');
           const [adminDateFilter, setAdminDateFilter] = useState('all');
 
-          const [selectedStandardAtom, setSelectedStandardAtom] = useState('');
-          const [customTestInput, setCustomTestInput] = useState('');
-          const [selectedAtomQuickParam, setSelectedAtomQuickParam] = useState({});
-          const [customParamInput, setCustomParamInput] = useState({});
+          const [selectedTestType, setSelectedTestType] = useState('');
+          const [customTestNameInput, setCustomTestNameInput] = useState('');
+          const [selectedParamAtom, setSelectedParamAtom] = useState({});
+          const [customParamNameInput, setCustomParamNameInput] = useState({});
           const [collapsedCategories, setCollapsedCategories] = useState({});
 
           useEffect(() => {
@@ -452,7 +446,7 @@
                               }
                               if (parsedPkgs.length > 0) {
                                   setPackages(parsedPkgs);
-                                  localStorage.setItem('swasthya_catalog_v5', JSON.stringify(parsedPkgs));
+                                  localStorage.setItem('swasthya_catalog_v7', JSON.stringify(parsedPkgs));
                               }
                           }
                       }
@@ -462,7 +456,7 @@
 
           const persistCatalog = async (updatedPkgs) => {
               setPackages(updatedPkgs);
-              localStorage.setItem('swasthya_catalog_v5', JSON.stringify(updatedPkgs));
+              localStorage.setItem('swasthya_catalog_v7', JSON.stringify(updatedPkgs));
               try {
                   if (user) {
                       await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('catalog').doc('main_catalog').set({ packages: updatedPkgs });
@@ -522,16 +516,20 @@
                           const data = await res.json();
                           if (data && data.address) {
                               const addr = data.address;
-                              const pin = addr.postcode ? addr.postcode.replace(/\D/g, '').slice(0, 6) : primaryBooking.pincode;
+                              const pin = addr.postcode ? addr.postcode.replace(/\D/g, '').slice(0, 6) : '';
+                              const streetName = addr.road || addr.suburb || addr.neighbourhood || '';
+                              
                               setPrimaryBooking(prev => ({
                                   ...prev,
-                                  street: addr.road || addr.suburb || addr.neighbourhood || prev.street,
-                                  city: addr.city || addr.town || addr.village || addr.state_district || prev.city,
-                                  state: addr.state || prev.state,
-                                  pincode: pin || prev.pincode,
+                                  street: streetName,
+                                  pincode: pin,
                                   mapLocation: link
                               }));
-                              setLocationStatus('Location detected & address filled successfully ✓');
+
+                              if (pin && pin.length === 6) {
+                                  await handlePincodeChange(pin);
+                              }
+                              setLocationStatus('Location detected, pincode & street filled successfully ✓');
                               return;
                           }
                       } catch (err) {
@@ -618,7 +616,6 @@
               return { price: totalPrice, mrp: totalMrp };
           };
 
-          // Count how many total patients (primary + family members) are assigned to a specific test/package
           const getAssignedCountForPackage = (pkgId) => {
               let count = 0;
               if ((patientAssignments['primary'] || []).includes(pkgId)) count++;
@@ -910,7 +907,7 @@
           };
 
           const addFamilyMember = () => {
-              const newMember = { id: Date.now(), name: '', age: '', gender: 'Male' };
+              const newMember = { id: Date.now(), name: '', age: '', gender: '' };
               setFamilyMembers([...familyMembers, newMember]);
           };
 
@@ -932,7 +929,7 @@
               for (const pid of selectedPackageIds) {
                   const pkg = packages.find(p => p.id === Number(pid));
                   if (pkg && pkg.gender !== "All" && userGender !== pkg.gender) {
-                      return `⚠️ Cannot assign "${pkg.name}". This package is strictly for ${pkg.gender} patients.`;
+                      return `⚠️ Test "${pkg.name}" is strictly for ${pkg.gender} patients only. Please assign to a matching member or change sex to ${pkg.gender}.`;
                   }
               }
               return null;
@@ -948,17 +945,48 @@
 
           const submitBooking = async (e) => {
               e.preventDefault();
-              if (primaryBooking.contact.length !== 10) {
-                  alert("Contact number must be exactly 10 digits.");
+
+              // Validation for primary fields & strict length rules
+              if (!primaryBooking.name || !primaryBooking.age || !primaryBooking.gender || !primaryBooking.email || !primaryBooking.contact || !primaryBooking.houseNo || !primaryBooking.street || !primaryBooking.city || !primaryBooking.state || !primaryBooking.pincode || !primaryBooking.preferredDate || !primaryBooking.preferredTime) {
+                  alert("⚠️ Please fill in all required primary patient and collection address fields before submitting.");
+                  const firstEmpty = document.querySelector('input:invalid, select:invalid');
+                  if (firstEmpty) firstEmpty.scrollIntoView({ behavior: 'smooth', block: 'center' });
                   return;
               }
-              if (primaryBooking.pincode.length !== 6) {
-                  alert("Pincode must be exactly 6 digits.");
+
+              if (primaryBooking.contact.length !== 10 || !/^\d{10}$/.test(primaryBooking.contact)) {
+                  alert("⚠️ Contact number must be exactly 10 digits.");
                   return;
               }
-              if (!areAllFamilyMembersAssigned()) {
-                  alert("Every added family member must have at least one test assigned to their bucket.");
+              if (primaryBooking.pincode.length !== 6 || !/^\d{6}$/.test(primaryBooking.pincode)) {
+                  alert("⚠️ Pincode must be exactly 6 digits.");
                   return;
+              }
+
+              // Check mandatory test assignment for every family member
+              for (let i = 0; i < familyMembers.length; i++) {
+                  const m = familyMembers[i];
+                  const assigned = patientAssignments[m.id] || [];
+                  if (assigned.length === 0) {
+                      alert(`⚠️ Family Member ${i+2} (${m.name || 'Unnamed'}) has no test assigned. Every added family member must have at least one test assigned to their bucket, or you can remove the member.`);
+                      return;
+                  }
+              }
+
+              // Gender conflict checks
+              const primaryConflict = getGenderConflict(primaryBooking.gender, patientAssignments['primary']);
+              if (primaryConflict) {
+                  alert(`⚠️ Primary Patient: ${primaryConflict}`);
+                  return;
+              }
+
+              for (let i = 0; i < familyMembers.length; i++) {
+                  const m = familyMembers[i];
+                  const mConflict = getGenderConflict(m.gender, patientAssignments[m.id]);
+                  if (mConflict) {
+                      alert(`⚠️ Family Member ${i+2} (${m.name || 'Unnamed'}): ${mConflict}`);
+                      return;
+                  }
               }
 
               if (primaryBooking.preferredDate && primaryBooking.preferredTime) {
@@ -967,7 +995,7 @@
                       const startHour = parseInt(primaryBooking.preferredTime.split(':')[0], 10);
                       const nowHour = new Date().getHours();
                       if (startHour <= nowHour + 4) {
-                          alert("Please select a time slot at least 4 hours from current time.");
+                          alert("⚠️ Please select a time slot at least 4 hours from current time.");
                           return;
                       }
                   }
@@ -1303,7 +1331,7 @@
 
                                                       <div className="mt-auto">
                                                           <div className="flex items-center space-x-3 mb-4">
-                                                              <span className="text-sm font-bold text-slate-400 line-through">₹{pricing.mrp}</span>
+                                                              <span className="text-sm font-bold text-slate-400">₹{pricing.mrp}</span>
                                                               <span className="text-2xl font-extrabold text-emerald-700">₹{pricing.price}</span>
                                                           </div>
                                                           <div className="grid grid-cols-2 gap-2">
@@ -1335,7 +1363,7 @@
                                   <div className="lg:col-span-2 bg-white rounded-3xl shadow-lg border border-slate-100 overflow-hidden p-6 md:p-8">
                                       <div className="bg-teal-900 p-6 -mx-6 -mt-6 md:-mx-8 md:-mt-8 mb-8 text-white">
                                           <h2 className="text-2xl md:text-3xl font-extrabold mb-1 text-yellow-400">Complete Your Booking</h2>
-                                          <p className="text-teal-100 text-xs md:text-sm">Drag or select items from your floating cart into each patient's test bucket below.</p>
+                                          <p className="text-teal-100 text-xs md:text-sm">Select items from your Cart into each patient's test bucket below.</p>
                                       </div>
 
                                       <form onSubmit={submitBooking} className="space-y-8">
@@ -1354,8 +1382,10 @@
                                                       <div>
                                                           <label className="block text-sm font-semibold text-slate-700 mb-1">Sex *</label>
                                                           <select required value={primaryBooking.gender} onChange={e => setPrimaryBooking({...primaryBooking, gender: e.target.value})} className="w-full p-2.5 bg-slate-50 border border-teal-200 rounded-lg outline-none">
+                                                              <option value="">Select Sex</option>
                                                               <option value="Male">Male</option>
                                                               <option value="Female">Female</option>
+                                                              <option value="Other">Other</option>
                                                           </select>
                                                       </div>
                                                   </div>
@@ -1389,21 +1419,19 @@
                                                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                                           <input required type="text" value={primaryBooking.houseNo} onChange={e => setPrimaryBooking({...primaryBooking, houseNo: e.target.value})} className="w-full p-2.5 bg-slate-50 border border-teal-200 rounded-lg outline-none text-sm" placeholder="House / Flat No." />
                                                           <input required type="text" value={primaryBooking.street} onChange={e => setPrimaryBooking({...primaryBooking, street: e.target.value})} className="w-full p-2.5 bg-slate-50 border border-teal-200 rounded-lg outline-none text-sm" placeholder="Street / Locality" />
-                                                          <div className="grid grid-cols-2 gap-2">
-                                                              <input 
-                                                                  required 
-                                                                  type="text" 
-                                                                  maxLength="6" 
-                                                                  minLength="6"
-                                                                  pattern="[0-9]{6}"
-                                                                  value={primaryBooking.pincode} 
-                                                                  onChange={e => handlePincodeChange(e.target.value)} 
-                                                                  className="w-full p-2.5 bg-slate-50 border border-teal-200 rounded-lg outline-none text-sm font-mono" 
-                                                                  placeholder="6-digit Pincode" 
-                                                              />
-                                                              <input required type="text" value={primaryBooking.city} onChange={e => setPrimaryBooking({...primaryBooking, city: e.target.value})} className="w-full p-2.5 bg-slate-50 border border-teal-200 rounded-lg outline-none text-sm" placeholder="City (Auto / Manual)" />
-                                                          </div>
-                                                          <input required type="text" value={primaryBooking.state} onChange={e => setPrimaryBooking({...primaryBooking, state: e.target.value})} className="w-full p-2.5 bg-slate-50 border border-teal-200 rounded-lg outline-none text-sm" placeholder="State" />
+                                                          <input 
+                                                              required 
+                                                              type="text" 
+                                                              maxLength="6" 
+                                                              minLength="6"
+                                                              pattern="[0-9]{6}"
+                                                              value={primaryBooking.pincode} 
+                                                              onChange={e => handlePincodeChange(e.target.value)} 
+                                                              className="w-full p-2.5 bg-slate-50 border border-teal-200 rounded-lg outline-none text-sm font-mono" 
+                                                              placeholder="6-digit Pincode" 
+                                                          />
+                                                          <input required type="text" value={primaryBooking.city} onChange={e => setPrimaryBooking({...primaryBooking, city: e.target.value})} className="w-full p-2.5 bg-slate-50 border border-teal-200 rounded-lg outline-none text-sm" placeholder="City (Auto-filled via Pincode)" />
+                                                          <input required type="text" value={primaryBooking.state} onChange={e => setPrimaryBooking({...primaryBooking, state: e.target.value})} className="w-full p-2.5 bg-slate-50 border border-teal-200 rounded-lg outline-none text-sm md:col-span-2" placeholder="State (Auto-filled via Pincode)" />
                                                       </div>
                                                   </div>
 
@@ -1432,7 +1460,7 @@
 
                                           {/* Patient Buckets */}
                                           <div className="space-y-6 pt-4 border-t">
-                                              <h3 className="text-lg font-bold text-slate-800">Patient Test Buckets (Assign tests from cart)</h3>
+                                              <h3 className="text-lg font-bold text-slate-800">Patient Test Buckets (Assign tests from Cart)</h3>
                                               
                                               {/* Primary Patient Bucket */}
                                               <div
@@ -1450,7 +1478,7 @@
                                                   </div>
                                                   <div className="flex flex-wrap gap-2 min-h-[48px] items-center bg-white p-3 rounded-xl border border-teal-200">
                                                       {(patientAssignments['primary'] || []).length === 0 ? (
-                                                          <span className="text-xs text-slate-400 italic">Drag or click cart items below to assign</span>
+                                                          <span className="text-xs text-slate-400 italic">Click items in the Cart on the right to assign to Primary Patient</span>
                                                       ) : (
                                                           (patientAssignments['primary'] || []).map(pkgId => {
                                                               const pkg = packages.find(p => p.id === pkgId);
@@ -1459,7 +1487,7 @@
                                                               const unitPrice = Math.round(getPricingForMembers(pkg, totalAssigned).price / totalAssigned);
                                                               return (
                                                                   <div key={pkgId} className="bg-teal-900 text-yellow-400 text-xs font-bold px-3 py-1.5 rounded-lg flex items-center space-x-2">
-                                                                      <span>{pkg.name} (₹{unitPrice})</span>
+                                                                      <span>{pkg.name} ({unitPrice})</span>
                                                                       <button type="button" onClick={() => removeTestFromPatient('primary', pkgId)} className="text-yellow-200 hover:text-white font-bold ml-1">×</button>
                                                                   </div>
                                                               );
@@ -1469,13 +1497,6 @@
                                               </div>
 
                                               {/* Family Members Buckets (Numbered from 2) */}
-                                              <div className="flex justify-between items-center pt-2">
-                                                  <h4 className="font-bold text-slate-800">Family Members</h4>
-                                                  <button type="button" onClick={addFamilyMember} className="flex items-center text-xs font-bold text-teal-700 bg-teal-50 px-3 py-2 rounded-lg border border-teal-200">
-                                                      <Icon name="plus" className="w-4 h-4 mr-1" /> Add Family Member
-                                                  </button>
-                                              </div>
-
                                               {familyMembers.map((member, index) => {
                                                   const assignedList = patientAssignments[member.id] || [];
                                                   const memberNum = index + 2;
@@ -1499,8 +1520,10 @@
                                                               <div className="grid grid-cols-2 gap-2">
                                                                   <input required type="number" min="1" max="120" value={member.age} onChange={e => updateFamilyMember(member.id, 'age', e.target.value)} className="w-full p-2 border border-teal-200 rounded-md text-sm" placeholder="Age" />
                                                                   <select required value={member.gender} onChange={e => updateFamilyMember(member.id, 'gender', e.target.value)} className="w-full p-2 border border-teal-200 rounded-md text-sm">
+                                                                      <option value="">Select Sex</option>
                                                                       <option value="Male">Male</option>
                                                                       <option value="Female">Female</option>
+                                                                      <option value="Other">Other</option>
                                                                   </select>
                                                               </div>
                                                           </div>
@@ -1509,7 +1532,7 @@
                                                               <label className="block text-xs font-bold text-slate-700">Assigned Tests Bucket for Family Member {memberNum} {assignedList.length === 0 ? <span className="text-red-500">* (At least 1 test required)</span> : ''}:</label>
                                                               <div className="flex flex-wrap gap-2 min-h-[40px] items-center bg-white p-2.5 rounded-lg border">
                                                                   {assignedList.length === 0 ? (
-                                                                      <span className="text-xs text-red-400 italic">Drag cart items here or click below to assign tests</span>
+                                                                      <span className="text-xs text-red-400 italic">Click items in the Cart on the right to assign tests</span>
                                                                   ) : (
                                                                       assignedList.map(pkgId => {
                                                                           const pkg = packages.find(p => p.id === pkgId);
@@ -1518,7 +1541,7 @@
                                                                           const unitPrice = Math.round(getPricingForMembers(pkg, totalAssigned).price / totalAssigned);
                                                                           return (
                                                                               <div key={pkgId} className="bg-teal-800 text-yellow-300 text-xs font-bold px-3 py-1.5 rounded-lg flex items-center space-x-2">
-                                                                                  <span>{pkg.name} (₹{unitPrice})</span>
+                                                                                  <span>{pkg.name} ({unitPrice})</span>
                                                                                   <button type="button" onClick={() => removeTestFromPatient(member.id, pkgId)} className="text-yellow-200 hover:text-white font-bold ml-1">×</button>
                                                                               </div>
                                                                           );
@@ -1529,16 +1552,21 @@
                                                       </div>
                                                   );
                                               })}
+
+                                              {/* Add Member button at bottom */}
+                                              <button type="button" onClick={addFamilyMember} className="w-full py-3 bg-teal-50 hover:bg-teal-100 border border-teal-300 text-teal-900 rounded-2xl font-bold text-xs flex items-center justify-center transition-colors shadow-sm">
+                                                  <Icon name="plus" className="w-4 h-4 mr-1.5" /> + Add Family Member
+                                              </button>
                                           </div>
                                       </form>
                                   </div>
 
-                                  {/* Floating Sticky Cart & Summary Widget */}
+                                  {/* Sticky Cart & Summary Widget */}
                                   <div className="lg:sticky lg:top-24 space-y-6">
                                       <div className="bg-white rounded-3xl shadow-lg border border-teal-100 p-6">
                                           <div className="flex items-center justify-between border-b pb-4 mb-4">
                                               <h3 className="font-extrabold text-teal-950 flex items-center">
-                                                  <Icon name="cart" className="w-5 h-5 mr-2 text-teal-700" /> Floating Cart ({cart.length})
+                                                  <Icon name="cart" className="w-5 h-5 mr-2 text-teal-700" /> Cart ({cart.length})
                                               </h3>
                                           </div>
 
@@ -1554,22 +1582,22 @@
                                                       return (
                                                           <div
                                                               key={pkgId}
-                                                              draggable
-                                                              onDragStart={(e) => e.dataTransfer.setData('text/plain', pkgId)}
-                                                              className="bg-teal-50/60 border border-teal-200 rounded-xl p-3 shadow-sm cursor-grab active:cursor-grabbing flex items-center justify-between"
+                                                              className="bg-teal-50/60 border border-teal-200 rounded-xl p-3 shadow-sm flex items-center justify-between"
                                                           >
                                                               <div>
                                                                   <p className="font-bold text-xs text-teal-950">{pkg.name}</p>
                                                                   <p className="text-[11px] font-extrabold text-emerald-700">₹{unitPrice} / person (Assigned: {totalAssigned})</p>
+                                                                  <div className="mt-1 flex gap-1">
+                                                                      <button type="button" onClick={() => assignTestToPatient('primary', pkgId)} className="text-[10px] bg-teal-900 text-white px-2 py-0.5 rounded font-bold">Assign Primary</button>
+                                                                      {familyMembers.map((m, mIdx) => (
+                                                                          <button key={m.id} type="button" onClick={() => assignTestToPatient(m.id, pkgId)} className="text-[10px] bg-teal-700 text-white px-2 py-0.5 rounded font-bold">M{mIdx+2}</button>
+                                                                      ))}
+                                                                  </div>
                                                               </div>
-                                                              <div className="flex items-center space-x-2">
-                                                                  <span className="text-[10px] bg-white text-teal-800 px-2 py-0.5 rounded border border-teal-200 font-bold hidden sm:inline">Drag</span>
-                                                                  <button onClick={() => toggleCart(pkgId)} className="text-slate-400 hover:text-red-600 p-1 font-bold">×</button>
-                                                              </div>
+                                                              <button type="button" onClick={() => toggleCart(pkgId)} className="text-slate-400 hover:text-red-600 p-1 font-bold">×</button>
                                                           </div>
                                                       );
                                                   })}
-                                                  <p className="text-[11px] text-slate-500 italic text-center pt-2">Drag cart items above into the patient buckets on the left.</p>
                                               </div>
                                           )}
 
@@ -1580,7 +1608,7 @@
                                               </div>
 
                                               <button onClick={() => setShowBillBreakdown(!showBillBreakdown)} className="text-xs text-teal-700 font-bold hover:underline flex items-center justify-between w-full pt-1">
-                                                  <span>{showBillBreakdown ? 'Hide Price Breakdown' : 'Show More (MRP & Discount)'}</span>
+                                                  <span>{showBillBreakdown ? 'Hide Price Breakdown' : 'Show More'}</span>
                                                   <Icon name={showBillBreakdown ? 'chevronUp' : 'chevronDown'} className="w-4 h-4" />
                                               </button>
 
@@ -1588,10 +1616,10 @@
                                                   <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-1.5 text-xs">
                                                       <div className="flex justify-between text-slate-600">
                                                           <span>Total Amount (MRP):</span>
-                                                          <span className="line-through font-semibold">₹{calculateTotalMrp()}</span>
+                                                          <span className="font-semibold text-slate-600">₹{calculateTotalMrp()}</span>
                                                       </div>
                                                       <div className="flex justify-between text-emerald-600 font-bold">
-                                                          <span>Total Discount:</span>
+                                                          <span>Discount:</span>
                                                           <span>- ₹{calculateTotalMrp() - calculateGrandTotal()}</span>
                                                       </div>
                                                       <div className="border-t pt-1 flex justify-between font-extrabold text-teal-950">
@@ -1767,7 +1795,7 @@
                                                                   {pkg.dealType || 'Lab Atoms'}
                                                               </span>
                                                           </td>
-                                                          <td className="p-4 text-slate-500 line-through">₹{pkg.mrp}</td>
+                                                          <td className="p-4 text-slate-500">₹{pkg.mrp}</td>
                                                           <td className="p-4 font-extrabold text-emerald-700">₹{pkg.price}</td>
                                                           <td className="p-4 text-right space-x-2">
                                                               <button onClick={() => setEditingPackage({ ...pkg, detailedParameters: pkg.detailedParameters || [] })} className="text-teal-700 hover:text-teal-900 p-2 rounded-lg hover:bg-teal-50 transition-colors inline-block" title="Edit Parameters">
@@ -1801,74 +1829,23 @@
                               <h3 className="font-extrabold text-lg mb-4 text-teal-950 flex items-center">
                                   <Icon name="lock" className="w-5 h-5 mr-2 text-teal-700" /> Lab Admin Login
                               </h3>
-                              {!showOtpModal ? (
-                                  <form onSubmit={(e) => {
-                                      e.preventDefault();
-                                      if (adminPasswordInput === adminPassword) {
-                                          setAdminModalOpen(false);
-                                          setView('admin');
-                                          setAdminAuthError(false);
-                                      } else {
-                                          setAdminAuthError(true);
-                                      }
-                                  }}>
-                                      <input type="password" required value={adminPasswordInput} onChange={e => setAdminPasswordInput(e.target.value)} placeholder="Enter password..." className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl mb-3 text-sm outline-none" />
-                                      {adminAuthError && <p className="text-xs text-red-600 font-bold mb-3">Incorrect password.</p>}
-                                      <div className="flex items-center justify-between mb-4">
-                                          <button type="button" onClick={() => { setShowOtpModal(true); setResetEmailInput(''); setOtpSent(false); setOtpMessage(''); }} className="text-xs text-teal-700 font-bold hover:underline flex items-center">
-                                              <Icon name="mail" className="w-3.5 h-3.5 mr-1" /> Reset Password via Email OTP
-                                          </button>
-                                      </div>
-                                      <div className="flex justify-end space-x-2">
-                                          <button type="button" onClick={() => setAdminModalOpen(false)} className="px-4 py-2 bg-slate-100 rounded-xl text-xs font-bold">Cancel</button>
-                                          <button type="submit" className="px-5 py-2 bg-teal-900 text-yellow-400 rounded-xl text-xs font-bold">Login</button>
-                                      </div>
-                                  </form>
-                              ) : (
-                                  <form onSubmit={(e) => {
-                                      e.preventDefault();
-                                      if (!otpSent) {
-                                          if (resetEmailInput.trim().toLowerCase() === 'admin.swasthyacare@gmail.com') {
-                                              const secureOtp = Math.floor(1000 + Math.random() * 9000).toString();
-                                              setOtpSent(true);
-                                              setOtpMessage('OTP has been securely dispatched from ajaydating1@gmail.com to inbox.');
-                                          } else {
-                                              setOtpMessage('Please enter the registered admin email address.');
-                                          }
-                                      } else {
-                                          if (newPasswordInput.trim().length >= 6) {
-                                              setAdminPassword(newPasswordInput.trim());
-                                              setAdminPasswordInput(newPasswordInput.trim());
-                                              setShowOtpModal(false);
-                                              setOtpMessage('Password updated successfully! You can now log in.');
-                                          } else {
-                                              setOtpMessage('Password too short (min 6 chars).');
-                                          }
-                                      }
-                                  }}>
-                                      <div className="mb-3">
-                                          <label className="block text-xs font-bold text-slate-700 mb-1">Admin Email Address</label>
-                                          <input type="email" required disabled={otpSent} value={resetEmailInput} onChange={e => setResetEmailInput(e.target.value)} placeholder="Enter registered admin email..." className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm" />
-                                      </div>
-                                      {otpSent && (
-                                          <>
-                                              <div className="mb-3">
-                                                  <label className="block text-xs font-bold text-slate-700 mb-1">Enter OTP received in inbox</label>
-                                                  <input type="text" required value={otpInput} onChange={e => setOtpInput(e.target.value)} placeholder="4-digit OTP" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm" />
-                                              </div>
-                                              <div className="mb-3">
-                                                  <label className="block text-xs font-bold text-slate-700 mb-1">New Password</label>
-                                                  <input type="password" required value={newPasswordInput} onChange={e => setNewPasswordInput(e.target.value)} placeholder="New password (min 6 chars)" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm" />
-                                              </div>
-                                          </>
-                                      )}
-                                      {otpMessage && <p className={`text-xs font-bold mb-3 ${otpMessage.includes('successfully') || otpMessage.includes('dispatched') ? 'text-green-600' : 'text-red-600'}`}>{otpMessage}</p>}
-                                      <div className="flex justify-end space-x-2">
-                                          <button type="button" onClick={() => setShowOtpModal(false)} className="px-4 py-2 bg-slate-100 rounded-xl text-xs font-bold">Back</button>
-                                          <button type="submit" className="px-5 py-2 bg-teal-900 text-yellow-400 rounded-xl text-xs font-bold">{otpSent ? 'Update Password' : 'Send OTP'}</button>
-                                      </div>
-                                  </form>
-                              )}
+                              <form onSubmit={(e) => {
+                                  e.preventDefault();
+                                  if (adminPasswordInput === adminPassword) {
+                                      setAdminModalOpen(false);
+                                      setView('admin');
+                                      setAdminAuthError(false);
+                                  } else {
+                                      setAdminAuthError(true);
+                                  }
+                              }}>
+                                  <input type="password" required value={adminPasswordInput} onChange={e => setAdminPasswordInput(e.target.value)} placeholder="Enter password..." className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl mb-3 text-sm outline-none" />
+                                  {adminAuthError && <p className="text-xs text-red-600 font-bold mb-3">Incorrect password.</p>}
+                                  <div className="flex justify-end space-x-2">
+                                      <button type="button" onClick={() => setAdminModalOpen(false)} className="px-4 py-2 bg-slate-100 rounded-xl text-xs font-bold">Cancel</button>
+                                      <button type="submit" className="px-5 py-2 bg-teal-900 text-yellow-400 rounded-xl text-xs font-bold">Login</button>
+                                  </div>
+                              </form>
                           </div>
                       </div>
                   )}
@@ -1975,7 +1952,7 @@
                                       <label className="block text-xs font-bold text-teal-950 uppercase">Add Test Profile / Category:</label>
                                       
                                       <div className="flex gap-2">
-                                          <select value={selectedStandardAtom} onChange={e => setSelectedStandardAtom(e.target.value)} className="flex-1 p-2 bg-white border border-slate-200 rounded-xl text-xs font-medium outline-none">
+                                          <select value={selectedTestType} onChange={e => setSelectedTestType(e.target.value)} className="flex-1 p-2 bg-white border border-slate-200 rounded-xl text-xs font-medium outline-none">
                                               <option value="">Select test profile from catalog / Lab Atoms...</option>
                                               <option value="OTHER_TEST" className="font-bold text-teal-700">+ Other (Type custom test)...</option>
                                               {packages.filter(p => p.dealType === 'Lab Atoms').map(p => (
@@ -1985,39 +1962,39 @@
                                                   <option key={idx} value={item.name}>{item.name} (Standard Medical Standard)</option>
                                               ))}
                                           </select>
-                                          {selectedStandardAtom !== 'OTHER_TEST' && (
+                                          {selectedTestType !== 'OTHER_TEST' && (
                                               <button type="button" onClick={() => {
-                                                  if (!selectedStandardAtom) return;
+                                                  if (!selectedTestType) return;
                                                   const existingParams = [...(editingPackage.detailedParameters || [])];
-                                                  const matchingPkg = packages.find(p => p.name === selectedStandardAtom);
+                                                  const matchingPkg = packages.find(p => p.name === selectedTestType);
                                                   if (matchingPkg && matchingPkg.detailedParameters) {
                                                       matchingPkg.detailedParameters.forEach(cat => existingParams.push({ category: cat.category, items: [...cat.items] }));
                                                   } else {
-                                                      const found = pathologyMedicalStandards.find(s => s.name === selectedStandardAtom);
+                                                      const found = pathologyMedicalStandards.find(s => s.name === selectedTestType);
                                                       if (found) existingParams.push({ category: found.name, items: [...found.items] });
                                                   }
                                                   setEditingPackage({ ...editingPackage, detailedParameters: existingParams });
-                                                  setSelectedStandardAtom('');
+                                                  setSelectedTestType('');
                                               }} className="bg-teal-900 text-yellow-400 px-4 py-2 rounded-xl text-xs font-bold">Add Test</button>
                                           )}
                                       </div>
 
-                                      {selectedStandardAtom === 'OTHER_TEST' && (
+                                      {selectedTestType === 'OTHER_TEST' && (
                                           <div className="flex gap-2 mt-2">
                                               <input 
                                                   type="text" 
-                                                  value={customTestInput}
-                                                  onChange={e => setCustomTestInput(e.target.value)}
+                                                  value={customTestNameInput}
+                                                  onChange={e => setCustomTestNameInput(e.target.value)}
                                                   placeholder="Type custom test / category name..." 
                                                   className="flex-1 p-2 bg-white border border-slate-200 rounded-xl text-xs outline-none font-bold"
                                               />
                                               <button type="button" onClick={() => {
-                                                  if (!customTestInput || !customTestInput.trim()) return;
+                                                  if (!customTestNameInput || !customTestNameInput.trim()) return;
                                                   const existingParams = [...(editingPackage.detailedParameters || [])];
-                                                  existingParams.push({ category: customTestInput.trim().toUpperCase(), items: ["General Parameter"] });
+                                                  existingParams.push({ category: customTestNameInput.trim().toUpperCase(), items: ["General Parameter"] });
                                                   setEditingPackage({ ...editingPackage, detailedParameters: existingParams });
-                                                  setSelectedStandardAtom('');
-                                                  setCustomTestInput('');
+                                                  setSelectedTestType('');
+                                                  setCustomTestNameInput('');
                                               }} className="bg-teal-900 text-yellow-400 px-4 py-2 rounded-xl text-xs font-bold">Add Custom</button>
                                           </div>
                                       )}
@@ -2048,19 +2025,19 @@
 
                                                   <div className="flex flex-col gap-2 pt-2 border-t border-slate-100">
                                                       <select
-                                                          value={selectedAtomQuickParam[cIdx] || ''}
+                                                          value={selectedParamAtom[cIdx] || ''}
                                                           onChange={e => {
                                                               const val = e.target.value;
                                                               if (!val) return;
                                                               if (val === 'OTHER_CUSTOM') {
-                                                                  setSelectedAtomQuickParam({ ...selectedAtomQuickParam, [cIdx]: 'OTHER_CUSTOM' });
+                                                                  setSelectedParamAtom({ ...selectedParamAtom, [cIdx]: 'OTHER_CUSTOM' });
                                                                   return;
                                                               }
                                                               const updatedCatItems = [...(cat.items || []), val];
                                                               const updatedDetailed = [...editingPackage.detailedParameters];
                                                               updatedDetailed[cIdx] = { ...cat, items: updatedCatItems };
                                                               setEditingPackage({ ...editingPackage, detailedParameters: updatedDetailed });
-                                                              setSelectedAtomQuickParam({ ...selectedAtomQuickParam, [cIdx]: '' });
+                                                              setSelectedParamAtom({ ...selectedParamAtom, [cIdx]: '' });
                                                           }}
                                                           className="w-full p-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs outline-none cursor-pointer"
                                                       >
@@ -2075,24 +2052,24 @@
                                                           ))}
                                                       </select>
 
-                                                      {selectedAtomQuickParam[cIdx] === 'OTHER_CUSTOM' && (
+                                                      {selectedParamAtom[cIdx] === 'OTHER_CUSTOM' && (
                                                           <div className="flex gap-2 mt-1">
                                                               <input 
                                                                   type="text" 
-                                                                  value={customParamInput[cIdx] || ''}
-                                                                  onChange={e => setCustomParamInput({ ...customParamInput, [cIdx]: e.target.value })}
+                                                                  value={customParamNameInput[cIdx] || ''}
+                                                                  onChange={e => setCustomParamNameInput({ ...customParamNameInput, [cIdx]: e.target.value })}
                                                                   placeholder="Type custom parameter name..." 
                                                                   className="flex-1 p-1.5 bg-white border border-slate-200 rounded-lg text-xs outline-none font-bold"
                                                               />
                                                               <button type="button" onClick={() => {
-                                                                  const val = customParamInput[cIdx];
+                                                                  const val = customParamNameInput[cIdx];
                                                                   if (!val || !val.trim()) return;
                                                                   const updatedCatItems = [...(cat.items || []), val.trim()];
                                                                   const updatedDetailed = [...editingPackage.detailedParameters];
                                                                   updatedDetailed[cIdx] = { ...cat, items: updatedCatItems };
                                                                   setEditingPackage({ ...editingPackage, detailedParameters: updatedDetailed });
-                                                                  setSelectedAtomQuickParam({ ...selectedAtomQuickParam, [cIdx]: '' });
-                                                                  setCustomParamInput({ ...customParamInput, [cIdx]: '' });
+                                                                  setSelectedParamAtom({ ...selectedParamAtom, [cIdx]: '' });
+                                                                  setCustomParamNameInput({ ...customParamNameInput, [cIdx]: '' });
                                                               }} className="bg-teal-900 text-yellow-400 px-3 py-1.5 rounded-lg text-xs font-bold">Add Custom</button>
                                                           </div>
                                                       )}
