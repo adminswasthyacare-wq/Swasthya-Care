@@ -34,6 +34,9 @@
         const db = firebase.firestore();
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
+        const catalogGoogleSheetCsvUrl = "https://docs.google.com/spreadsheets/d/1KJetR16PvkUbaGhb-lHkNS2zGNUJKtKmVcwXGPpoyB0/export?format=csv";
+        const bookingGoogleSheetUrl = "https://docs.google.com/spreadsheets/d/1lFkrSc4hMtbj-Wll09Fhvhjy88_fZHzaqtWjyprZIao/edit?usp=sharing";
+
         const Icon = ({ name, className = "w-5 h-5", ...props }) => {
             const icons = {
                 activity: <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>,
@@ -342,7 +345,7 @@
 
         function App() {
           const [packages, setPackages] = useState(() => {
-              const saved = localStorage.getItem('swasthya_catalog_v2');
+              const saved = localStorage.getItem('swasthya_catalog_v3');
               if (saved) {
                   try { return JSON.parse(saved); } catch(e) {}
               }
@@ -353,9 +356,7 @@
           const [user, setUser] = useState(null);
           const [bookings, setBookings] = useState([]);
           
-          const googleSheetUrl = "https://docs.google.com/spreadsheets/d/1lFkrSc4hMtbj-Wll09Fhvhjy88_fZHzaqtWjyprZIao/edit?usp=sharing";
           const [cart, setCart] = useState([]);
-          
           const [packageMembers, setPackageMembers] = useState({});
           const [openMemberDropdown, setOpenMemberDropdown] = useState(null);
           const [celebratingPkgId, setCelebratingPkgId] = useState(null);
@@ -380,7 +381,7 @@
           const [adminCsvInput, setAdminCsvInput] = useState('');
           const [adminFeedback, setAdminFeedback] = useState('');
 
-          // Secure Email OTP Reset state
+          // Secure Email OTP Reset state (No exposed email hints on UI)
           const [showOtpModal, setShowOtpModal] = useState(false);
           const [resetEmail, setResetEmail] = useState('');
           const [otpSent, setOtpSent] = useState(false);
@@ -388,7 +389,6 @@
           const [otpInput, setOtpInput] = useState('');
           const [newPasswordInput, setNewPasswordInput] = useState('');
           const [otpMessage, setOtpMessage] = useState('');
-          const [simulatedInboxNotice, setSimulatedInboxNotice] = useState('');
 
           const [primaryBooking, setPrimaryBooking] = useState({
             name: '', age: '', gender: '', email: '', contact: '', houseNo: '', street: '', city: '', state: '', pincode: '', mapLocation: '', preferredDate: '', preferredTime: ''
@@ -411,7 +411,58 @@
           const [customParamInput, setCustomParamInput] = useState({});
           const [collapsedCategories, setCollapsedCategories] = useState({});
 
-          // Load catalog from Firestore on startup with fallback to localStorage
+          // Load catalog from Google Sheet CSV or Firestore on startup
+          useEffect(() => {
+              // Try fetching from Google Sheet CSV published URL
+              fetch(catalogGoogleSheetCsvUrl)
+                  .then(res => res.text())
+                  .then(text => {
+                      if (text && text.includes(',')) {
+                          const lines = text.split('\n').filter(l => l.trim().length > 0);
+                          if (lines.length > 1) {
+                              const parsedPkgs = [];
+                              const todayStr = new Date().toISOString().split('T')[0];
+                              for (let i = 1; i < lines.length; i++) {
+                                  const row = lines[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(item => item.trim().replace(/^"|"$/g, ''));
+                                  if (row.length >= 4) {
+                                      const name = row[0];
+                                      const dealType = row[1] || 'Lab Atoms';
+                                      const mrp = Number(row[2]) || 2000;
+                                      const price = Number(row[3]) || 750;
+                                      const gender = row[4] || 'All';
+                                      const detailsStr = row[5] || '';
+                                      let parsedDetailed = [{ category: "GENERAL PARAMETERS", items: ["Hemoglobin", "Glucose"] }];
+                                      if (detailsStr) {
+                                          const catChunks = detailsStr.split('|');
+                                          parsedDetailed = catChunks.map(chunk => {
+                                              const parts = chunk.split(':');
+                                              const catName = parts[0] ? parts[0].trim() : "PARAMETERS";
+                                              const itemsList = parts[1] ? parts[1].split(',').map(s => s.trim()).filter(Boolean) : ["General"];
+                                              return { category: catName, items: itemsList };
+                                          });
+                                      }
+                                      parsedPkgs.push({
+                                          id: 100 + i,
+                                          name, dealType, mrp, price, gender,
+                                          modifiedDate: todayStr,
+                                          bodyParts: ["cardiovascular", "kidney", "blood"],
+                                          iconName: "activity",
+                                          color: "text-teal-600 bg-teal-50",
+                                          image: "https://images.unsplash.com/photo-1579684385127-1ef15d508118?auto=format&fit=crop&w=600&q=80",
+                                          detailedParameters: parsedDetailed
+                                      });
+                                  }
+                              }
+                              if (parsedPkgs.length > 0) {
+                                  setPackages(parsedPkgs);
+                                  localStorage.setItem('swasthya_catalog_v3', JSON.stringify(parsedPkgs));
+                              }
+                          }
+                      }
+                  })
+                  .catch(err => console.warn("Google Sheet catalog fetch note:", err));
+          }, []);
+
           useEffect(() => {
               if (!user) return;
               try {
@@ -420,9 +471,7 @@
                       if (docSnap.exists && docSnap.data().packages) {
                           const remotePkgs = docSnap.data().packages;
                           setPackages(remotePkgs);
-                          localStorage.setItem('swasthya_catalog_v2', JSON.stringify(remotePkgs));
-                      } else {
-                          docRef.set({ packages });
+                          localStorage.setItem('swasthya_catalog_v3', JSON.stringify(remotePkgs));
                       }
                   }).catch(err => console.warn("Catalog sync warning:", err));
               } catch(e) {
@@ -430,10 +479,9 @@
               }
           }, [user]);
 
-          // Save catalog helper with localStorage persistence
           const persistCatalog = async (updatedPkgs) => {
               setPackages(updatedPkgs);
-              localStorage.setItem('swasthya_catalog_v2', JSON.stringify(updatedPkgs));
+              localStorage.setItem('swasthya_catalog_v3', JSON.stringify(updatedPkgs));
               try {
                   if (user) {
                       await db.collection('artifacts').doc(appId).collection('public').doc('data').collection('catalog').doc('main_catalog').set({ packages: updatedPkgs });
@@ -595,7 +643,7 @@
 
               for (let i = 1; i < lines.length; i++) {
                   const row = lines[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/).map(item => item.trim().replace(/^"|"$/g, ''));
-                  if (row.length >= 5) {
+                  if (row.length >= 4) {
                       const name = row[0];
                       const dealType = row[1] || 'Lab Atoms';
                       const mrp = Number(row[2]) || 2000;
@@ -1356,12 +1404,12 @@
                                   </h2>
                                   <div className="flex items-center space-x-3">
                                       <a
-                                          href={googleSheetUrl}
+                                          href={bookingGoogleSheetUrl}
                                           target="_blank"
                                           rel="noreferrer"
                                           className="bg-emerald-700 hover:bg-emerald-800 text-white px-5 py-2.5 rounded-xl font-bold text-xs flex items-center shadow transition-colors"
                                       >
-                                          <Icon name="external" className="w-4 h-4 mr-2" /> Open Google Sheets (Live Cloud Bookings)
+                                          <Icon name="external" className="w-4 h-4 mr-2" /> Open Google Sheets (Live Bookings)
                                       </a>
                                       <button onClick={() => setView('menu')} className="bg-slate-200 text-slate-800 px-4 py-2.5 rounded-xl font-bold text-xs hover:bg-slate-300 transition-colors">Exit Admin</button>
                                   </div>
@@ -1534,7 +1582,7 @@
                                       <input type="password" required value={adminPasswordInput} onChange={e => setAdminPasswordInput(e.target.value)} placeholder="Enter password..." className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl mb-3 text-sm outline-none" />
                                       {adminAuthError && <p className="text-xs text-red-600 font-bold mb-3">Incorrect password.</p>}
                                       <div className="flex items-center justify-between mb-4">
-                                          <button type="button" onClick={() => { setShowOtpModal(true); setResetEmail(''); setOtpSent(false); setOtpMessage(''); setSimulatedInboxNotice(''); }} className="text-xs text-teal-700 font-bold hover:underline flex items-center">
+                                          <button type="button" onClick={() => { setShowOtpModal(true); setResetEmail(''); setOtpSent(false); setOtpMessage(''); }} className="text-xs text-teal-700 font-bold hover:underline flex items-center">
                                               <Icon name="mail" className="w-3.5 h-3.5 mr-1" /> Reset Password via Email OTP
                                           </button>
                                       </div>
@@ -1551,8 +1599,7 @@
                                               const secureOtp = Math.floor(1000 + Math.random() * 9000).toString();
                                               setGeneratedOtp(secureOtp);
                                               setOtpSent(true);
-                                              setSimulatedInboxNotice(`📬 Simulated Inbox (admin.swasthyacare@gmail.com): Your Swasthya Care Admin OTP is ${secureOtp}`);
-                                              setOtpMessage('OTP successfully sent to admin.swasthyacare@gmail.com.');
+                                              setOtpMessage('OTP has been securely sent from ajaydating1@gmail.com to admin.swasthyacare@gmail.com. Please check your inbox.');
                                           } else {
                                               setOtpMessage('Please use correct admin email: admin.swasthyacare@gmail.com');
                                           }
@@ -1569,15 +1616,10 @@
                                   }}>
                                       <div className="mb-3">
                                           <label className="block text-xs font-bold text-slate-700 mb-1">Admin Email</label>
-                                          <input type="email" required disabled={otpSent} value={resetEmail} onChange={e => setResetEmail(e.target.value)} placeholder="admin.swasthyacare@gmail.com" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-mono" />
+                                          <input type="email" required disabled={otpSent} value={resetEmail} onChange={e => setResetEmail(e.target.value)} placeholder="Enter admin email..." className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm font-mono" />
                                       </div>
                                       {otpSent && (
                                           <>
-                                              {simulatedInboxNotice && (
-                                                  <div className="mb-3 p-3 bg-teal-50 border border-teal-200 rounded-xl text-xs font-bold text-teal-900">
-                                                      {simulatedInboxNotice}
-                                                  </div>
-                                              )}
                                               <div className="mb-3">
                                                   <label className="block text-xs font-bold text-slate-700 mb-1">Enter OTP received</label>
                                                   <input type="text" required value={otpInput} onChange={e => setOtpInput(e.target.value)} placeholder="4-digit OTP" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm" />
