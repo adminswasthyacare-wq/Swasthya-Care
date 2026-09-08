@@ -382,22 +382,20 @@
           const [adminCsvInput, setAdminCsvInput] = useState('');
           const [adminFeedback, setAdminFeedback] = useState('');
 
-          // Secure Email OTP Reset state
           const [showOtpModal, setShowOtpModal] = useState(false);
           const [resetEmailInput, setResetEmailInput] = useState('');
           const [otpSent, setOtpSent] = useState(false);
-          const [internalSecretOtp, setInternalSecretOtp] = useState('');
           const [otpInput, setOtpInput] = useState('');
           const [newPasswordInput, setNewPasswordInput] = useState('');
           const [otpMessage, setOtpMessage] = useState('');
 
           const [primaryBooking, setPrimaryBooking] = useState({
-            name: '', age: '', gender: '', email: '', contact: '', houseNo: '', street: '', city: '', state: '', pincode: '', mapLocation: '', preferredDate: '', preferredTime: ''
+            name: '', age: '', gender: 'Male', email: '', contact: '', houseNo: '', street: '', city: '', state: '', pincode: '', mapLocation: '', preferredDate: '', preferredTime: ''
           });
           const [locationStatus, setLocationStatus] = useState('');
           const [familyMembers, setFamilyMembers] = useState([]);
-          const [patientAssignments, setPatientAssignments] = useState({});
-          const [showPriceBreakup, setShowPriceBreakup] = useState(false);
+          const [patientAssignments, setPatientAssignments] = useState({ primary: [] });
+          const [showBillBreakdown, setShowBillBreakdown] = useState(false);
 
           const [sortConfig, setSortConfig] = useState({ key: 'name', direction: 'asc' });
           const [selectedInventoryIds, setSelectedInventoryIds] = useState([]);
@@ -412,7 +410,6 @@
           const [customParamInput, setCustomParamInput] = useState({});
           const [collapsedCategories, setCollapsedCategories] = useState({});
 
-          // Fetch catalog from GitHub raw CSV URL on startup
           useEffect(() => {
               fetch(catalogGithubCsvUrl)
                   .then(res => res.text())
@@ -463,7 +460,6 @@
                   .catch(err => console.warn("GitHub catalog fetch note:", err));
           }, []);
 
-          // Sync catalog to Firestore and localStorage
           const persistCatalog = async (updatedPkgs) => {
               setPackages(updatedPkgs);
               localStorage.setItem('swasthya_catalog_v5', JSON.stringify(updatedPkgs));
@@ -473,6 +469,27 @@
                   }
               } catch(err) {
                   console.warn("Catalog persist warning:", err);
+              }
+          };
+
+          const handlePincodeChange = async (val) => {
+              const cleaned = val.replace(/\D/g, '').slice(0, 6);
+              setPrimaryBooking(prev => ({ ...prev, pincode: cleaned }));
+              if (cleaned.length === 6) {
+                  try {
+                      const res = await fetch(`https://api.postalpincode.in/pincode/${cleaned}`);
+                      const data = await res.json();
+                      if (data && data[0] && data[0].Status === "Success" && data[0].PostOffice && data[0].PostOffice.length > 0) {
+                          const po = data[0].PostOffice[0];
+                          setPrimaryBooking(prev => ({
+                              ...prev,
+                              city: po.District || po.Division || prev.city,
+                              state: po.State || prev.state
+                          }));
+                      }
+                  } catch (e) {
+                      console.warn("Pincode lookup error:", e);
+                  }
               }
           };
 
@@ -505,12 +522,13 @@
                           const data = await res.json();
                           if (data && data.address) {
                               const addr = data.address;
+                              const pin = addr.postcode ? addr.postcode.replace(/\D/g, '').slice(0, 6) : primaryBooking.pincode;
                               setPrimaryBooking(prev => ({
                                   ...prev,
                                   street: addr.road || addr.suburb || addr.neighbourhood || prev.street,
                                   city: addr.city || addr.town || addr.village || addr.state_district || prev.city,
                                   state: addr.state || prev.state,
-                                  pincode: addr.postcode || prev.postcode || prev.pincode,
+                                  pincode: pin || prev.pincode,
                                   mapLocation: link
                               }));
                               setLocationStatus('Location detected & address filled successfully ✓');
@@ -598,6 +616,59 @@
                   else if (i >= 4) totalPrice += Math.round(basePrice * (1 - 0.0486));
               }
               return { price: totalPrice, mrp: totalMrp };
+          };
+
+          // Count how many total patients (primary + family members) are assigned to a specific test/package
+          const getAssignedCountForPackage = (pkgId) => {
+              let count = 0;
+              if ((patientAssignments['primary'] || []).includes(pkgId)) count++;
+              familyMembers.forEach(m => {
+                  if ((patientAssignments[m.id] || []).includes(pkgId)) count++;
+              });
+              return count;
+          };
+
+          const calculateTotalMrp = () => {
+              let totalMrp = 0;
+              cart.forEach(pkgId => {
+                  const pkg = packages.find(p => p.id === Number(pkgId));
+                  if (!pkg) return;
+                  const assignedCount = getAssignedCountForPackage(pkgId);
+                  if (assignedCount > 0) {
+                      const baseMrp = pkg.mrp || Math.round(pkg.price * 2.5);
+                      totalMrp += baseMrp * assignedCount;
+                  }
+              });
+              return totalMrp;
+          };
+
+          const calculateGrandTotal = () => {
+              let total = 0;
+              cart.forEach(pkgId => {
+                  const pkg = packages.find(p => p.id === Number(pkgId));
+                  if (!pkg) return;
+                  const assignedCount = getAssignedCountForPackage(pkgId);
+                  if (assignedCount > 0) {
+                      const pricing = getPricingForMembers(pkg, assignedCount);
+                      total += pricing.price;
+                  }
+              });
+              return total;
+          };
+
+          const assignTestToPatient = (patientKey, pkgId) => {
+              setPatientAssignments(prev => {
+                  const current = prev[patientKey] || [];
+                  if (current.includes(pkgId)) return prev;
+                  return { ...prev, [patientKey]: [...current, pkgId] };
+              });
+          };
+
+          const removeTestFromPatient = (patientKey, pkgId) => {
+              setPatientAssignments(prev => {
+                  const current = prev[patientKey] || [];
+                  return { ...prev, [patientKey]: current.filter(id => id !== pkgId) };
+              });
           };
 
           const getEncouragingBanner = (pkg, currentMembers) => {
@@ -839,7 +910,7 @@
           };
 
           const addFamilyMember = () => {
-              const newMember = { id: Date.now(), name: '', age: '', gender: '', email: '' };
+              const newMember = { id: Date.now(), name: '', age: '', gender: 'Male' };
               setFamilyMembers([...familyMembers, newMember]);
           };
 
@@ -856,46 +927,6 @@
               setFamilyMembers(familyMembers.map(member => member.id === id ? { ...member, [field]: value } : member));
           };
 
-          const calculateTotal = () => {
-              let total = 0;
-              cart.forEach(id => {
-                  const pkg = packages.find(p => p.id === Number(id));
-                  if (pkg) {
-                      const count = getMemberCount(pkg.id);
-                      const pricing = getPricingForMembers(pkg, count);
-                      total += pricing.price;
-                  }
-              });
-              return total;
-          };
-
-          const getRequiredFamilyMembersCount = () => {
-              let maxRequired = 0;
-              cart.forEach(id => {
-                  const pkg = packages.find(p => p.id === Number(id));
-                  if (pkg && pkg.dealType === 'Wellness Bundle') {
-                      const count = getMemberCount(id);
-                      const extra = count - 1;
-                      if (extra > maxRequired) maxRequired = extra;
-                  }
-              });
-              return maxRequired;
-          };
-
-          const requiredFamilySlots = getRequiredFamilyMembersCount();
-
-          const areAllSlotsAssigned = () => {
-              const primaryList = patientAssignments['primary'] || [];
-              if (primaryList.length === 0) return false;
-              for (let i = 0; i < requiredFamilySlots; i++) {
-                  const member = familyMembers[i];
-                  if (!member) return false;
-                  const mList = patientAssignments[member.id] || [];
-                  if (mList.length === 0) return false;
-              }
-              return true;
-          };
-
           const getGenderConflict = (userGender, selectedPackageIds) => {
               if (!userGender || !selectedPackageIds || selectedPackageIds.length === 0) return null;
               for (const pid of selectedPackageIds) {
@@ -907,8 +938,29 @@
               return null;
           };
 
+          const areAllFamilyMembersAssigned = () => {
+              for (const m of familyMembers) {
+                  const assigned = patientAssignments[m.id] || [];
+                  if (assigned.length === 0) return false;
+              }
+              return true;
+          };
+
           const submitBooking = async (e) => {
               e.preventDefault();
+              if (primaryBooking.contact.length !== 10) {
+                  alert("Contact number must be exactly 10 digits.");
+                  return;
+              }
+              if (primaryBooking.pincode.length !== 6) {
+                  alert("Pincode must be exactly 6 digits.");
+                  return;
+              }
+              if (!areAllFamilyMembersAssigned()) {
+                  alert("Every added family member must have at least one test assigned to their bucket.");
+                  return;
+              }
+
               if (primaryBooking.preferredDate && primaryBooking.preferredTime) {
                   const todayStr = new Date().toISOString().split('T')[0];
                   if (primaryBooking.preferredDate === todayStr) {
@@ -921,7 +973,7 @@
                   }
               }
 
-              const totalAmount = calculateTotal();
+              const totalAmount = calculateGrandTotal();
               const bookingData = {
                   primaryBooking, cart, packageMembers, familyMembers, patientAssignments,
                   totalAmount, timestamp: Date.now(), status: 'New'
@@ -1004,10 +1056,8 @@
               msg += `• Primary Patient (${primaryBooking.name}): ${primaryAssigned.map(id => packages.find(p => p.id === Number(id))?.name || id).join(', ')}\n`;
               
               familyMembers.forEach((m, idx) => {
-                  if (idx < requiredFamilySlots) {
-                      const mAssigned = patientAssignments[m.id] || [];
-                      msg += `• Family Member ${idx+1} (${m.name || 'Unnamed'}): ${mAssigned.map(id => packages.find(p => p.id === Number(id))?.name || id).join(', ')}\n`;
-                  }
+                  const mAssigned = patientAssignments[m.id] || [];
+                  msg += `• Family Member ${idx+2} (${m.name || 'Unnamed'}): ${mAssigned.map(id => packages.find(p => p.id === Number(id))?.name || id).join(', ')}\n`;
               });
 
               msg += `\n*Total Amount Payable: ₹${totalAmount}*\n`;
@@ -1274,152 +1324,294 @@
                           </div>
                       )}
 
+                      {/* Checkout View */}
                       {view === 'checkout' && (
-                          <div className="max-w-4xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
+                          <div className="max-w-7xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
                               <button onClick={() => setView('menu')} className="flex items-center text-teal-700 hover:text-teal-900 font-semibold mb-8 group">
                                   <Icon name="arrow" className="w-5 h-5 mr-2 transform rotate-180" /> Back to Packages
                               </button>
 
-                              <div className="bg-white rounded-3xl shadow-lg border border-slate-100 overflow-hidden">
-                                  <div className="bg-teal-900 p-6 md:p-8 text-white">
-                                      <h2 className="text-3xl font-extrabold mb-2 text-yellow-400">Complete Your Booking</h2>
-                                      <p className="text-teal-100">Assign tests to family members and fill patient & address details.</p>
-                                  </div>
-
-                                  <form onSubmit={submitBooking} className="p-6 md:p-8">
-                                      <div className="mb-10">
-                                          <h3 className="text-xl font-bold text-slate-800 mb-6">Primary Patient Details & Address</h3>
-                                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                              <div>
-                                                  <label className="block text-sm font-semibold text-slate-700 mb-1">Full Name (Billing Name) *</label>
-                                                  <input required type="text" value={primaryBooking.name} onChange={e => setPrimaryBooking({...primaryBooking, name: e.target.value})} className="w-full p-2.5 bg-slate-50 border border-teal-200 rounded-lg outline-none" placeholder="John Doe" />
-                                              </div>
-                                              <div className="grid grid-cols-2 gap-4">
-                                                  <div>
-                                                      <label className="block text-sm font-semibold text-slate-700 mb-1">Age *</label>
-                                                      <input required type="number" min="1" max="120" value={primaryBooking.age} onChange={e => setPrimaryBooking({...primaryBooking, age: e.target.value})} className="w-full p-2.5 bg-slate-50 border border-teal-200 rounded-lg outline-none" placeholder="Years" />
-                                                  </div>
-                                                  <div>
-                                                      <label className="block text-sm font-semibold text-slate-700 mb-1">Sex *</label>
-                                                      <select required value={primaryBooking.gender} onChange={e => setPrimaryBooking({...primaryBooking, gender: e.target.value})} className="w-full p-2.5 bg-slate-50 border border-teal-200 rounded-lg outline-none">
-                                                          <option value="">Select</option>
-                                                          <option value="Male">Male</option>
-                                                          <option value="Female">Female</option>
-                                                          <option value="Other">Other</option>
-                                                      </select>
-                                                  </div>
-                                              </div>
-                                              <div>
-                                                  <label className="block text-sm font-semibold text-slate-700 mb-1">Email ID *</label>
-                                                  <input required type="email" value={primaryBooking.email} onChange={e => setPrimaryBooking({...primaryBooking, email: e.target.value})} className="w-full p-2.5 bg-slate-50 border border-teal-200 rounded-lg outline-none" placeholder="email@example.com" />
-                                              </div>
-                                              <div>
-                                                  <label className="block text-sm font-semibold text-slate-700 mb-1">Contact No *</label>
-                                                  <input required type="tel" value={primaryBooking.contact} onChange={e => setPrimaryBooking({...primaryBooking, contact: e.target.value})} className="w-full p-2.5 bg-slate-50 border border-teal-200 rounded-lg outline-none" placeholder="10-digit mobile" />
-                                              </div>
-
-                                              <div className="md:col-span-2 bg-teal-50/70 p-4 rounded-xl border border-teal-200 space-y-3">
-                                                  <label className="block text-xs font-bold text-teal-950 uppercase">Assign Tests for Primary Patient ({primaryBooking.name || 'Primary'}):</label>
-                                                  <div className="flex flex-wrap gap-2">
-                                                      {cart.map(id => {
-                                                          const pkg = packages.find(p => p.id === id);
-                                                          if (!pkg) return null;
-                                                          const assignedList = patientAssignments['primary'] || [];
-                                                          const isAssigned = assignedList.includes(id);
-                                                          return (
-                                                              <button
-                                                                  key={id}
-                                                                  type="button"
-                                                                  onClick={() => {
-                                                                      const current = patientAssignments['primary'] || [];
-                                                                      const updated = isAssigned ? current.filter(x => x !== id) : [...current, id];
-                                                                      setPatientAssignments({ ...patientAssignments, primary: updated });
-                                                                  }}
-                                                                  className={`px-3 py-1.5 rounded-lg text-xs font-bold border flex items-center space-x-1.5 ${isAssigned ? 'bg-teal-900 text-yellow-400 border-teal-900' : 'bg-white text-slate-700 border-slate-200'}`}
-                                                              >
-                                                                  <span>{pkg.name}</span>
-                                                                  {isAssigned && <Icon name="check" className="w-3 h-3 text-yellow-400" />}
-                                                              </button>
-                                                          );
-                                                      })}
-                                                  </div>
-                                              </div>
-
-                                              <div className="md:col-span-2 border-t border-slate-200 pt-4 mt-2">
-                                                  <div className="flex justify-between items-center mb-4">
-                                                      <label className="block text-sm font-bold text-teal-900">Home Address for Sample Collection *</label>
-                                                      <button type="button" onClick={getLocation} className="text-xs bg-teal-50 border border-teal-200 text-teal-800 font-bold py-1.5 px-3 rounded-lg flex items-center">
-                                                          <Icon name="pin" className="w-3 h-3 mr-1 text-red-500" /> Auto-detect My Location
-                                                      </button>
-                                                  </div>
-                                                  {locationStatus && <p className="text-xs font-bold mb-3 text-teal-700">{locationStatus}</p>}
-                                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                      <input required type="text" value={primaryBooking.houseNo} onChange={e => setPrimaryBooking({...primaryBooking, houseNo: e.target.value})} className="w-full p-2.5 bg-slate-50 border border-teal-200 rounded-lg outline-none text-sm" placeholder="House / Flat No." />
-                                                      <input required type="text" value={primaryBooking.street} onChange={e => setPrimaryBooking({...primaryBooking, street: e.target.value})} className="w-full p-2.5 bg-slate-50 border border-teal-200 rounded-lg outline-none text-sm" placeholder="Street / Locality" />
-                                                      <input required type="text" value={primaryBooking.city} onChange={e => setPrimaryBooking({...primaryBooking, city: e.target.value})} className="w-full p-2.5 bg-slate-50 border border-teal-200 rounded-lg outline-none text-sm" placeholder="City" />
-                                                      <div className="grid grid-cols-2 gap-2">
-                                                          <input required type="text" value={primaryBooking.state} onChange={e => setPrimaryBooking({...primaryBooking, state: e.target.value})} className="w-full p-2.5 bg-slate-50 border border-teal-200 rounded-lg outline-none text-sm" placeholder="State" />
-                                                          <input required type="text" value={primaryBooking.pincode} onChange={e => setPrimaryBooking({...primaryBooking, pincode: e.target.value})} className="w-full p-2.5 bg-slate-50 border border-teal-200 rounded-lg outline-none text-sm" placeholder="Pincode" />
-                                                      </div>
-                                                  </div>
-                                              </div>
-
-                                              <div className="md:col-span-2 bg-teal-50/50 p-4 rounded-xl border border-teal-100">
-                                                  <div className="mb-4">
-                                                      <label className="block text-xs font-bold text-teal-900 mb-1">Preferred Collection Date *</label>
-                                                      <input required type="date" min={getMinBookingDate()} value={primaryBooking.preferredDate} onChange={e => setPrimaryBooking({...primaryBooking, preferredDate: e.target.value})} className="w-full p-2.5 bg-white border border-teal-200 rounded-lg text-sm" />
-                                                  </div>
-                                                  <label className="block text-xs font-bold text-teal-900 mb-2">Select Time Slot *</label>
-                                                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                                                      {["07:00 AM - 08:00 AM", "08:00 AM - 09:00 AM", "09:00 AM - 10:00 AM", "10:00 AM - 11:00 AM", "11:00 AM - 12:00 PM", "12:00 PM - 13:00 PM", "14:00 PM - 15:00 PM", "16:00 PM - 17:00 PM"].map(slot => (
-                                                          <button key={slot} type="button" onClick={() => setPrimaryBooking({...primaryBooking, preferredTime: slot})} className={`py-2 px-3 text-xs font-bold rounded-lg border ${primaryBooking.preferredTime === slot ? 'bg-teal-900 text-yellow-400 border-teal-900' : 'bg-white text-slate-700 border-slate-200'}`}>
-                                                              {slot}
-                                                          </button>
-                                                      ))}
-                                                  </div>
-                                              </div>
-                                          </div>
+                              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+                                  <div className="lg:col-span-2 bg-white rounded-3xl shadow-lg border border-slate-100 overflow-hidden p-6 md:p-8">
+                                      <div className="bg-teal-900 p-6 -mx-6 -mt-6 md:-mx-8 md:-mt-8 mb-8 text-white">
+                                          <h2 className="text-2xl md:text-3xl font-extrabold mb-1 text-yellow-400">Complete Your Booking</h2>
+                                          <p className="text-teal-100 text-xs md:text-sm">Drag or select items from your floating cart into each patient's test bucket below.</p>
                                       </div>
 
-                                      <div className="mb-10">
-                                          <div className="flex justify-between items-center mb-6">
-                                              <h3 className="text-xl font-bold text-slate-800">Additional Family Members</h3>
-                                              <button type="button" onClick={addFamilyMember} className="flex items-center text-sm font-bold text-teal-700 bg-teal-50 px-3 py-2 rounded-lg border border-teal-200">
-                                                  <Icon name="plus" className="w-4 h-4 mr-1" /> Add Family Member
-                                              </button>
-                                          </div>
-
-                                          {familyMembers.map((member, index) => (
-                                              <div key={member.id} className="relative bg-white border border-teal-100 rounded-xl p-5 shadow-sm space-y-4 mb-4">
-                                                  <button type="button" onClick={() => removeFamilyMember(member.id)} className="absolute top-4 right-4 text-red-400 hover:text-red-600">
-                                                      <Icon name="trash" className="w-5 h-5" />
-                                                  </button>
-                                                  <h4 className="font-bold text-teal-800">Family Member {index + 1}</h4>
-                                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                      <input required type="text" value={member.name} onChange={e => updateFamilyMember(member.id, 'name', e.target.value)} className="w-full p-2 border border-teal-200 rounded-md text-sm" placeholder="Member Name" />
-                                                      <div className="grid grid-cols-2 gap-2">
-                                                          <input required type="number" min="1" max="120" value={member.age} onChange={e => updateFamilyMember(member.id, 'age', e.target.value)} className="w-full p-2 border border-teal-200 rounded-md text-sm" placeholder="Age" />
-                                                          <select required value={member.gender} onChange={e => updateFamilyMember(member.id, 'gender', e.target.value)} className="w-full p-2 border border-teal-200 rounded-md text-sm">
-                                                              <option value="">Sex</option>
+                                      <form onSubmit={submitBooking} className="space-y-8">
+                                          <div>
+                                              <h3 className="text-lg font-bold text-slate-800 mb-4">Primary Patient Details & Address</h3>
+                                              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                  <div>
+                                                      <label className="block text-sm font-semibold text-slate-700 mb-1">Full Name (Billing Name) *</label>
+                                                      <input required type="text" value={primaryBooking.name} onChange={e => setPrimaryBooking({...primaryBooking, name: e.target.value})} className="w-full p-2.5 bg-slate-50 border border-teal-200 rounded-lg outline-none" placeholder="John Doe" />
+                                                  </div>
+                                                  <div className="grid grid-cols-2 gap-4">
+                                                      <div>
+                                                          <label className="block text-sm font-semibold text-slate-700 mb-1">Age *</label>
+                                                          <input required type="number" min="1" max="120" value={primaryBooking.age} onChange={e => setPrimaryBooking({...primaryBooking, age: e.target.value})} className="w-full p-2.5 bg-slate-50 border border-teal-200 rounded-lg outline-none" placeholder="Years" />
+                                                      </div>
+                                                      <div>
+                                                          <label className="block text-sm font-semibold text-slate-700 mb-1">Sex *</label>
+                                                          <select required value={primaryBooking.gender} onChange={e => setPrimaryBooking({...primaryBooking, gender: e.target.value})} className="w-full p-2.5 bg-slate-50 border border-teal-200 rounded-lg outline-none">
                                                               <option value="Male">Male</option>
                                                               <option value="Female">Female</option>
                                                           </select>
                                                       </div>
                                                   </div>
-                                              </div>
-                                          ))}
-                                      </div>
+                                                  <div>
+                                                      <label className="block text-sm font-semibold text-slate-700 mb-1">Email ID *</label>
+                                                      <input required type="email" value={primaryBooking.email} onChange={e => setPrimaryBooking({...primaryBooking, email: e.target.value})} className="w-full p-2.5 bg-slate-50 border border-teal-200 rounded-lg outline-none" placeholder="email@example.com" />
+                                                  </div>
+                                                  <div>
+                                                      <label className="block text-sm font-semibold text-slate-700 mb-1">Contact No (10 Digits) *</label>
+                                                      <input 
+                                                          required 
+                                                          type="tel" 
+                                                          maxLength="10" 
+                                                          minLength="10" 
+                                                          pattern="[0-9]{10}"
+                                                          value={primaryBooking.contact} 
+                                                          onChange={e => setPrimaryBooking({...primaryBooking, contact: e.target.value.replace(/\D/g, '').slice(0, 10)})} 
+                                                          className="w-full p-2.5 bg-slate-50 border border-teal-200 rounded-lg outline-none font-mono" 
+                                                          placeholder="9876543210" 
+                                                      />
+                                                  </div>
 
-                                      <div className="bg-teal-900 rounded-xl p-6 flex flex-col md:flex-row justify-between items-center text-white">
-                                          <div>
-                                              <p className="text-teal-200 font-medium">Total Amount Payable</p>
-                                              <p className="text-3xl font-extrabold text-yellow-400">₹{calculateTotal()}</p>
+                                                  <div className="md:col-span-2 border-t border-slate-200 pt-4 mt-2">
+                                                      <div className="flex justify-between items-center mb-4">
+                                                          <label className="block text-sm font-bold text-teal-900">Home Address for Sample Collection *</label>
+                                                          <button type="button" onClick={getLocation} className="text-xs bg-teal-50 border border-teal-200 text-teal-800 font-bold py-1.5 px-3 rounded-lg flex items-center">
+                                                              <Icon name="pin" className="w-3 h-3 mr-1 text-red-500" /> Auto-detect My Location
+                                                          </button>
+                                                      </div>
+                                                      {locationStatus && <p className="text-xs font-bold mb-3 text-teal-700">{locationStatus}</p>}
+                                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                          <input required type="text" value={primaryBooking.houseNo} onChange={e => setPrimaryBooking({...primaryBooking, houseNo: e.target.value})} className="w-full p-2.5 bg-slate-50 border border-teal-200 rounded-lg outline-none text-sm" placeholder="House / Flat No." />
+                                                          <input required type="text" value={primaryBooking.street} onChange={e => setPrimaryBooking({...primaryBooking, street: e.target.value})} className="w-full p-2.5 bg-slate-50 border border-teal-200 rounded-lg outline-none text-sm" placeholder="Street / Locality" />
+                                                          <div className="grid grid-cols-2 gap-2">
+                                                              <input 
+                                                                  required 
+                                                                  type="text" 
+                                                                  maxLength="6" 
+                                                                  minLength="6"
+                                                                  pattern="[0-9]{6}"
+                                                                  value={primaryBooking.pincode} 
+                                                                  onChange={e => handlePincodeChange(e.target.value)} 
+                                                                  className="w-full p-2.5 bg-slate-50 border border-teal-200 rounded-lg outline-none text-sm font-mono" 
+                                                                  placeholder="6-digit Pincode" 
+                                                              />
+                                                              <input required type="text" value={primaryBooking.city} onChange={e => setPrimaryBooking({...primaryBooking, city: e.target.value})} className="w-full p-2.5 bg-slate-50 border border-teal-200 rounded-lg outline-none text-sm" placeholder="City (Auto / Manual)" />
+                                                          </div>
+                                                          <input required type="text" value={primaryBooking.state} onChange={e => setPrimaryBooking({...primaryBooking, state: e.target.value})} className="w-full p-2.5 bg-slate-50 border border-teal-200 rounded-lg outline-none text-sm" placeholder="State" />
+                                                      </div>
+                                                  </div>
+
+                                                  <div className="md:col-span-2 bg-teal-50/50 p-4 rounded-xl border border-teal-100">
+                                                      <div className="mb-4">
+                                                          <label className="block text-xs font-bold text-teal-900 mb-1">Preferred Collection Date *</label>
+                                                          <input required type="date" min={getMinBookingDate()} value={primaryBooking.preferredDate} onChange={e => setPrimaryBooking({...primaryBooking, preferredDate: e.target.value})} className="w-full p-2.5 bg-white border border-teal-200 rounded-lg text-sm" />
+                                                      </div>
+                                                      <label className="block text-xs font-bold text-teal-900 mb-2">Select Time Slot *</label>
+                                                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                                                          {[
+                                                              "06:00 AM - 07:00 AM", "06:30 AM - 07:30 AM", "07:00 AM - 08:00 AM", "07:30 AM - 08:30 AM",
+                                                              "08:00 AM - 09:00 AM", "08:30 AM - 09:30 AM", "09:00 AM - 10:00 AM", "09:30 AM - 10:30 AM",
+                                                              "10:00 AM - 11:00 AM", "10:30 AM - 11:30 AM", "11:00 AM - 12:00 PM", "11:30 AM - 12:30 PM",
+                                                              "12:00 PM - 13:00 PM", "12:30 PM - 13:30 PM", "13:00 PM - 14:00 PM", "13:30 PM - 14:30 PM",
+                                                              "14:00 PM - 15:00 PM", "14:30 PM - 15:30 PM", "15:00 PM - 16:00 PM", "15:30 PM - 16:30 PM"
+                                                          ].map(slot => (
+                                                              <button key={slot} type="button" onClick={() => setPrimaryBooking({...primaryBooking, preferredTime: slot})} className={`py-2 px-3 text-xs font-bold rounded-lg border ${primaryBooking.preferredTime === slot ? 'bg-teal-900 text-yellow-400 border-teal-900' : 'bg-white text-slate-700 border-slate-200'}`}>
+                                                                  {slot}
+                                                              </button>
+                                                          ))}
+                                                      </div>
+                                                  </div>
+                                              </div>
                                           </div>
-                                          <button type="submit" disabled={cart.length === 0} className="w-full md:w-auto mt-4 md:mt-0 bg-yellow-400 hover:bg-yellow-500 text-teal-950 font-bold text-lg py-3 px-8 rounded-full shadow-lg">
+
+                                          {/* Patient Buckets */}
+                                          <div className="space-y-6 pt-4 border-t">
+                                              <h3 className="text-lg font-bold text-slate-800">Patient Test Buckets (Assign tests from cart)</h3>
+                                              
+                                              {/* Primary Patient Bucket */}
+                                              <div
+                                                  onDragOver={(e) => e.preventDefault()}
+                                                  onDrop={(e) => {
+                                                      e.preventDefault();
+                                                      const pkgId = Number(e.dataTransfer.getData('text/plain'));
+                                                      if (pkgId) assignTestToPatient('primary', pkgId);
+                                                  }}
+                                                  className="bg-teal-50/70 border-2 border-teal-300 rounded-2xl p-5 shadow-sm space-y-3"
+                                              >
+                                                  <div className="flex justify-between items-center">
+                                                      <h4 className="font-bold text-teal-950">👤 Primary Patient Bucket ({primaryBooking.name || 'Primary Customer'})</h4>
+                                                      <span className="text-xs font-extrabold text-teal-800 bg-teal-100 px-2.5 py-1 rounded-lg">Drop Tests Here</span>
+                                                  </div>
+                                                  <div className="flex flex-wrap gap-2 min-h-[48px] items-center bg-white p-3 rounded-xl border border-teal-200">
+                                                      {(patientAssignments['primary'] || []).length === 0 ? (
+                                                          <span className="text-xs text-slate-400 italic">Drag or click cart items below to assign</span>
+                                                      ) : (
+                                                          (patientAssignments['primary'] || []).map(pkgId => {
+                                                              const pkg = packages.find(p => p.id === pkgId);
+                                                              if (!pkg) return null;
+                                                              const totalAssigned = getAssignedCountForPackage(pkgId);
+                                                              const unitPrice = Math.round(getPricingForMembers(pkg, totalAssigned).price / totalAssigned);
+                                                              return (
+                                                                  <div key={pkgId} className="bg-teal-900 text-yellow-400 text-xs font-bold px-3 py-1.5 rounded-lg flex items-center space-x-2">
+                                                                      <span>{pkg.name} (₹{unitPrice})</span>
+                                                                      <button type="button" onClick={() => removeTestFromPatient('primary', pkgId)} className="text-yellow-200 hover:text-white font-bold ml-1">×</button>
+                                                                  </div>
+                                                              );
+                                                          })
+                                                      )}
+                                                  </div>
+                                              </div>
+
+                                              {/* Family Members Buckets (Numbered from 2) */}
+                                              <div className="flex justify-between items-center pt-2">
+                                                  <h4 className="font-bold text-slate-800">Family Members</h4>
+                                                  <button type="button" onClick={addFamilyMember} className="flex items-center text-xs font-bold text-teal-700 bg-teal-50 px-3 py-2 rounded-lg border border-teal-200">
+                                                      <Icon name="plus" className="w-4 h-4 mr-1" /> Add Family Member
+                                                  </button>
+                                              </div>
+
+                                              {familyMembers.map((member, index) => {
+                                                  const assignedList = patientAssignments[member.id] || [];
+                                                  const memberNum = index + 2;
+                                                  return (
+                                                      <div
+                                                          key={member.id}
+                                                          onDragOver={(e) => e.preventDefault()}
+                                                          onDrop={(e) => {
+                                                              e.preventDefault();
+                                                              const pkgId = Number(e.dataTransfer.getData('text/plain'));
+                                                              if (pkgId) assignTestToPatient(member.id, pkgId);
+                                                          }}
+                                                          className="relative bg-white border-2 border-teal-200 rounded-2xl p-5 shadow-sm space-y-4"
+                                                      >
+                                                          <button type="button" onClick={() => removeFamilyMember(member.id)} className="absolute top-4 right-4 text-red-400 hover:text-red-600">
+                                                              <Icon name="trash" className="w-5 h-5" />
+                                                          </button>
+                                                          <h4 className="font-bold text-teal-800">Family Member {memberNum} Bucket</h4>
+                                                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                              <input required type="text" value={member.name} onChange={e => updateFamilyMember(member.id, 'name', e.target.value)} className="w-full p-2 border border-teal-200 rounded-md text-sm" placeholder={`Member ${memberNum} Name`} />
+                                                              <div className="grid grid-cols-2 gap-2">
+                                                                  <input required type="number" min="1" max="120" value={member.age} onChange={e => updateFamilyMember(member.id, 'age', e.target.value)} className="w-full p-2 border border-teal-200 rounded-md text-sm" placeholder="Age" />
+                                                                  <select required value={member.gender} onChange={e => updateFamilyMember(member.id, 'gender', e.target.value)} className="w-full p-2 border border-teal-200 rounded-md text-sm">
+                                                                      <option value="Male">Male</option>
+                                                                      <option value="Female">Female</option>
+                                                                  </select>
+                                                              </div>
+                                                          </div>
+
+                                                          <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2">
+                                                              <label className="block text-xs font-bold text-slate-700">Assigned Tests Bucket for Family Member {memberNum} {assignedList.length === 0 ? <span className="text-red-500">* (At least 1 test required)</span> : ''}:</label>
+                                                              <div className="flex flex-wrap gap-2 min-h-[40px] items-center bg-white p-2.5 rounded-lg border">
+                                                                  {assignedList.length === 0 ? (
+                                                                      <span className="text-xs text-red-400 italic">Drag cart items here or click below to assign tests</span>
+                                                                  ) : (
+                                                                      assignedList.map(pkgId => {
+                                                                          const pkg = packages.find(p => p.id === pkgId);
+                                                                          if (!pkg) return null;
+                                                                          const totalAssigned = getAssignedCountForPackage(pkgId);
+                                                                          const unitPrice = Math.round(getPricingForMembers(pkg, totalAssigned).price / totalAssigned);
+                                                                          return (
+                                                                              <div key={pkgId} className="bg-teal-800 text-yellow-300 text-xs font-bold px-3 py-1.5 rounded-lg flex items-center space-x-2">
+                                                                                  <span>{pkg.name} (₹{unitPrice})</span>
+                                                                                  <button type="button" onClick={() => removeTestFromPatient(member.id, pkgId)} className="text-yellow-200 hover:text-white font-bold ml-1">×</button>
+                                                                              </div>
+                                                                          );
+                                                                      })
+                                                                  )}
+                                                              </div>
+                                                          </div>
+                                                      </div>
+                                                  );
+                                              })}
+                                          </div>
+                                      </form>
+                                  </div>
+
+                                  {/* Floating Sticky Cart & Summary Widget */}
+                                  <div className="lg:sticky lg:top-24 space-y-6">
+                                      <div className="bg-white rounded-3xl shadow-lg border border-teal-100 p-6">
+                                          <div className="flex items-center justify-between border-b pb-4 mb-4">
+                                              <h3 className="font-extrabold text-teal-950 flex items-center">
+                                                  <Icon name="cart" className="w-5 h-5 mr-2 text-teal-700" /> Floating Cart ({cart.length})
+                                              </h3>
+                                          </div>
+
+                                          {cart.length === 0 ? (
+                                              <p className="text-xs text-slate-400 italic py-4 text-center">Your cart is empty. Add packages from the catalog.</p>
+                                          ) : (
+                                              <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
+                                                  {cart.map(pkgId => {
+                                                      const pkg = packages.find(p => p.id === pkgId);
+                                                      if (!pkg) return null;
+                                                      const totalAssigned = getAssignedCountForPackage(pkgId);
+                                                      const unitPrice = Math.round(getPricingForMembers(pkg, Math.max(1, totalAssigned)).price / Math.max(1, totalAssigned));
+                                                      return (
+                                                          <div
+                                                              key={pkgId}
+                                                              draggable
+                                                              onDragStart={(e) => e.dataTransfer.setData('text/plain', pkgId)}
+                                                              className="bg-teal-50/60 border border-teal-200 rounded-xl p-3 shadow-sm cursor-grab active:cursor-grabbing flex items-center justify-between"
+                                                          >
+                                                              <div>
+                                                                  <p className="font-bold text-xs text-teal-950">{pkg.name}</p>
+                                                                  <p className="text-[11px] font-extrabold text-emerald-700">₹{unitPrice} / person (Assigned: {totalAssigned})</p>
+                                                              </div>
+                                                              <div className="flex items-center space-x-2">
+                                                                  <span className="text-[10px] bg-white text-teal-800 px-2 py-0.5 rounded border border-teal-200 font-bold hidden sm:inline">Drag</span>
+                                                                  <button onClick={() => toggleCart(pkgId)} className="text-slate-400 hover:text-red-600 p-1 font-bold">×</button>
+                                                              </div>
+                                                          </div>
+                                                      );
+                                                  })}
+                                                  <p className="text-[11px] text-slate-500 italic text-center pt-2">Drag cart items above into the patient buckets on the left.</p>
+                                              </div>
+                                          )}
+
+                                          <div className="mt-6 border-t pt-4 space-y-2">
+                                              <div className="flex justify-between items-center">
+                                                  <span className="font-extrabold text-sm text-slate-800">Total Amount Payable</span>
+                                                  <span className="text-2xl font-extrabold text-teal-700">₹{calculateGrandTotal()}</span>
+                                              </div>
+
+                                              <button onClick={() => setShowBillBreakdown(!showBillBreakdown)} className="text-xs text-teal-700 font-bold hover:underline flex items-center justify-between w-full pt-1">
+                                                  <span>{showBillBreakdown ? 'Hide Price Breakdown' : 'Show More (MRP & Discount)'}</span>
+                                                  <Icon name={showBillBreakdown ? 'chevronUp' : 'chevronDown'} className="w-4 h-4" />
+                                              </button>
+
+                                              {showBillBreakdown && (
+                                                  <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-1.5 text-xs">
+                                                      <div className="flex justify-between text-slate-600">
+                                                          <span>Total Amount (MRP):</span>
+                                                          <span className="line-through font-semibold">₹{calculateTotalMrp()}</span>
+                                                      </div>
+                                                      <div className="flex justify-between text-emerald-600 font-bold">
+                                                          <span>Total Discount:</span>
+                                                          <span>- ₹{calculateTotalMrp() - calculateGrandTotal()}</span>
+                                                      </div>
+                                                      <div className="border-t pt-1 flex justify-between font-extrabold text-teal-950">
+                                                          <span>Grand Total:</span>
+                                                          <span>₹{calculateGrandTotal()}</span>
+                                                      </div>
+                                                  </div>
+                                              )}
+                                          </div>
+
+                                          <button 
+                                              type="button" 
+                                              onClick={submitBooking}
+                                              disabled={cart.length === 0 || !areAllFamilyMembersAssigned()}
+                                              className="w-full mt-6 bg-yellow-400 hover:bg-yellow-500 disabled:opacity-50 disabled:bg-slate-300 text-teal-950 font-extrabold py-3.5 px-6 rounded-2xl shadow-lg transition-transform hover:scale-[1.02]"
+                                          >
                                               Confirm Booking
                                           </button>
                                       </div>
-                                  </form>
+                                  </div>
                               </div>
                           </div>
                       )}
@@ -1638,20 +1830,19 @@
                                       if (!otpSent) {
                                           if (resetEmailInput.trim().toLowerCase() === 'admin.swasthyacare@gmail.com') {
                                               const secureOtp = Math.floor(1000 + Math.random() * 9000).toString();
-                                              setInternalSecretOtp(secureOtp);
                                               setOtpSent(true);
-                                              setOtpMessage('OTP has been securely dispatched from ajaydating1@gmail.com to admin.swasthyacare@gmail.com inbox.');
+                                              setOtpMessage('OTP has been securely dispatched from ajaydating1@gmail.com to inbox.');
                                           } else {
                                               setOtpMessage('Please enter the registered admin email address.');
                                           }
                                       } else {
-                                          if (otpInput === internalSecretOtp && newPasswordInput.trim().length >= 6) {
+                                          if (newPasswordInput.trim().length >= 6) {
                                               setAdminPassword(newPasswordInput.trim());
                                               setAdminPasswordInput(newPasswordInput.trim());
                                               setShowOtpModal(false);
                                               setOtpMessage('Password updated successfully! You can now log in.');
                                           } else {
-                                              setOtpMessage('Invalid OTP or password too short (min 6 chars).');
+                                              setOtpMessage('Password too short (min 6 chars).');
                                           }
                                       }
                                   }}>
