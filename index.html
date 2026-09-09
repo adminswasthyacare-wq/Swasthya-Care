@@ -134,7 +134,8 @@
                 chevronUp: <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="m18 15-6-6-6 6"/></svg>,
                 upload: <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4m14-7-5-5-5 5m5-5v12"/></svg>,
                 download: <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4m7-10v12m0 0l-4-4m4 4l4-4"/></svg>,
-                receipt: <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M8 8h8M8 12h8M8 16h6"/></svg>
+                receipt: <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M8 8h8M8 12h8M8 16h6"/></svg>,
+                sparkles: <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>
             };
             return icons[name] || null;
         };
@@ -445,7 +446,7 @@
           const [currentRewardIdx, setCurrentRewardIdx] = useState(0);
 
           const [chatOpen, setChatOpen] = useState(false);
-          const [messages, setMessages] = useState([{ role: 'model', text: 'Hi! I am the Swasthya AI Assistant. How can I help you choose a health package or analyze your lab reports today?' }]);
+          const [messages, setMessages] = useState([{ role: 'model', text: 'Hi! I am the Swasthya AI Assistant. How can I help you choose a health package today?' }]);
           const [inputValue, setInputValue] = useState('');
           const [isAILoading, setIsAILoading] = useState(false);
           const chatEndRef = useRef(null);
@@ -484,6 +485,7 @@
           const [selectedParamAtom, setSelectedParamAtom] = useState({});
           const [customParamNameInput, setCustomParamNameInput] = useState({});
 
+          // Auto rotate rewards carousel every 4 seconds
           useEffect(() => {
               const rewardTimer = setInterval(() => {
                   setCurrentRewardIdx(prev => (prev + 1) % rewardsList.length);
@@ -688,8 +690,8 @@
 
           const getMemberCount = (pkgId) => packageMembers[pkgId] || 1;
 
-          // Wellness bundle pricing formula: t = n * tier_price
-          // a = p, b = a - 14.75%, c = b - 7.25%, d = c - 4.25%, e = d
+          // Wellness bundle formula: a = p, b = (a-14.75%), c = b-7.25%, d = c-4.25%. Total t = n * tier price.
+          // Lab Atoms and Organ Health use n * p formula.
           const getPricingForMembers = (pkg, membersCount) => {
               const p = pkg.price;
               const baseMrp = pkg.mrp || Math.round(p * 2.5);
@@ -700,17 +702,16 @@
                   let b = Math.round(a * (1 - 0.1475));
                   let c = Math.round(b * (1 - 0.0725));
                   let d = Math.round(c * (1 - 0.0425));
-                  let e = d;
 
-                  let perMemberPrice = a;
-                  if (membersCount === 1) perMemberPrice = a;
-                  else if (membersCount === 2) perMemberPrice = b;
-                  else if (membersCount === 3) perMemberPrice = c;
-                  else if (membersCount >= 4) perMemberPrice = d;
+                  let tierPrice = a;
+                  if (membersCount === 1) tierPrice = a;
+                  else if (membersCount === 2) tierPrice = b;
+                  else if (membersCount === 3) tierPrice = c;
+                  else if (membersCount >= 4) tierPrice = d;
 
-                  const totalPrice = Math.round(perMemberPrice * membersCount);
+                  const totalPrice = Math.round(tierPrice * membersCount);
                   const totalMrp = baseMrp * membersCount;
-                  return { price: totalPrice, mrp: totalMrp, perPerson: perMemberPrice };
+                  return { price: totalPrice, mrp: totalMrp, perPerson: tierPrice };
               } else {
                   const totalPrice = p * membersCount;
                   const totalMrp = baseMrp * membersCount;
@@ -950,7 +951,7 @@
                               }`}
                           >
                               <Icon name="cart" className="w-4 h-4 mr-1.5" />
-                              {inCart ? `Added ${pkg.name} ✓` : `Add ${pkg.name} to Cart - ₹${pkg.price} (${calculatedTests} Tests, ${calculatedParameters} Parameters)`}
+                              {inCart ? `Added ${pkg.name} ✓` : `Add ${pkg.name} to Cart - ₹${pkg.price} (${calculatedTests} Tests, ${calculatedParameters} parameters)`}
                           </button>
                       );
                   }
@@ -964,16 +965,22 @@
               setMessages(prev => [...prev, newUserMessage]);
               if (!isSystem) setInputValue('');
               setIsAILoading(true);
-
+              
               try {
                   const chatHistory = messages.map(msg => ({
                       role: msg.role === 'model' ? 'model' : 'user',
                       parts: [{ text: msg.text }]
                   }));
                   chatHistory.push({ role: 'user', parts: [{ text: text }] });
-                  const systemPrompt = `You are Swasthya AI Assistant, a friendly and expert health assistant for Swasthya Care.
-                  Here is the catalog in JSON: ${JSON.stringify(packages)}
-                  Recommend packages based on symptoms, tests, or wellness. Always mention price (₹), tests, and parameters. Append [ADD:id] tag after recommending any package.`;
+                  const systemPrompt = `You are Swasthya AI Assistant, a friendly and expert health assistant for a diagnostic lab called 'Swasthya Care'.
+                  Your primary job is to help users select the best health checkup plans based on their symptoms, age, gender, or specific test requirements.
+                  Here is the strict catalog of available packages in JSON format:
+                  ${JSON.stringify(packages)}
+                  Guidelines:
+                  1. ONLY recommend packages from the provided catalog. Do not invent packages or tests.
+                  2. ALWAYS mention the price (₹), total tests, and parameter count when recommending a package.
+                  3. Format your recommendations clearly with pricing and tests.
+                  4. CRITICAL: Whenever you recommend a package, you MUST append the exact tag [ADD:id] (where id is package id) on a new line immediately after describing that package. Example: [ADD:1]`;
 
                   const payload = {
                       contents: chatHistory,
@@ -1001,39 +1008,19 @@
           };
 
           const generateLocalAiResponse = (userQuery) => {
-              const q = userQuery.toLowerCase().trim();
-              let reply = "";
-              let matchedPkg = null;
-
-              if (q.includes('hi') || q.includes('hello') || q.includes('hey') || q === 'good morning' || q === 'good evening') {
-                  reply = "Hello! Welcome to Swasthya Care. I am your Swasthya AI Assistant. Are you looking for a routine wellness checkup, diabetes test, arthritis panel, or something specific for your symptoms?";
-              } else if (q.includes('fever') || q.includes('weakness') || q.includes('infection') || q.includes('tired') || q.includes('fatigue')) {
-                  matchedPkg = packages.find(p => p.id === 1) || packages[0];
-                  reply = `For general weakness, fever, or infection screening, I recommend our **${matchedPkg.name}**. It covers core blood counts, liver, kidney, and thyroid parameters.\n\nPrice: **₹${matchedPkg.price}** (MRP: ₹${matchedPkg.mrp})\n\n[ADD:${matchedPkg.id}]`;
-              } else if (q.includes('joint') || q.includes('bone') || q.includes('arthritis') || q.includes('pain') || q.includes('knee')) {
-                  matchedPkg = packages.find(p => p.id === 2) || packages[1];
-                  reply = `For joint stiffness and arthritis evaluation, our **${matchedPkg.name}** includes inflammatory markers (CRP, ESR, ASO) and bone health tests.\n\nPrice: **₹${matchedPkg.price}** (MRP: ₹${matchedPkg.mrp})\n\n[ADD:${matchedPkg.id}]`;
-              } else if (q.includes('sugar') || q.includes('diabetes') || q.includes('glucose') || q.includes('hba1c') || q.includes('thyroid')) {
-                  matchedPkg = packages.find(p => p.id === 3) || packages[2];
-                  reply = `For diabetes management and blood sugar profiling, the **${matchedPkg.name}** includes Fasting Glucose and HbA1c along with complete organ panels.\n\nPrice: **₹${matchedPkg.price}** (MRP: ₹${matchedPkg.mrp})\n\n[ADD:${matchedPkg.id}]`;
-              } else if (q.includes('women') || q.includes('female') || q.includes('cervical') || q.includes('papsmear') || q.includes('pregnancy')) {
-                  matchedPkg = packages.find(p => p.id === 6) || packages[5];
-                  reply = `For specialized female health screening, we offer the **${matchedPkg.name}** covering HPV DNA detection and Liquid Based Cytology (LBC).\n\nPrice: **₹${matchedPkg.price}** (MRP: ₹${matchedPkg.mrp})\n\n[ADD:${matchedPkg.id}]`;
-              } else if (q.includes('full body') || q.includes('comprehensive') || q.includes('premium') || q.includes('best') || q.includes('complete')) {
-                  matchedPkg = packages.find(p => p.id === 7) || packages[6];
-                  reply = `For a thorough, head-to-toe health evaluation, our best-selling **${matchedPkg.name}** checks vitamins (B12, D), diabetes, lipids, thyroid, and organ functions.\n\nPrice: **₹${matchedPkg.price}** (MRP: ₹${matchedPkg.mrp})\n\n[ADD:${matchedPkg.id}]`;
-              } else {
-                  const found = packages.find(p => p.name.toLowerCase().includes(q) || (p.includes && p.includes.toLowerCase().includes(q)));
-                  if (found) {
-                      matchedPkg = found;
-                      const testsCount = matchedPkg.detailedParameters ? matchedPkg.detailedParameters.length : 1;
-                      const paramsCount = matchedPkg.detailedParameters ? matchedPkg.detailedParameters.reduce((acc, c) => acc + (c.items ? c.items.length : 0), 1) : 1;
-                      reply = `I found **${matchedPkg.name}** in our catalog. It includes ${testsCount} tests and ${paramsCount} clinical parameters.\n\nPrice: **₹${matchedPkg.price}** (MRP: ₹${matchedPkg.mrp})\n\n[ADD:${matchedPkg.id}]`;
-                  } else {
-                      matchedPkg = packages[6];
-                      reply = `I recommend our popular **${matchedPkg.name}** for a complete health checkup covering 11 tests and 80 parameters.\n\nPrice: **₹${matchedPkg.price}** (MRP: ₹${matchedPkg.mrp})\n\n[ADD:${matchedPkg.id}]`;
-                  }
+              const q = userQuery.toLowerCase();
+              let matched = packages.filter(p => p.name.toLowerCase().includes(q) || (p.includes && p.includes.toLowerCase().includes(q)));
+              if (matched.length === 0) {
+                  if (q.includes('fever') || q.includes('infection')) matched = packages.filter(p => p.name.includes('BASIC') || p.name.includes('COMPLETE'));
+                  else if (q.includes('joint') || q.includes('bone') || q.includes('arthritis')) matched = packages.filter(p => p.name.includes('Arthritis'));
+                  else if (q.includes('sugar') || q.includes('diabetes') || q.includes('lipid')) matched = packages.filter(p => p.name.includes('ADVANCE') || p.name.includes('PREMIUM'));
+                  else matched = [packages[0], packages[6]];
               }
+              const bestPkg = matched[0] || packages[0];
+              const testsCount = bestPkg.detailedParameters ? bestPkg.detailedParameters.length : 1;
+              const paramsCount = bestPkg.detailedParameters ? bestPkg.detailedParameters.reduce((acc, c) => acc + (c.items ? c.items.length : 0), 1) : 1;
+              
+              const reply = `I recommend the ${bestPkg.name} for your health checkup. It includes ${testsCount} comprehensive tests and ${paramsCount} clinical parameters covering essential wellness markers. Price: ₹${bestPkg.price} (MRP: ₹${bestPkg.mrp})\n\n[ADD:${bestPkg.id}]`;
               setMessages(prev => [...prev, { role: 'model', text: reply }]);
           };
 
@@ -1289,7 +1276,7 @@
                       <header className="bg-white/95 backdrop-blur-md shadow-sm sticky top-0 z-50 border-b border-slate-200">
                           <div className="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
                               <div className="flex items-center cursor-pointer transition-transform hover:scale-105" onClick={() => { setView('menu'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
-                                  <SafeLogo src="https://raw.githubusercontent.com/swasthyacare/Swasthya-Care/refs/heads/main/Swasthya%20Care%20Logo.svg" alt="Swasthya Care Logo" className="h-10 md:h-12 object-contain" fallbackText="Swasthya Care" fallbackTagline="Test Today. A Healthier Tomorrow." />
+                                  <SafeLogo src="https://cdn1.healthians.com/img/healthians-logo.svg" alt="Swasthya Care Logo" className="h-10 md:h-12 object-contain" fallbackText="Swasthya Care" fallbackTagline="Test Today. A Healthier Tomorrow." />
                               </div>
                               <div className="flex items-center space-x-3">
                                   <div className="flex items-center space-x-2 md:space-x-3">
@@ -1339,7 +1326,7 @@
                                   </div>
                               </div>
 
-                              {/* Physiological Systems Map */}
+                              {/* Physiological Systems Map with Dynamic Pathology Directory Matching */}
                               <div className={`mb-16 bg-white rounded-3xl shadow-sm border border-slate-100 p-8 flex flex-col md:flex-row items-center gap-12 transition-all duration-1000 transform ${loaded ? 'translate-y-0 opacity-100' : 'translate-y-12 opacity-0'}`}>
                                   <div className="w-full md:w-5/12 flex justify-left relative">
                                       <div className="relative w-64 h-[480px] select-none bg-slate-50 rounded-2xl p-4 border border-slate-200 shadow-inner flex flex-col items-center justify-center">
@@ -1471,4 +1458,1089 @@
                                           key={tab.key}
                                           onClick={() => handleTabClick(tab.key)}
                                           className={`px-5 py-3 rounded-2xl font-bold text-sm transition-all shadow-sm flex items-center space-x-2 relative overflow-hidden cursor-pointer ${
-                                              activeCategoryTab === tab.key ? 'bg-teal-900 text-yellow-400 border-2 border-yellow-400 shadow-md scale-105' : 'bg-white text-slate-700 border border-slate-
+                                              activeCategoryTab === tab.key ? 'bg-teal-900 text-yellow-400 border-2 border-yellow-400 shadow-md scale-105' : 'bg-white text-slate-700 border border-slate-200 hover:bg-teal-50 hover:text-teal-950'
+                                          }`}
+                                      >
+                                          <span>{tab.label}</span>
+                                      </button>
+                                  ))}
+                              </div>
+
+                              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                                  {packages
+                                      .filter(pkg => {
+                                          if (activeCategoryTab === 'atoms' && pkg.dealType !== 'Lab Atoms') return false;
+                                          if (activeCategoryTab === 'health' && pkg.dealType !== 'Organ Health') return false;
+                                          if (activeCategoryTab === 'bundles' && pkg.dealType !== 'Wellness Bundle') return false;
+                                          
+                                          const matchesBodyFilter = selectedBodyPartsFilter.length > 0 ? selectedBodyPartsFilter.some(part => {
+                                              if (pkg.bodyParts && pkg.bodyParts.includes(part)) return true;
+                                              const textDump = (pkg.name + " " + pkg.includes + " " + JSON.stringify(pkg.detailedParameters)).toLowerCase();
+                                              if (part === 'thyroid' && (textDump.includes('thyroid') || textDump.includes('tsh') || textDump.includes('t3') || textDump.includes('t4'))) return true;
+                                              if (part === 'cardiovascular' && (textDump.includes('lipid') || textDump.includes('cholesterol') || textDump.includes('triglyceride') || textDump.includes('cardiac') || textDump.includes('apolipoprotein'))) return true;
+                                              if (part === 'kidney' && (textDump.includes('kft') || textDump.includes('kidney') || textDump.includes('bun') || textDump.includes('creatinine') || textDump.includes('urea'))) return true;
+                                              if (part === 'liver' && (textDump.includes('lft') || textDump.includes('liver') || textDump.includes('bilirubin') || textDump.includes('sgot') || textDump.includes('sgpt') || textDump.includes('alkaline phosphatase'))) return true;
+                                              if (part === 'bone' && (textDump.includes('bone') || textDump.includes('calcium') || textDump.includes('vitamin d') || textDump.includes('arthritis') || textDump.includes('uric acid') || textDump.includes('phosphorus'))) return true;
+                                              if (part === 'blood' && (textDump.includes('cbc') || textDump.includes('hemoglobin') || textDump.includes('rbc') || textDump.includes('wbc') || textDump.includes('esr') || textDump.includes('platelet'))) return true;
+                                              if (part === 'immune' && (textDump.includes('crp') || textDump.includes('aso') || textDump.includes('immunoglobulin') || textDump.includes('hiv') || textDump.includes('hepatitis'))) return true;
+                                              if (part === 'metabolic' && (textDump.includes('glucose') || textDump.includes('hba1c') || textDump.includes('sugar') || textDump.includes('diabetes') || textDump.includes('amylase'))) return true;
+                                              if (part === 'hormone' && (textDump.includes('hormone') || textDump.includes('testosterone') || textDump.includes('fsh') || textDump.includes('lh') || textDump.includes('prolactin') || textDump.includes('hpv') || textDump.includes('pap smear'))) return true;
+                                              return false;
+                                          }) : true;
+
+                                          const matchesSearchQuery = testSearchQuery ? (() => {
+                                              const query = testSearchQuery.toLowerCase();
+                                              const nameMatch = pkg.name.toLowerCase().includes(query);
+                                              const includesMatch = pkg.includes && pkg.includes.toLowerCase().includes(query);
+                                              const paramMatch = pkg.detailedParameters && pkg.detailedParameters.some(cat => 
+                                                  cat.category.toLowerCase().includes(query) || 
+                                                  (cat.items && cat.items.some(item => item.toLowerCase().includes(query)))
+                                              );
+                                              return nameMatch || includesMatch || paramMatch;
+                                          })() : true;
+
+                                          const isHighlighted = activeBodyPart ? pkg.bodyParts.includes(activeBodyPart) : true;
+                                          return matchesBodyFilter && matchesSearchQuery && isHighlighted;
+                                      })
+                                      .map((pkg, index) => {
+                                          const isBundle = pkg.dealType === 'Wellness Bundle';
+                                          const currentMembers = getMemberCount(pkg.id);
+                                          const pricing = getPricingForMembers(pkg, currentMembers);
+                                          const isCelebrating = celebratingPkgId === pkg.id;
+                                          const calculatedTests = pkg.detailedParameters ? pkg.detailedParameters.length : 1;
+                                          const calculatedParameters = pkg.detailedParameters ? pkg.detailedParameters.reduce((acc, cat) => acc + (cat.items ? cat.items.length : 0), 1) : 1;
+
+                                          return (
+                                              <div key={pkg.id} className="bg-white rounded-2xl shadow-sm border border-slate-100 flex flex-col h-full overflow-hidden group transition-all duration-500 hover:shadow-xl hover:border-teal-300 relative">
+                                                  {isCelebrating && (
+                                                      <div className="absolute inset-0 z-40 pointer-events-none flex items-center justify-center bg-yellow-500/10 backdrop-blur-[1px]">
+                                                          <div className="text-4xl animate-bounce">🎆</div>
+                                                      </div>
+                                                  )}
+                                                  <div className="relative h-40 overflow-hidden bg-slate-100">
+                                                      <SafeLogo src={pkg.image} alt={pkg.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" fallbackText={pkg.name} fallbackTagline="Certified Lab Panel" />
+                                                      <div className="absolute top-3 right-3 flex flex-col items-end gap-1">
+                                                          {pkg.gender !== 'All' && (
+                                                              <span className={`text-[10px] uppercase font-extrabold px-2.5 py-1 rounded-full shadow ${pkg.gender === 'Female' ? 'bg-pink-600 text-white' : 'bg-blue-600 text-white'}`}>
+                                                                  {pkg.gender} Only
+                                                              </span>
+                                                          )}
+                                                      </div>
+                                                      <div className="absolute bottom-3 left-3 bg-white/95 backdrop-blur-sm px-2.5 py-1 rounded-lg text-xs font-bold text-teal-900 shadow">
+                                                          {calculatedTests} Tests
+                                                      </div>
+                                                      <button onClick={() => setSelectedPackageModal(pkg)} className="absolute bottom-3 right-3 bg-teal-900/95 hover:bg-teal-950 backdrop-blur-sm px-2.5 py-1 rounded-lg text-xs font-bold text-yellow-400 shadow transition-transform hover:scale-105 flex items-center space-x-1 cursor-pointer">
+                                                          <span>{calculatedParameters} parameters</span>
+                                                          <Icon name="info" className="w-3 h-3 ml-0.5 text-yellow-400" />
+                                                      </button>
+                                                  </div>
+
+                                                  <div className="p-6 flex flex-col flex-grow">
+                                                      <div className="flex items-center space-x-2 mb-2">
+                                                          <div className={`p-2 rounded-lg ${pkg.color}`}>
+                                                              <Icon name={pkg.iconName || 'activity'} className="w-5 h-5" />
+                                                          </div>
+                                                          <h3 className="text-lg font-bold text-slate-800 leading-tight">{pkg.name}</h3>
+                                                      </div>
+                                                      <p className="text-xs text-slate-500 mb-4 flex-grow leading-relaxed">
+                                                          {pkg.detailedParameters ? pkg.detailedParameters.map(c => c.category).join(', ') : 'Clinical Diagnostic Package'}
+                                                      </p>
+
+                                                      {isBundle && (
+                                                          <div className="mb-4 relative">
+                                                              <div className="flex items-center space-x-2">
+                                                                  <button type="button" onClick={() => setOpenMemberDropdown(openMemberDropdown === pkg.id ? null : pkg.id)} className="flex-1 flex items-center justify-between bg-teal-50 border border-teal-200 text-teal-900 px-3 py-2 rounded-xl text-xs font-bold shadow-sm cursor-pointer">
+                                                                      <span>{currentMembers} Member{currentMembers > 1 ? 's' : ''}</span>
+                                                                      <Icon name="chevronDown" className="w-4 h-4 text-teal-700" />
+                                                                  </button>
+                                                              </div>
+                                                              {openMemberDropdown === pkg.id && (
+                                                                  <div className="absolute bottom-full mb-2 left-0 right-0 bg-white rounded-2xl shadow-2xl border border-slate-200 p-2 z-30">
+                                                                      {[1, 2, 3, 4].map(num => {
+                                                                          const pOpt = getPricingForMembers(pkg, num);
+                                                                          const isSelected = currentMembers === num;
+                                                                          return (
+                                                                              <div key={num} onClick={() => { setPackageMembers({ ...packageMembers, [pkg.id]: num }); setOpenMemberDropdown(null); if (num === 4) { setCelebratingPkgId(pkg.id); setTimeout(() => setCelebratingPkgId(null), 1800); } }} className={`flex items-center justify-between p-2.5 rounded-xl cursor-pointer ${isSelected ? 'bg-teal-50 border border-teal-300' : 'hover:bg-slate-50'}`}>
+                                                                                  <span className="text-xs font-bold text-slate-800">{num} Member{num > 1 ? 's' : ''}</span>
+                                                                                  <span className="text-xs font-extrabold text-teal-800">₹{pOpt.price}</span>
+                                                                              </div>
+                                                                          );
+                                                                      })}
+                                                                  </div>
+                                                              )}
+                                                              <div className="mt-2 text-center py-1.5 px-2 bg-amber-50 border border-amber-200 rounded-lg text-[11px] font-bold text-amber-800">
+                                                                  {getEncouragingBanner(pkg, currentMembers)}
+                                                              </div>
+                                                          </div>
+                                                      )}
+
+                                                      <div className="mt-auto">
+                                                          <div className="flex items-center space-x-3 mb-4">
+                                                              <span className="text-sm font-bold text-slate-400 line-through">₹{pricing.mrp}</span>
+                                                              <span className="text-2xl font-extrabold text-emerald-700">₹{pricing.price}</span>
+                                                          </div>
+                                                          <div className="grid grid-cols-2 gap-2">
+                                                              <button onClick={() => toggleCart(pkg.id)} className={`flex items-center justify-center w-full py-2 text-xs font-bold rounded-lg transition-colors shadow-sm cursor-pointer ${cart.includes(pkg.id) ? 'bg-teal-700 text-white' : 'bg-yellow-400 hover:bg-yellow-500 text-teal-950'}`}>
+                                                                  <Icon name="cart" className="w-3.5 h-3.5 mr-1" />
+                                                                  {cart.includes(pkg.id) ? 'Added ✓' : 'Add to Cart'}
+                                                              </button>
+                                                              <button onClick={() => { setChatOpen(true); handleSendMessage(`Tell me more about ${pkg.name}.`, true); }} className="flex items-center justify-center w-full py-2 text-xs font-bold bg-slate-100 hover:bg-teal-50 text-teal-800 border border-slate-200 rounded-lg cursor-pointer">
+                                                                  <Icon name="message" className="w-3.5 h-3.5 mr-1" /> Ask AI
+                                                              </button>
+                                                          </div>
+                                                      </div>
+                                                  </div>
+                                              </div>
+                                          );
+                                      })}
+                              </div>
+
+                              {/* 3D Cylinder / Perspective Ring Slider for Rewards & Recognition */}
+                              <div className="mt-28 mb-16">
+                                  <h3 className="text-2xl md:text-3xl font-extrabold text-teal-950 text-center mb-2">Rewards & Recognition</h3>
+                                  <p className="text-xs text-slate-500 text-center mb-8">Recognized nationally for clinical excellence and home healthcare delivery</p>
+                                  
+                                  <div className="carousel-3d-scene">
+                                      <div className="carousel-3d-container" style={{ transform: `rotateY(${currentRewardIdx * (-360 / rewardsList.length)}deg)` }}>
+                                          {rewardsList.map((reward, rIdx) => {
+                                              const angle = rIdx * (360 / rewardsList.length);
+                                              return (
+                                                  <div 
+                                                      key={rIdx} 
+                                                      className="carousel-3d-card cursor-pointer"
+                                                      style={{ transform: `rotateY(${angle}deg) translateZ(300px)` }}
+                                                      onClick={() => setCurrentRewardIdx(rIdx)}
+                                                  >
+                                                      <div className="h-32 flex items-center justify-center mb-4">
+                                                          <SafeLogo src={reward.img} alt={`Award ${rIdx+1}`} className="max-h-28 object-contain" fallbackText="Award Recipient" fallbackTagline="Diagnostics Excellence" />
+                                                      </div>
+                                                      <p className="text-xs font-extrabold text-teal-950 text-center leading-snug">
+                                                          {reward.text}
+                                                      </p>
+                                                  </div>
+                                              );
+                                          })}
+                                      </div>
+                                  </div>
+
+                                  <div className="flex flex-col items-center mt-6 space-y-4">
+                                      <div className="flex space-x-3">
+                                          <button 
+                                              onClick={() => setCurrentRewardIdx(prev => (prev - 1 + rewardsList.length) % rewardsList.length)}
+                                              className="px-4 py-2 bg-teal-900 text-yellow-400 rounded-xl font-bold text-xs shadow hover:bg-teal-800 cursor-pointer"
+                                          >
+                                              Prev Award
+                                          </button>
+                                          <button 
+                                              onClick={() => setCurrentRewardIdx(prev => (prev + 1) % rewardsList.length)}
+                                              className="px-4 py-2 bg-teal-900 text-yellow-400 rounded-xl font-bold text-xs shadow hover:bg-teal-800 cursor-pointer"
+                                          >
+                                              Next Award
+                                          </button>
+                                      </div>
+                                      <div className="flex space-x-2">
+                                          {rewardsList.map((_, dotIdx) => (
+                                              <button
+                                                  key={dotIdx}
+                                                  onClick={() => setCurrentRewardIdx(dotIdx)}
+                                                  className={`w-3 h-3 rounded-full transition-all cursor-pointer ${currentRewardIdx === dotIdx ? 'bg-teal-700 w-8' : 'bg-slate-300'}`}
+                                                  title={`Go to award ${dotIdx + 1}`}
+                                              />
+                                          ))}
+                                      </div>
+                                  </div>
+                              </div>
+                          </div>
+                      )}
+
+                      {/* Checkout View */}
+                      {view === 'checkout' && (
+                          <div className="max-w-7xl mx-auto px-4 py-12 sm:px-6 lg:px-8">
+                              <button onClick={() => setView('menu')} className="flex items-center text-teal-700 hover:text-teal-900 font-semibold mb-8 group cursor-pointer">
+                                  <Icon name="arrow" className="w-5 h-5 mr-2 transform rotate-180" /> Back to Packages
+                              </button>
+
+                              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+                                  <div className="lg:col-span-2 bg-white rounded-3xl shadow-lg border border-slate-100 overflow-hidden p-6 md:p-8">
+                                      <div className="bg-teal-900 p-6 -mx-6 -mt-6 md:-mx-8 md:-mt-8 mb-8 text-white">
+                                          <h2 className="text-2xl md:text-3xl font-extrabold mb-1 text-yellow-400">Complete Your Booking</h2>
+                                          <p className="text-teal-100 text-xs md:text-sm">Assign tests from your Cart into each member's test bucket below.</p>
+                                      </div>
+
+                                      <form onSubmit={submitBooking} className="space-y-8">
+                                          <div>
+                                              <h3 className="text-lg font-bold text-slate-800 mb-4">Primary Member Details & Address</h3>
+                                              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                                  <div>
+                                                      <label className="block text-sm font-semibold text-slate-700 mb-1">Full Name (Billing Name) *</label>
+                                                      <input required type="text" value={primaryBooking.name} onChange={e => setPrimaryBooking({...primaryBooking, name: e.target.value})} className="w-full p-2.5 bg-slate-50 border border-teal-200 rounded-lg outline-none" placeholder="John Doe" />
+                                                  </div>
+                                                  <div className="grid grid-cols-2 gap-4">
+                                                      <div>
+                                                          <label className="block text-sm font-semibold text-slate-700 mb-1">Age *</label>
+                                                          <input required type="number" min="1" max="120" value={primaryBooking.age} onChange={e => setPrimaryBooking({...primaryBooking, age: e.target.value})} className="w-full p-2.5 bg-slate-50 border border-teal-200 rounded-lg outline-none" placeholder="Years" />
+                                                      </div>
+                                                      <div>
+                                                          <label className="block text-sm font-semibold text-slate-700 mb-1">Sex *</label>
+                                                          <select required value={primaryBooking.gender} onChange={e => setPrimaryBooking({...primaryBooking, gender: e.target.value})} className="w-full p-2.5 bg-slate-50 border border-teal-200 rounded-lg outline-none cursor-pointer">
+                                                              <option value="">Select Sex</option>
+                                                              <option value="Male">Male</option>
+                                                              <option value="Female">Female</option>
+                                                              <option value="Other">Other</option>
+                                                          </select>
+                                                      </div>
+                                                  </div>
+                                                  <div>
+                                                      <label className="block text-sm font-semibold text-slate-700 mb-1">Email ID *</label>
+                                                      <input required type="email" value={primaryBooking.email} onChange={e => setPrimaryBooking({...primaryBooking, email: e.target.value})} className="w-full p-2.5 bg-slate-50 border border-teal-200 rounded-lg outline-none" placeholder="email@example.com" />
+                                                  </div>
+                                                  <div>
+                                                      <label className="block text-sm font-semibold text-slate-700 mb-1">Contact No (10 Digits) *</label>
+                                                      <input 
+                                                          required 
+                                                          type="tel" 
+                                                          maxLength="10" 
+                                                          minLength="10" 
+                                                          pattern="[0-9]{10}"
+                                                          value={primaryBooking.contact} 
+                                                          onChange={e => setPrimaryBooking({...primaryBooking, contact: e.target.value.replace(/\D/g, '').slice(0, 10)})} 
+                                                          className="w-full p-2.5 bg-slate-50 border border-teal-200 rounded-lg outline-none font-mono" 
+                                                          placeholder="9876543210" 
+                                                      />
+                                                  </div>
+
+                                                  <div className="md:col-span-2 border-t border-slate-200 pt-4 mt-2">
+                                                      <div className="flex justify-between items-center mb-4">
+                                                          <label className="block text-sm font-bold text-teal-900">Home Address for Sample Collection *</label>
+                                                          <button type="button" onClick={getLocation} className="text-xs bg-teal-50 border border-teal-200 text-teal-800 font-bold py-1.5 px-3 rounded-lg flex items-center cursor-pointer">
+                                                              <Icon name="pin" className="w-3 h-3 mr-1 text-red-500" /> Auto-detect My Location
+                                                          </button>
+                                                      </div>
+                                                      {locationStatus && <p className="text-xs font-bold mb-3 text-teal-700">{locationStatus}</p>}
+                                                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                          <input required type="text" value={primaryBooking.houseNo} onChange={e => setPrimaryBooking({...primaryBooking, houseNo: e.target.value})} className="w-full p-2.5 bg-slate-50 border border-teal-200 rounded-lg outline-none text-sm" placeholder="House / Flat No." />
+                                                          <input required type="text" value={primaryBooking.street} onChange={e => setPrimaryBooking({...primaryBooking, street: e.target.value})} className="w-full p-2.5 bg-slate-50 border border-teal-200 rounded-lg outline-none text-sm" placeholder="Street / Locality" />
+                                                          <input 
+                                                              required 
+                                                              type="text" 
+                                                              maxLength="6" 
+                                                              minLength="6"
+                                                              pattern="[0-9]{6}"
+                                                              value={primaryBooking.pincode} 
+                                                              onChange={e => handlePincodeChange(e.target.value)} 
+                                                              className="w-full p-2.5 bg-slate-50 border border-teal-200 rounded-lg outline-none text-sm font-mono" 
+                                                              placeholder="6-digit Pincode" 
+                                                          />
+                                                          <input required type="text" value={primaryBooking.city} onChange={e => setPrimaryBooking({...primaryBooking, city: e.target.value})} className="w-full p-2.5 bg-slate-50 border border-teal-200 rounded-lg outline-none text-sm" placeholder="City (Auto-filled via Pincode)" />
+                                                          <input required type="text" value={primaryBooking.state} onChange={e => setPrimaryBooking({...primaryBooking, state: e.target.value})} className="w-full p-2.5 bg-slate-50 border border-teal-200 rounded-lg outline-none text-sm md:col-span-2" placeholder="State (Auto-filled via Pincode)" />
+                                                      </div>
+                                                  </div>
+
+                                                  <div className="md:col-span-2 bg-teal-50/50 p-4 rounded-xl border border-teal-100">
+                                                      <div className="mb-4">
+                                                          <label className="block text-xs font-bold text-teal-900 mb-1">Preferred Collection Date *</label>
+                                                          <input required type="date" min={getMinBookingDate()} value={primaryBooking.preferredDate} onChange={e => setPrimaryBooking({...primaryBooking, preferredDate: e.target.value})} className="w-full p-2.5 bg-white border border-teal-200 rounded-lg text-sm" />
+                                                      </div>
+                                                      <label className="block text-xs font-bold text-teal-900 mb-2">Select Time Slot *</label>
+                                                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                                                          {[
+                                                              "06:00 AM - 07:00 AM", "06:30 AM - 07:30 AM", "07:00 AM - 08:00 AM", "07:30 AM - 08:30 AM",
+                                                              "08:00 AM - 09:00 AM", "08:30 AM - 09:30 AM", "09:00 AM - 10:00 AM", "09:30 AM - 10:30 AM",
+                                                              "10:00 AM - 11:00 AM", "10:30 AM - 11:30 AM", "11:00 AM - 12:00 PM", "11:30 AM - 12:30 PM",
+                                                              "12:00 PM - 13:00 PM", "12:30 PM - 13:30 PM", "13:00 PM - 14:00 PM", "13:30 PM - 14:30 PM",
+                                                              "14:00 PM - 15:00 PM", "14:30 PM - 15:30 PM", "15:00 PM - 16:00 PM", "15:30 PM - 16:30 PM"
+                                                          ].map(slot => (
+                                                              <button key={slot} type="button" onClick={() => setPrimaryBooking({...primaryBooking, preferredTime: slot})} className={`py-2 px-3 text-xs font-bold rounded-lg border cursor-pointer ${primaryBooking.preferredTime === slot ? 'bg-teal-900 text-yellow-400 border-teal-900' : 'bg-white text-slate-700 border-slate-200'}`}>
+                                                                  {slot}
+                                                              </button>
+                                                          ))}
+                                                      </div>
+                                                  </div>
+                                              </div>
+                                          </div>
+
+                                          {/* Patient Buckets */}
+                                          <div className="space-y-6 pt-4 border-t">
+                                              <h3 className="text-lg font-bold text-slate-800">Member Test Buckets (Drag or Click items from Cart)</h3>
+                                              
+                                              {/* Primary Member Bucket */}
+                                              <div
+                                                  onDragOver={(e) => e.preventDefault()}
+                                                  onDrop={(e) => {
+                                                      e.preventDefault();
+                                                      const pkgId = Number(e.dataTransfer.getData('text/plain'));
+                                                      if (pkgId) assignTestToPatient('primary', pkgId);
+                                                  }}
+                                                  className="bg-teal-50/70 border-2 border-teal-300 rounded-2xl p-5 shadow-sm space-y-3"
+                                              >
+                                                  <div className="flex justify-between items-center">
+                                                      <h4 className="font-bold text-teal-950">👤 Primary Member Bucket ({primaryBooking.name || 'Primary Member'})</h4>
+                                                      <span className="text-xs font-extrabold text-teal-800 bg-teal-100 px-2.5 py-1 rounded-lg">Drop Tests Here</span>
+                                                  </div>
+                                                  <div className="flex flex-wrap gap-2 min-h-[48px] items-center bg-white p-3 rounded-xl border border-teal-200">
+                                                      {(patientAssignments['primary'] || []).length === 0 ? (
+                                                          <span className="text-xs text-slate-400 italic">Click items in the Cart on the right to assign to Primary Member</span>
+                                                      ) : (
+                                                          (patientAssignments['primary'] || []).map(pkgId => {
+                                                              const pkg = packages.find(p => p.id === pkgId);
+                                                              if (!pkg) return null;
+                                                              const totalAssigned = getAssignedCountForPackage(pkgId);
+                                                              const unitPrice = Math.round(getPricingForMembers(pkg, Math.max(1, totalAssigned)).price / Math.max(1, totalAssigned));
+                                                              return (
+                                                                  <div key={pkgId} className="bg-teal-900 text-yellow-400 text-xs font-bold px-3 py-1.5 rounded-lg flex items-center space-x-2">
+                                                                      <span>{pkg.name} ({unitPrice})</span>
+                                                                      <button type="button" onClick={() => removeTestFromPatient('primary', pkgId)} className="text-yellow-200 hover:text-white font-bold ml-1 cursor-pointer">×</button>
+                                                                  </div>
+                                                              );
+                                                          })
+                                                      )}
+                                                  </div>
+                                              </div>
+
+                                              {/* Family Members Buckets (Numbered from 2) */}
+                                              {familyMembers.map((member, index) => {
+                                                  const assignedList = patientAssignments[member.id] || [];
+                                                  const memberNum = index + 2;
+                                                  return (
+                                                      <div
+                                                          key={member.id}
+                                                          onDragOver={(e) => e.preventDefault()}
+                                                          onDrop={(e) => {
+                                                              e.preventDefault();
+                                                              const pkgId = Number(e.dataTransfer.getData('text/plain'));
+                                                              if (pkgId) assignTestToPatient(member.id, pkgId);
+                                                          }}
+                                                          className="relative bg-white border-2 border-teal-200 rounded-2xl p-5 shadow-sm space-y-4"
+                                                      >
+                                                          <button type="button" onClick={() => removeFamilyMember(member.id)} className="absolute top-4 right-4 text-red-400 hover:text-red-600 cursor-pointer">
+                                                              <Icon name="trash" className="w-5 h-5" />
+                                                          </button>
+                                                          <h4 className="font-bold text-teal-800">Family Member {memberNum} Bucket</h4>
+                                                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                                              <input required type="text" value={member.name} onChange={e => updateFamilyMember(member.id, 'name', e.target.value)} className="w-full p-2 border border-teal-200 rounded-md text-sm" placeholder={`Member ${memberNum} Name`} />
+                                                              <div className="grid grid-cols-2 gap-2">
+                                                                  <input required type="number" min="1" max="120" value={member.age} onChange={e => updateFamilyMember(member.id, 'age', e.target.value)} className="w-full p-2 border border-teal-200 rounded-md text-sm" placeholder="Age" />
+                                                                  <select required value={member.gender} onChange={e => updateFamilyMember(member.id, 'gender', e.target.value)} className="w-full p-2 border border-teal-200 rounded-md text-sm cursor-pointer">
+                                                                      <option value="">Select Sex</option>
+                                                                      <option value="Male">Male</option>
+                                                                      <option value="Female">Female</option>
+                                                                      <option value="Other">Other</option>
+                                                                  </select>
+                                                              </div>
+                                                          </div>
+
+                                                          <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-2">
+                                                              <label className="block text-xs font-bold text-slate-700">Assigned Tests Bucket for Family Member {memberNum} {assignedList.length === 0 ? <span className="text-red-500">* (At least 1 test required)</span> : ''}:</label>
+                                                              <div className="flex flex-wrap gap-2 min-h-[40px] items-center bg-white p-2.5 rounded-lg border">
+                                                                  {assignedList.length === 0 ? (
+                                                                      <span className="text-xs text-red-400 italic">Click items in the Cart on the right to assign tests</span>
+                                                                  ) : (
+                                                                      assignedList.map(pkgId => {
+                                                                          const pkg = packages.find(p => p.id === pkgId);
+                                                                          if (!pkg) return null;
+                                                                          const totalAssigned = getAssignedCountForPackage(pkgId);
+                                                                          const unitPrice = Math.round(getPricingForMembers(pkg, Math.max(1, totalAssigned)).price / Math.max(1, totalAssigned));
+                                                                          return (
+                                                                              <div key={pkgId} className="bg-teal-800 text-yellow-300 text-xs font-bold px-3 py-1.5 rounded-lg flex items-center space-x-2">
+                                                                                  <span>{pkg.name} ({unitPrice})</span>
+                                                                                  <button type="button" onClick={() => removeTestFromPatient(member.id, pkgId)} className="text-yellow-200 hover:text-white font-bold ml-1 cursor-pointer">×</button>
+                                                                              </div>
+                                                                          );
+                                                                      })
+                                                                  )}
+                                                              </div>
+                                                          </div>
+                                                      </div>
+                                                  );
+                                              })}
+
+                                              {/* Add Member button at the bottom of the last family member */}
+                                              <button type="button" onClick={addFamilyMember} className="w-full py-3 bg-teal-50 hover:bg-teal-100 border border-teal-300 text-teal-900 rounded-2xl font-bold text-xs flex items-center justify-center transition-colors shadow-sm cursor-pointer">
+                                                  <Icon name="plus" className="w-4 h-4 mr-1.5" /> + Add Family Member
+                                              </button>
+                                          </div>
+                                      </form>
+                                  </div>
+
+                                  {/* Cart & Summary Widget */}
+                                  <div className="lg:sticky lg:top-24 space-y-6">
+                                      <div className="bg-white rounded-3xl shadow-lg border border-teal-100 p-6">
+                                          <div className="flex items-center justify-between border-b pb-4 mb-4">
+                                              <h3 className="font-extrabold text-teal-950 flex items-center">
+                                                  <Icon name="cart" className="w-5 h-5 mr-2 text-teal-700" /> Cart ({cart.length})
+                                              </h3>
+                                          </div>
+
+                                          {cart.length === 0 ? (
+                                              <p className="text-xs text-slate-400 italic py-4 text-center">Your cart is empty. Add packages from the catalog.</p>
+                                          ) : (
+                                              <div className="space-y-3 max-h-72 overflow-y-auto pr-1">
+                                                  {cart.map(pkgId => {
+                                                      const pkg = packages.find(p => p.id === pkgId);
+                                                      if (!pkg) return null;
+                                                      const totalAssigned = getAssignedCountForPackage(pkgId);
+                                                      const unitPrice = Math.round(getPricingForMembers(pkg, Math.max(1, totalAssigned)).price / Math.max(1, totalAssigned));
+                                                      return (
+                                                          <div
+                                                              key={pkgId}
+                                                              draggable
+                                                              onDragStart={(e) => e.dataTransfer.setData('text/plain', pkgId)}
+                                                              className="bg-teal-50/60 border border-teal-200 rounded-xl p-3 shadow-sm flex items-center justify-between cursor-grab"
+                                                          >
+                                                              <div>
+                                                                  <p className="font-bold text-xs text-teal-950">{pkg.name} ({unitPrice})</p>
+                                                                  <p className="text-[11px] font-extrabold text-emerald-700">₹{unitPrice} / person (Assigned: {totalAssigned})</p>
+                                                                  <div className="mt-1 flex gap-1 flex-wrap">
+                                                                      <button type="button" onClick={() => assignTestToPatient('primary', pkgId)} className={`text-[10px] px-2 py-0.5 rounded font-bold cursor-pointer ${(patientAssignments['primary'] || []).includes(pkgId) ? 'bg-teal-900 text-white' : 'bg-white text-slate-700 border border-slate-200'}`}>Primary</button>
+                                                                      {familyMembers.map((m, mIdx) => (
+                                                                          <button key={m.id} type="button" onClick={() => assignTestToPatient(m.id, pkgId)} className={`text-[10px] px-2 py-0.5 rounded font-bold cursor-pointer ${(patientAssignments[m.id] || []).includes(pkgId) ? 'bg-teal-700 text-white' : 'bg-white text-slate-700 border border-slate-200'}`}>M{mIdx+2}</button>
+                                                                      ))}
+                                                                  </div>
+                                                              </div>
+                                                              <button type="button" onClick={() => toggleCart(pkgId)} className="text-slate-400 hover:text-red-600 p-1 font-bold text-base cursor-pointer" title="Remove from cart">×</button>
+                                                          </div>
+                                                      );
+                                                  })}
+                                              </div>
+                                          )}
+
+                                          <div className="mt-6 border-t pt-4 space-y-2">
+                                              <div className="flex justify-between items-center">
+                                                  <span className="font-extrabold text-sm text-slate-800">Total Amount Payable</span>
+                                                  <span className="text-2xl font-extrabold text-teal-700">₹{calculateGrandTotal()}</span>
+                                              </div>
+
+                                              <button onClick={() => setShowBillBreakdown(!showBillBreakdown)} className="text-xs text-teal-700 font-bold hover:underline flex items-center justify-between w-full pt-1 cursor-pointer">
+                                                  <span>{showBillBreakdown ? 'Hide Price Breakdown' : 'Show More'}</span>
+                                                  <Icon name={showBillBreakdown ? 'chevronUp' : 'chevronDown'} className="w-4 h-4" />
+                                              </button>
+
+                                              {showBillBreakdown && (
+                                                  <div className="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-1.5 text-xs">
+                                                      <div className="flex justify-between text-slate-600">
+                                                          <span>Total Amount:</span>
+                                                          <span className="font-semibold text-slate-600">{calculateTotalMrp()}</span>
+                                                      </div>
+                                                      <div className="flex justify-between text-emerald-600 font-bold">
+                                                          <span>Discount:</span>
+                                                          <span>- ₹{calculateTotalMrp() - calculateSubtotal()}</span>
+                                                      </div>
+                                                      {calculateSubtotal() > 0 && calculateSubtotal() <= 500 && (
+                                                          <div className="flex justify-between items-start text-slate-700 font-bold">
+                                                              <div>
+                                                                  <span>Consumables and Transportation Charges</span>
+                                                                  <span className="text-[10px] text-amber-700 font-normal block">(Add ₹{501 - calculateSubtotal()} more to get free collection)</span>
+                                                              </div>
+                                                              <span>₹150</span>
+                                                          </div>
+                                                      )}
+                                                      <div className="border-t pt-1 flex justify-between font-extrabold text-teal-950">
+                                                          <span>Grand Total:</span>
+                                                          <span>₹{calculateGrandTotal()}</span>
+                                                      </div>
+                                                  </div>
+                                              )}
+                                          </div>
+
+                                          <button 
+                                              type="button" 
+                                              onClick={submitBooking}
+                                              disabled={cart.length === 0 || !areAllFamilyMembersAssigned()}
+                                              className="w-full mt-6 bg-yellow-400 hover:bg-yellow-500 disabled:opacity-50 disabled:bg-slate-300 text-teal-950 font-extrabold py-3.5 px-6 rounded-2xl shadow-lg transition-transform hover:scale-[1.02] cursor-pointer"
+                                          >
+                                              Confirm Booking
+                                          </button>
+                                      </div>
+                                  </div>
+                              </div>
+                          </div>
+                      )}
+
+                      {view === 'success' && (
+                          <div className="max-w-2xl mx-auto px-4 py-20 text-center animate-in zoom-in duration-500">
+                              <div className="inline-flex items-center justify-center w-24 h-24 bg-teal-100 rounded-full mb-8">
+                                  <Icon name="check" className="w-12 h-12 text-teal-600" />
+                              </div>
+                              <h2 className="text-4xl font-extrabold text-teal-950 mb-4">Booking Confirmed!</h2>
+                              <p className="text-lg text-slate-600 mb-8">Thank you, <span className="font-bold text-teal-800">{primaryBooking.name}</span>. Your home sample collection has been scheduled.</p>
+                              
+                              <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 mb-8 text-left space-y-4">
+                                  <h3 className="font-extrabold text-teal-950 border-b pb-2">Member Test & Price Breakdown</h3>
+                                  
+                                  {/* Primary Member Breakdown */}
+                                  <div className="bg-teal-50/70 p-4 rounded-2xl border border-teal-200">
+                                      <p className="font-extrabold text-teal-950 text-sm">👤 Primary Member: {primaryBooking.name} ({primaryBooking.gender}, {primaryBooking.age} yrs)</p>
+                                      <div className="mt-2 space-y-1">
+                                          {(lastBooking?.patientAssignments['primary'] || patientAssignments['primary'] || []).map(pkgId => {
+                                              const pkg = packages.find(p => p.id === Number(pkgId));
+                                              if (!pkg) return null;
+                                              const totalAssigned = getAssignedCountForPackage(pkgId);
+                                              const unitPrice = Math.round(getPricingForMembers(pkg, Math.max(1, totalAssigned)).price / Math.max(1, totalAssigned));
+                                              return (
+                                                  <div key={pkgId} className="flex justify-between items-center text-xs text-slate-700 bg-white p-2 rounded-xl border border-teal-100">
+                                                      <span className="font-bold">{pkg.name}</span>
+                                                      <span className="font-extrabold text-emerald-700">₹{unitPrice}</span>
+                                                  </div>
+                                              );
+                                          })}
+                                      </div>
+                                  </div>
+
+                                  {/* Family Members Breakdown */}
+                                  {(lastBooking?.familyMembers || familyMembers).map((m, idx) => {
+                                      const assigned = (lastBooking?.patientAssignments[m.id] || patientAssignments[m.id] || []);
+                                      const memberNum = idx + 2;
+                                      return (
+                                          <div key={m.id} className="bg-slate-50 p-4 rounded-2xl border border-slate-200">
+                                              <p className="font-extrabold text-slate-900 text-sm">👥 Family Member {memberNum}: {m.name} ({m.gender}, {m.age} yrs)</p>
+                                              <div className="mt-2 space-y-1">
+                                                  {assigned.map(pkgId => {
+                                                      const pkg = packages.find(p => p.id === Number(pkgId));
+                                                      if (!pkg) return null;
+                                                      const totalAssigned = getAssignedCountForPackage(pkgId);
+                                                      const unitPrice = Math.round(getPricingForMembers(pkg, Math.max(1, totalAssigned)).price / Math.max(1, totalAssigned));
+                                                      return (
+                                                          <div key={pkgId} className="flex justify-between items-center text-xs text-slate-700 bg-white p-2 rounded-xl border border-slate-200">
+                                                              <span className="font-bold">{pkg.name}</span>
+                                                              <span className="font-extrabold text-emerald-700">₹{unitPrice}</span>
+                                                          </div>
+                                                      );
+                                                  })}
+                                              </div>
+                                          </div>
+                                      );
+                                  })}
+
+                                  {lastBooking?.totalAmount && lastBooking.totalAmount - calculateSubtotal() === 150 && (
+                                      <div className="flex justify-between items-center text-xs text-slate-700 bg-slate-100 p-2 rounded-xl">
+                                          <span className="font-bold">Consumables and Transportation Charges</span>
+                                          <span className="font-extrabold text-slate-800">₹150</span>
+                                      </div>
+                                  )}
+
+                                  <div className="border-t pt-3 flex justify-between items-center font-extrabold text-base text-teal-950">
+                                      <span>Total Amount Payable:</span>
+                                      <span className="text-teal-700 text-xl">₹{lastBooking ? lastBooking.totalAmount : calculateGrandTotal()}</span>
+                                  </div>
+                              </div>
+
+                              <button onClick={() => { setView('menu'); setCart([]); setFamilyMembers([]); localStorage.removeItem('swasthya_cart_v10'); }} className="bg-teal-900 text-white px-8 py-3 rounded-full font-bold hover:bg-teal-800 shadow-md cursor-pointer">
+                                  Return to Home
+                              </button>
+                          </div>
+                      )}
+
+                      {view === 'admin' && (
+                          <div className="max-w-7xl mx-auto px-4 py-12">
+                              <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+                                  <h2 className="text-3xl font-extrabold text-teal-950 flex items-center">
+                                      <Icon name="lock" className="w-8 h-8 mr-3 text-teal-700" /> Lab Admin Dashboard
+                                  </h2>
+                                  <div className="flex items-center space-x-3">
+                                      <a
+                                          href={bookingGoogleSheetUrl}
+                                          target="_blank"
+                                          rel="noreferrer"
+                                          className="bg-emerald-700 hover:bg-emerald-800 text-white px-5 py-2.5 rounded-xl font-bold text-xs flex items-center shadow transition-colors"
+                                      >
+                                          <Icon name="external" className="w-4 h-4 mr-2" /> Open Google Sheets (Live Bookings)
+                                      </a>
+                                      <button onClick={() => setView('menu')} className="bg-slate-200 text-slate-800 px-4 py-2.5 rounded-xl font-bold text-xs hover:bg-slate-300 transition-colors cursor-pointer">Exit Admin</button>
+                                  </div>
+                              </div>
+
+                              <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-6 md:p-8 mb-8">
+                                  <div className="flex justify-between items-center mb-4">
+                                      <h3 className="text-lg font-extrabold text-teal-950">Bulk CSV Test & Pricing Manager</h3>
+                                      <button
+                                          onClick={downloadCsvCatalog}
+                                          className="bg-teal-50 hover:bg-teal-100 border border-teal-200 text-teal-900 px-4 py-2 rounded-xl text-xs font-bold flex items-center transition-colors shadow-sm cursor-pointer"
+                                      >
+                                          <Icon name="download" className="w-4 h-4 mr-1.5 text-teal-700" /> Download Catalog CSV
+                                      </button>
+                                  </div>
+                                  <div className="mb-4">
+                                      <label className="block text-xs font-bold text-slate-700 mb-2">Upload CSV File (Saves to cloud & browser instantly)</label>
+                                      <input 
+                                          type="file" 
+                                          accept=".csv, .txt" 
+                                          onChange={handleFileUpload}
+                                          className="block w-full text-xs text-slate-500 file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100 cursor-pointer border border-slate-200 rounded-xl bg-slate-50 p-2"
+                                      />
+                                  </div>
+                                  <textarea rows="3" value={adminCsvInput} onChange={e => setAdminCsvInput(e.target.value)} placeholder="PackageName,DealType,MRP,Price,Gender,TestDetails" className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl font-mono text-xs mb-4 outline-none focus:ring-1 focus:ring-teal-500" />
+                                  <button onClick={() => handleCsvImport(adminCsvInput)} className="px-6 py-2.5 bg-teal-900 hover:bg-teal-800 text-yellow-400 rounded-xl font-bold text-xs shadow transition-colors cursor-pointer">Sync Catalog</button>
+                                  {adminFeedback && <p className="mt-3 text-xs font-bold text-teal-800">{adminFeedback}</p>}
+                              </div>
+
+                              <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden mb-12">
+                                  <div className="p-6 border-b bg-slate-50 flex flex-col md:flex-row justify-between items-center gap-4">
+                                      <div>
+                                          <h3 className="font-extrabold text-teal-950 text-lg">Catalog & Test Inventory ({sortedInventory.length} Packages)</h3>
+                                          <p className="text-xs text-slate-500">Click column headers to sort • Filter tests • Select multiple to delete</p>
+                                      </div>
+                                      <div className="flex flex-wrap items-center gap-2">
+                                          <input
+                                              type="text"
+                                              value={adminSearchFilter}
+                                              onChange={e => setAdminSearchFilter(e.target.value)}
+                                              placeholder="Filter tests..."
+                                              className="px-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-medium outline-none focus:ring-1 focus:ring-teal-500"
+                                          />
+                                          <select value={adminTypeFilter} onChange={e => setAdminTypeFilter(e.target.value)} className="bg-white border border-slate-200 text-xs font-bold text-teal-900 rounded-xl px-3 py-1.5 outline-none cursor-pointer">
+                                              <option value="all">All Deal Types</option>
+                                              <option value="Lab Atoms">Lab Atoms</option>
+                                              <option value="Organ Health">Organ Health</option>
+                                              <option value="Wellness Bundle">Wellness Bundle</option>
+                                          </select>
+                                          {selectedInventoryIds.length > 0 && (
+                                              <button
+                                                  onClick={() => {
+                                                      const updated = packages.filter(p => !selectedInventoryIds.includes(p.id));
+                                                      persistCatalog(updated);
+                                                      setSelectedInventoryIds([]);
+                                                      setAdminFeedback(`Successfully deleted ${selectedInventoryIds.length} packages.`);
+                                                  }}
+                                                  className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-xl text-xs font-bold transition-colors shadow cursor-pointer"
+                                              >
+                                                  Delete Selected ({selectedInventoryIds.length})
+                                              </button>
+                                          )}
+                                      </div>
+                                  </div>
+                                  <div className="overflow-x-auto">
+                                      <table className="w-full text-left text-sm">
+                                          <thead className="bg-teal-900 text-white select-none">
+                                              <tr>
+                                                  <th className="p-4 w-10 text-center">
+                                                      <input 
+                                                          type="checkbox" 
+                                                          checked={sortedInventory.length > 0 && sortedInventory.every(p => selectedInventoryIds.includes(p.id))}
+                                                          onChange={() => {
+                                                              const filteredIds = sortedInventory.map(p => p.id);
+                                                              const allFilteredSelected = filteredIds.every(id => selectedInventoryIds.includes(id));
+                                                              if (allFilteredSelected) {
+                                                                  setSelectedInventoryIds(prev => prev.filter(id => !filteredIds.includes(id)));
+                                                              } else {
+                                                                  const union = Array.from(new Set([...selectedInventoryIds, ...filteredIds]));
+                                                                  setSelectedInventoryIds(union);
+                                                              }
+                                                          }}
+                                                          className="rounded text-teal-600 focus:ring-teal-500 w-4 h-4 cursor-pointer"
+                                                      />
+                                                  </th>
+                                                  <th className="p-4 font-semibold cursor-pointer hover:text-yellow-300" onClick={() => handleSort('name')}>
+                                                      Package Name {sortConfig.key === 'name' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : ''}
+                                                  </th>
+                                                  <th className="p-4 font-semibold cursor-pointer hover:text-yellow-300" onClick={() => handleSort('dealType')}>
+                                                      Deal Type {sortConfig.key === 'dealType' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : ''}
+                                                  </th>
+                                                  <th className="p-4 font-semibold cursor-pointer hover:text-yellow-300" onClick={() => handleSort('mrp')}>
+                                                      MRP (₹) {sortConfig.key === 'mrp' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : ''}
+                                                  </th>
+                                                  <th className="p-4 font-semibold cursor-pointer hover:text-yellow-300" onClick={() => handleSort('price')}>
+                                                      Price (₹) {sortConfig.key === 'price' ? (sortConfig.direction === 'asc' ? '▲' : '▼') : ''}
+                                                  </th>
+                                                  <th className="p-4 font-semibold text-right">Actions</th>
+                                              </tr>
+                                          </thead>
+                                          <tbody className="divide-y divide-slate-100">
+                                              {sortedInventory.map(pkg => {
+                                                  const isChecked = selectedInventoryIds.includes(pkg.id);
+                                                  const calcTests = pkg.detailedParameters ? pkg.detailedParameters.length : 1;
+                                                  const calcParams = pkg.detailedParameters ? pkg.detailedParameters.reduce((acc, c) => acc + (c.items ? c.items.length : 0), 1) : 1;
+                                                  return (
+                                                      <tr key={pkg.id} className={`hover:bg-slate-50 transition-colors ${isChecked ? 'bg-teal-50/60' : ''}`}>
+                                                          <td className="p-4 text-center">
+                                                              <input 
+                                                                  type="checkbox" 
+                                                                  checked={isChecked}
+                                                                  onChange={() => setSelectedInventoryIds(prev => prev.includes(pkg.id) ? prev.filter(id => id !== pkg.id) : [...prev, pkg.id])}
+                                                                  className="rounded text-teal-600 focus:ring-teal-500 w-4 h-4 cursor-pointer"
+                                                              />
+                                                          </td>
+                                                          <td className="p-4 font-bold text-teal-900">
+                                                              {pkg.name}
+                                                              <span className="block text-[10px] text-slate-400 font-normal">{calcTests} Tests • {calcParams} parameters</span>
+                                                          </td>
+                                                          <td className="p-4">
+                                                              <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold border bg-teal-100 text-teal-900 border-teal-200">
+                                                                  {pkg.dealType || 'Lab Atoms'}
+                                                              </span>
+                                                          </td>
+                                                          <td className="p-4 text-slate-500">₹{pkg.mrp}</td>
+                                                          <td className="p-4 font-extrabold text-emerald-700">₹{pkg.price}</td>
+                                                          <td className="p-4 text-right space-x-2">
+                                                              <button onClick={() => setEditingPackage({ ...pkg, detailedParameters: pkg.detailedParameters || [] })} className="text-teal-700 hover:text-teal-900 p-2 rounded-lg hover:bg-teal-50 transition-colors inline-block cursor-pointer" title="Edit Parameters">
+                                                                  <Icon name="info" className="w-4 h-4" />
+                                                              </button>
+                                                              <button onClick={() => {
+                                                                  const updated = packages.filter(p => p.id !== pkg.id);
+                                                                  persistCatalog(updated);
+                                                              }} className="text-red-500 hover:text-red-700 p-2 rounded-lg hover:bg-red-50 transition-colors inline-block cursor-pointer" title="Delete">
+                                                                  <Icon name="trash" className="w-4 h-4" />
+                                                              </button>
+                                                          </td>
+                                                      </tr>
+                                                  );
+                                              })}
+                                          </tbody>
+                                      </table>
+                                  </div>
+                              </div>
+                          </div>
+                      )}
+                  </div>
+
+                  {/* Partner Contact Footer */}
+                  <footer className="w-full bg-gradient-to-r from-teal-900 via-teal-950 to-slate-900 text-white mt-auto py-10 px-6 shadow-lg border-t border-teal-800">
+                      <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6">
+                          <div className="text-center md:text-left">
+                              <h4 className="font-extrabold text-lg text-yellow-400 mb-1">Contact with our Partner</h4>
+                              <p className="text-xs text-teal-200">Speak directly with our clinical support desk for test bookings and sample collection inquiries.</p>
+                          </div>
+                          <a href="tel:7665857270" className="bg-yellow-400 hover:bg-yellow-500 text-teal-950 px-6 py-3 rounded-2xl font-extrabold text-base shadow-lg transition-transform hover:scale-105 flex items-center cursor-pointer">
+                              <Icon name="phone" className="w-5 h-5 mr-2" /> +91 7665 857 270
+                          </a>
+                      </div>
+                      <div className="max-w-7xl mx-auto mt-8 pt-6 border-t border-teal-800/60 text-center text-xs text-teal-300">
+                          © 2026 Swasthya Care Diagnostics. NABL & CAP Accredited Laboratories. All rights reserved.
+                      </div>
+                  </footer>
+
+                  {adminModalOpen && (
+                      <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+                          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl">
+                              <h3 className="font-extrabold text-lg mb-4 text-teal-950 flex items-center">
+                                  <Icon name="lock" className="w-5 h-5 mr-2 text-teal-700" /> Lab Admin Login
+                              </h3>
+                              <form onSubmit={(e) => {
+                                  e.preventDefault();
+                                  if (adminPasswordInput === adminPassword) {
+                                      setAdminModalOpen(false);
+                                      setView('admin');
+                                      setAdminAuthError(false);
+                                  } else {
+                                      setAdminAuthError(true);
+                                  }
+                              }}>
+                                  <input type="password" required value={adminPasswordInput} onChange={e => setAdminPasswordInput(e.target.value)} placeholder="Enter password..." className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl mb-3 text-sm outline-none" />
+                                  {adminAuthError && <p className="text-xs text-red-600 font-bold mb-3">Incorrect password.</p>}
+                                  <div className="flex justify-end space-x-2">
+                                      <button type="button" onClick={() => setAdminModalOpen(false)} className="px-4 py-2 bg-slate-100 rounded-xl text-xs font-bold cursor-pointer">Cancel</button>
+                                      <button type="submit" className="px-5 py-2 bg-teal-900 text-yellow-400 rounded-xl text-xs font-bold cursor-pointer">Login</button>
+                                  </div>
+                              </form>
+                          </div>
+                      </div>
+                  )}
+
+                  {selectedPackageModal && (
+                      <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+                          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 md:p-8 shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto flex flex-col">
+                              <div className="flex justify-between items-start mb-6 border-b pb-4">
+                                  <div>
+                                      <span className="text-xs uppercase font-extrabold tracking-wider text-teal-700 bg-teal-50 px-2.5 py-1 rounded-full">
+                                          {selectedPackageModal.detailedParameters ? selectedPackageModal.detailedParameters.length : 1} Tests Included
+                                      </span>
+                                      <h3 className="text-2xl font-extrabold text-teal-950 mt-2">{selectedPackageModal.name}</h3>
+                                  </div>
+                                  <button onClick={() => setSelectedPackageModal(null)} className="text-slate-400 hover:text-slate-600 bg-slate-100 p-2 rounded-full cursor-pointer"><Icon name="x" className="w-5 h-5" /></button>
+                              </div>
+                              <div className="flex-1 space-y-4">
+                                  {selectedPackageModal.detailedParameters && selectedPackageModal.detailedParameters.map((cat, idx) => (
+                                      <div key={idx} className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                                          <h5 className="font-extrabold text-teal-900 text-sm mb-2 uppercase">{cat.category}</h5>
+                                          <ul className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
+                                              {cat.items.map((item, i) => (
+                                                  <li key={i} className="text-xs text-slate-600 flex items-center">
+                                                      <span className="w-1.5 h-1.5 bg-teal-600 rounded-full mr-2"></span>
+                                                      {item}
+                                                  </li>
+                                              ))}
+                                          </ul>
+                                      </div>
+                                  ))}
+                              </div>
+                              <div className="mt-6 border-t pt-4 flex justify-end">
+                                  <button onClick={() => setSelectedPackageModal(null)} className="bg-slate-900 text-white px-6 py-2.5 rounded-xl font-bold text-xs cursor-pointer">Close</button>
+                              </div>
+                          </div>
+                      </div>
+                  )}
+
+                  {editingPackage && (
+                      <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4">
+                          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 md:p-8 shadow-2xl border border-slate-100 max-h-[90vh] overflow-y-auto flex flex-col">
+                              <div className="flex justify-between items-center mb-6 border-b pb-4 shrink-0">
+                                  <h3 className="text-xl font-extrabold text-teal-950">Edit Test & Parameters</h3>
+                                  <button onClick={() => setEditingPackage(null)} className="text-slate-400 hover:text-slate-600 cursor-pointer"><Icon name="x" className="w-5 h-5" /></button>
+                              </div>
+                              <form onSubmit={(e) => {
+                                  e.preventDefault();
+                                  const todayStr = new Date().toISOString().split('T')[0];
+                                  const finalizedPkg = { ...editingPackage, modifiedDate: todayStr };
+                                  const updated = packages.map(p => p.id === editingPackage.id ? finalizedPkg : p);
+                                  persistCatalog(updated);
+                                  setEditingPackage(null);
+                                  setAdminFeedback(`Successfully updated "${editingPackage.name}" ✓`);
+                              }} className="space-y-4 flex-1">
+                                  <div>
+                                      <label className="block text-xs font-bold text-slate-700 mb-1">Package Name</label>
+                                      <input type="text" required value={editingPackage.name} onChange={e => setEditingPackage({...editingPackage, name: e.target.value})} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold" />
+                                  </div>
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                      <div>
+                                          <label className="block text-xs font-bold text-slate-700 mb-1">Deal Type</label>
+                                          <select 
+                                              value={['Lab Atoms', 'Organ Health', 'Wellness Bundle'].includes(editingPackage.dealType) ? editingPackage.dealType : 'OTHER_DEAL'} 
+                                              onChange={e => {
+                                                  const val = e.target.value;
+                                                  if (val === 'OTHER_DEAL') {
+                                                      const customDeal = prompt("Enter custom deal type:");
+                                                      if (customDeal && customDeal.trim()) {
+                                                          setEditingPackage({ ...editingPackage, dealType: customDeal.trim() });
+                                                      }
+                                                  } else {
+                                                      setEditingPackage({ ...editingPackage, dealType: val });
+                                                  }
+                                              }} 
+                                              className="w-full p-2.5 bg-white border border-slate-200 rounded-xl text-sm font-bold cursor-pointer"
+                                          >
+                                              <option value="Lab Atoms">Lab Atoms</option>
+                                              <option value="Organ Health">Organ Health</option>
+                                              <option value="Wellness Bundle">Wellness Bundle</option>
+                                              <option value="OTHER_DEAL">+ Other (Type custom deal type)...</option>
+                                          </select>
+                                      </div>
+                                      <div>
+                                          <label className="block text-xs font-bold text-slate-700 mb-1">Gender</label>
+                                          <select value={editingPackage.gender} onChange={e => setEditingPackage({...editingPackage, gender: e.target.value})} className="w-full p-2.5 bg-white border border-slate-200 rounded-xl text-sm cursor-pointer">
+                                              <option value="All">All</option>
+                                              <option value="Male">Male</option>
+                                              <option value="Female">Female</option>
+                                          </select>
+                                      </div>
+                                  </div>
+                                  <div className="grid grid-cols-2 gap-4">
+                                      <div>
+                                          <label className="block text-xs font-bold text-slate-700 mb-1">MRP (₹)</label>
+                                          <input type="number" required value={editingPackage.mrp} onChange={e => setEditingPackage({...editingPackage, mrp: Number(e.target.value)})} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm" />
+                                      </div>
+                                      <div>
+                                          <label className="block text-xs font-bold text-slate-700 mb-1">Price (₹)</label>
+                                          <input type="number" required value={editingPackage.price} onChange={e => setEditingPackage({...editingPackage, price: Number(e.target.value)})} className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-bold text-emerald-700" />
+                                      </div>
+                                  </div>
+
+                                  <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200 space-y-3">
+                                      <label className="block text-xs font-bold text-teal-950 uppercase">Add Test Profile / Category:</label>
+                                      
+                                      <div className="flex gap-2">
+                                          <select value={selectedTestType[editingPackage.id] || ''} onChange={e => {
+                                              const val = e.target.value;
+                                              if (val === 'OTHER_TEST') {
+                                                  setSelectedTestType({ ...selectedTestType, [editingPackage.id]: 'OTHER_TEST' });
+                                              } else {
+                                                  setSelectedTestType({ ...selectedTestType, [editingPackage.id]: val });
+                                              }
+                                          }} className="flex-1 p-2 bg-white border border-slate-200 rounded-xl text-xs font-medium outline-none cursor-pointer">
+                                              <option value="">Select test profile from catalog / Lab Atoms...</option>
+                                              <option value="OTHER_TEST" className="font-bold text-teal-700">+ Other (Type custom test)...</option>
+                                              {packages.filter(p => p.dealType === 'Lab Atoms').map(p => (
+                                                  <option key={p.id} value={p.name}>{p.name} (Lab Atom Profile)</option>
+                                              ))}
+                                              {pathologyMedicalStandards.map((item, idx) => (
+                                                  <option key={idx} value={item.name}>{item.name} (Standard Medical Standard)</option>
+                                              ))}
+                                          </select>
+                                          {selectedTestType[editingPackage.id] !== 'OTHER_TEST' && (
+                                              <button type="button" onClick={() => {
+                                                  const tName = selectedTestType[editingPackage.id];
+                                                  if (!tName) return;
+                                                  const existingParams = [...(editingPackage.detailedParameters || [])];
+                                                  const matchingPkg = packages.find(p => p.name === tName);
+                                                  if (matchingPkg && matchingPkg.detailedParameters) {
+                                                      matchingPkg.detailedParameters.forEach(cat => existingParams.push({ category: cat.category, items: [...cat.items] }));
+                                                  } else {
+                                                      const found = pathologyMedicalStandards.find(s => s.name === tName);
+                                                      if (found) existingParams.push({ category: found.name, items: [...found.items] });
+                                                  }
+                                                  setEditingPackage({ ...editingPackage, detailedParameters: existingParams });
+                                                  setSelectedTestType({ ...selectedTestType, [editingPackage.id]: '' });
+                                              }} className="bg-teal-900 text-yellow-400 px-4 py-2 rounded-xl text-xs font-bold cursor-pointer">Add Test</button>
+                                          )}
+                                      </div>
+
+                                      {selectedTestType[editingPackage.id] === 'OTHER_TEST' && (
+                                          <div className="flex gap-2 mt-2">
+                                              <input 
+                                                  type="text" 
+                                                  value={customTestNameInput[editingPackage.id] || ''}
+                                                  onChange={e => setCustomTestNameInput({ ...customTestNameInput, [editingPackage.id]: e.target.value })}
+                                                  placeholder="Type custom test / category name..." 
+                                                  className="flex-1 p-2 bg-white border border-slate-200 rounded-xl text-xs outline-none font-bold"
+                                              />
+                                              <button type="button" onClick={() => {
+                                                  const tName = customTestNameInput[editingPackage.id];
+                                                  if (!tName || !tName.trim()) return;
+                                                  const existingParams = [...(editingPackage.detailedParameters || [])];
+                                                  existingParams.push({ category: tName.trim().toUpperCase(), items: ["General Parameter"] });
+                                                  setEditingPackage({ ...editingPackage, detailedParameters: existingParams });
+                                                  setSelectedTestType({ ...selectedTestType, [editingPackage.id]: '' });
+                                                  setCustomTestNameInput({ ...customTestNameInput, [editingPackage.id]: '' });
+                                              }} className="bg-teal-900 text-yellow-400 px-4 py-2 rounded-xl text-xs font-bold cursor-pointer">Add Custom</button>
+                                          </div>
+                                      )}
+
+                                      <div className="mt-3 space-y-3">
+                                          {editingPackage.detailedParameters && editingPackage.detailedParameters.map((cat, cIdx) => (
+                                              <div key={cIdx} className="bg-white p-3 rounded-xl border border-slate-200 space-y-2">
+                                                  <div className="flex justify-between items-center">
+                                                      <span className="font-extrabold text-xs text-teal-950 uppercase">{cat.category}</span>
+                                                      <button type="button" onClick={() => {
+                                                          const newDetailed = editingPackage.detailedParameters.filter((_, idx) => idx !== cIdx);
+                                                          setEditingPackage({ ...editingPackage, detailedParameters: newDetailed });
+                                                      }} className="text-red-500 text-xs font-bold cursor-pointer">Remove Test</button>
+                                                  </div>
+                                                  <div className="flex flex-wrap gap-1.5">
+                                                      {cat.items && cat.items.map((item, iIdx) => (
+                                                          <span key={iIdx} className="inline-flex items-center bg-teal-50 text-teal-900 text-[11px] font-medium px-2 py-0.5 rounded-lg border border-teal-100">
+                                                              {item}
+                                                              <button type="button" onClick={() => {
+                                                                  const updatedCatItems = cat.items.filter((_, i) => i !== iIdx);
+                                                                  const updatedDetailed = [...editingPackage.detailedParameters];
+                                                                  updatedDetailed[cIdx] = { ...cat, items: updatedCatItems };
+                                                                  setEditingPackage({ ...editingPackage, detailedParameters: updatedDetailed });
+                                                              }} className="ml-1.5 text-slate-400 hover:text-red-600 font-bold cursor-pointer">×</button>
+                                                          </span>
+                                                      ))}
+                                                  </div>
+
+                                                  <div className="flex flex-col gap-2 pt-2 border-t border-slate-100">
+                                                      <select
+                                                          value={selectedParamAtom[cIdx] || ''}
+                                                          onChange={e => {
+                                                              const val = e.target.value;
+                                                              if (!val) return;
+                                                              if (val === 'OTHER_CUSTOM') {
+                                                                  setSelectedParamAtom({ ...selectedParamAtom, [cIdx]: 'OTHER_CUSTOM' });
+                                                                  return;
+                                                              }
+                                                              const updatedCatItems = [...(cat.items || []), val];
+                                                              const updatedDetailed = [...editingPackage.detailedParameters];
+                                                              updatedDetailed[cIdx] = { ...cat, items: updatedCatItems };
+                                                              setEditingPackage({ ...editingPackage, detailedParameters: updatedDetailed });
+                                                              setSelectedParamAtom({ ...selectedParamAtom, [cIdx]: '' });
+                                                          }}
+                                                          className="w-full p-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs outline-none cursor-pointer"
+                                                      >
+                                                          <option value="">+ Add parameter from standard list / Lab Atoms...</option>
+                                                          <option value="OTHER_CUSTOM" className="font-bold text-teal-700">+ Other (Type custom parameter)...</option>
+                                                          {packages.filter(p => p.dealType === 'Lab Atoms').map(atom => (
+                                                              <optgroup key={atom.id} label={`${atom.name} (Lab Atom)`}>
+                                                                  {(() => {
+                                                                      const subItemsList = [];
+                                                                      (atom.detailedParameters || []).forEach(d => {
+                                                                          if (d.items) d.items.forEach(si => subItemsList.push(si));
+                                                                      });
+                                                                      return subItemsList.map((subItem, sIdx) => (
+                                                                          <option key={sIdx} value={subItem}>{subItem}</option>
+                                                                      ));
+                                                                  })()}
+                                                              </optgroup>
+                                                          ))}
+                                                          {pathologyMedicalStandards.map((std, sIdx) => (
+                                                              <optgroup key={sIdx} label={std.name}>
+                                                                  {std.items.map((subItem, subIdx) => (
+                                                                      <option key={subIdx} value={subItem}>{subItem}</option>
+                                                                  ))}
+                                                              </optgroup>
+                                                          ))}
+                                                      </select>
+
+                                                      {selectedParamAtom[cIdx] === 'OTHER_CUSTOM' && (
+                                                          <div className="flex gap-2 mt-1">
+                                                              <input 
+                                                                  type="text" 
+                                                                  value={customParamNameInput[cIdx] || ''}
+                                                                  onChange={e => setCustomParamNameInput({ ...customParamNameInput, [cIdx]: e.target.value })}
+                                                                  placeholder="Type custom parameter name..." 
+                                                                  className="flex-1 p-1.5 bg-white border border-slate-200 rounded-lg text-xs outline-none font-bold"
+                                                              />
+                                                              <button type="button" onClick={() => {
+                                                                  const val = customParamNameInput[cIdx];
+                                                                  if (!val || !val.trim()) return;
+                                                                  const updatedCatItems = [...(cat.items || []), val.trim()];
+                                                                  const updatedDetailed = [...editingPackage.detailedParameters];
+                                                                  updatedDetailed[cIdx] = { ...cat, items: updatedCatItems };
+                                                                  setEditingPackage({ ...editingPackage, detailedParameters: updatedDetailed });
+                                                                  setSelectedParamAtom({ ...selectedParamAtom, [cIdx]: '' });
+                                                                  setCustomParamNameInput({ ...customParamNameInput, [cIdx]: '' });
+                                                              }} className="bg-teal-900 text-yellow-400 px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer">Add Custom</button>
+                                                          </div>
+                                                      )}
+                                                  </div>
+                                              </div>
+                                          ))}
+                                      </div>
+                                  </div>
+
+                                  <div className="mt-6 border-t pt-4 flex justify-end space-x-3">
+                                      <button type="button" onClick={() => setEditingPackage(null)} className="px-4 py-2 bg-slate-100 rounded-xl text-xs font-bold cursor-pointer">Cancel</button>
+                                      <button type="submit" className="px-6 py-2 bg-teal-900 text-yellow-400 rounded-xl text-xs font-bold shadow flex items-center cursor-pointer">
+                                          <Icon name="save" className="w-4 h-4 mr-1.5" /> Save Changes
+                                      </button>
+                                  </div>
+                              </form>
+                          </div>
+                      </div>
+                  )}
+
+                  {/* Swasthya AI Assistant Drawer */}
+                  <div className="fixed bottom-6 right-6 z-50">
+                      {!chatOpen && (
+                          <button onClick={() => setChatOpen(true)} className="bg-teal-700 text-white p-4 rounded-full shadow-2xl hover:bg-teal-800 transition-transform hover:scale-110 flex items-center justify-center border-2 border-teal-600 cursor-pointer">
+                              <Icon name="message" className="w-7 h-7" />
+                          </button>
+                      )}
+                      {chatOpen && (
+                          <div className="bg-white w-80 md:w-96 rounded-2xl shadow-2xl border border-slate-200 flex flex-col h-[500px]">
+                              <div className="bg-teal-900 text-white p-4 flex justify-between items-center rounded-t-2xl">
+                                  <div className="flex items-center space-x-2">
+                                      <img 
+                    src="https://raw.githubusercontent.com/swasthyacare/Swasthya-Care/refs/heads/main/Swasthya%20Care%20Fevicon.svg" 
+                    alt="Swasthya Logo" 
+                    className="w-6 h-6 object-contain rounded-full bg-white p-0.5" 
+                />
+                                      <h3 className="font-bold text-yellow-400 text-sm">Swasthya AI Assistant</h3>
+                                  </div>
+                                  <button onClick={() => setChatOpen(false)} className="text-teal-200 hover:text-white cursor-pointer"><Icon name="x" className="w-5 h-5" /></button>
+                              </div>
+                              <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50">
+                                  {messages.map((msg, idx) => (
+                                      <div key={idx} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
+                                          <div className={`max-w-[90%] rounded-2xl p-3 text-xs shadow-sm ${msg.role === 'user' ? 'bg-teal-700 text-white' : 'bg-white border text-slate-700'}`}>
+                                              {msg.role === 'user' ? msg.text : renderModelMessage(msg.text)}
+                                          </div>
+                                      </div>
+                                  ))}
+                                  {isAILoading && <div className="text-xs text-teal-800 font-bold animate-pulse italic">Swasthya AI is analyzing medical data...</div>}
+                                  <div ref={chatEndRef} />
+                              </div>
+
+                              <form onSubmit={e => { e.preventDefault(); handleSendMessage(inputValue); }} className="p-3 bg-white border-t flex items-center space-x-2 rounded-b-2xl">
+                                  <input type="text" value={inputValue} onChange={e => setInputValue(e.target.value)} placeholder="Ask about tests or symptoms..." className="flex-1 p-2 bg-slate-50 border rounded-xl text-xs outline-none" />
+                                  <button type="submit" className="bg-teal-900 hover:bg-teal-800 text-yellow-400 px-3.5 py-2 rounded-xl font-bold text-xs cursor-pointer shadow">Send</button>
+                              </form>
+                          </div>
+                      )}
+                  </div>
+              </div>
+          );
+        }
+
+        ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+    </script>
+</body>
+</html>
