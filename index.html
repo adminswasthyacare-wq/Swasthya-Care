@@ -21,7 +21,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; }
-        /* High contrast text selection styling to prevent blending with dark/green backgrounds */
         ::selection {
             background-color: #facc15;
             color: #022c22;
@@ -35,7 +34,6 @@
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         @keyframes ping { 0% { transform: scale(1); opacity: 1; } 75%, 100% { transform: scale(1.5); opacity: 0; } }
         
-        /* 3D Perspective Carousel Styles */
         .carousel-3d-scene {
             perspective: 1400px;
             width: 100%;
@@ -87,7 +85,6 @@
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
 
         const catalogGithubCsvUrl = "https://raw.githubusercontent.com/swasthyacare/Swasthya-Care/refs/heads/main/swasthya_care_catalog_complete.csv";
-        const catalogGoogleSheetUrl = "https://docs.google.com/spreadsheets/d/1KJetR16PvkUbaGhb-lHkNS2zGNUJKtKmVcwXGPpoyB0/edit?usp=sharing";
         const bookingGoogleSheetUrl = "https://docs.google.com/spreadsheets/d/1lFkrSc4hMtbj-Wll09Fhvhjy88_fZHzaqtWjyprZIao/edit?usp=sharing";
         const googleFormResponseUrl = "https://docs.google.com/forms/d/e/1FAIpQLSc_3k5J4pFkGwa0UQiWCwnGtkvmKK2ODnnWf4tNYL7v8cfy-g/formResponse";
 
@@ -110,7 +107,7 @@
                 microscope: <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M6 18h8M3 22h18M14 22a7 7 0 1 0 0-14h-1m-4 3h4M9 3h2v5H9z"/></svg>,
                 droplet: <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"/></svg>,
                 heartPulse: <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.04 3 5.5l7 7Z"/></svg>,
-                stethoscope: <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M4.8 2.3A.3.3 0 0 1 5 2h4a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V3c0-.1 0-.2.1-.3M14 6h2a2 2 0 0 1 2 2v2a6 6 0 0 1-12 0V8a2 2  0 0 1 2-2h2m2 14v-4m0 4a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/></svg>,
+                stethoscope: <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M4.8 2.3A.3.3 0 0 1 5 2h4a1 1 0 0 1 1 1v4a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V3c0-.1 0-.2.1-.3M14 6h2a2 2 0 0 1 2 2v2a6 6 0 0 1-12 0V8a2 2 0 0 1 2-2h2m2 14v-4m0 4a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/></svg>,
                 syringe: <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="m18 2 4 4M17 7l-3-3M19 9l-7 7H9v-3l7-7M3 21l3-3M2 22h2"/></svg>,
                 clipboard: <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1"/></svg>,
                 dna: <svg className={className} fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M2 15c6.67 0 10-10 13-10M2 9c6.67 0 10 10 13 10m-3-10h8M5 15h8M8 6h8M6 18h8"/></svg>,
@@ -428,7 +425,18 @@
           const [user, setUser] = useState(null);
           const [bookings, setBookings] = useState([]);
           
-          const [cart, setCart] = useState([]);
+          const [cart, setCart] = useState(() => {
+              const savedCart = localStorage.getItem('swasthya_cart_v10');
+              if (savedCart) {
+                  try { return JSON.parse(savedCart); } catch(e) {}
+              }
+              return [];
+          });
+
+          useEffect(() => {
+              localStorage.setItem('swasthya_cart_v10', JSON.stringify(cart));
+          }, [cart]);
+
           const [toastMessage, setToastMessage] = useState('');
           const [packageMembers, setPackageMembers] = useState({});
           const [openMemberDropdown, setOpenMemberDropdown] = useState(null);
@@ -475,7 +483,6 @@
           const [selectedParamAtom, setSelectedParamAtom] = useState({});
           const [customParamNameInput, setCustomParamNameInput] = useState({});
 
-          // Auto rotate rewards carousel every 4 seconds
           useEffect(() => {
               const rewardTimer = setInterval(() => {
                   setCurrentRewardIdx(prev => (prev + 1) % rewardsList.length);
@@ -680,30 +687,32 @@
 
           const getMemberCount = (pkgId) => packageMembers[pkgId] || 1;
 
-          // Wellness bundle pricing formula:
-          // a = p, b = a - 14.75%, c = b - 7.25%, d = c - 4.25%.
-          // t = n * tier price. All lab atoms and organ health test use t = n * p.
           const getPricingForMembers = (pkg, membersCount) => {
               const p = pkg.price;
               const baseMrp = pkg.mrp || Math.round(p * 2.5);
               if (membersCount <= 0) return { price: 0, mrp: 0, perPerson: 0 };
 
               if (pkg.dealType === 'Wellness Bundle') {
+                  let totalPrice = 0;
                   let a = p;
                   let b = Math.round(a * (1 - 0.1475));
                   let c = Math.round(b * (1 - 0.0725));
                   let d = Math.round(c * (1 - 0.0425));
                   let e = d;
 
-                  let tierPrice = a;
-                  if (membersCount === 1) tierPrice = a;
-                  else if (membersCount === 2) tierPrice = b;
-                  else if (membersCount === 3) tierPrice = c;
-                  else if (membersCount >= 4) tierPrice = d;
+                  for (let i = 1; i <= membersCount; i++) {
+                      let tierPrice = a;
+                      if (i === 1) tierPrice = a;
+                      else if (i === 2) tierPrice = b;
+                      else if (i === 3) tierPrice = c;
+                      else if (i === 4) tierPrice = d;
+                      else tierPrice = e;
 
-                  const totalPrice = Math.round(tierPrice * membersCount);
+                      totalPrice += tierPrice;
+                  }
                   const totalMrp = baseMrp * membersCount;
-                  return { price: totalPrice, mrp: totalMrp, perPerson: tierPrice };
+                  const unitPrice = Math.round(totalPrice / membersCount);
+                  return { price: Math.round(totalPrice), mrp: totalMrp, perPerson: unitPrice };
               } else {
                   const totalPrice = p * membersCount;
                   const totalMrp = baseMrp * membersCount;
@@ -1012,7 +1021,7 @@
               const testsCount = bestPkg.detailedParameters ? bestPkg.detailedParameters.length : 1;
               const paramsCount = bestPkg.detailedParameters ? bestPkg.detailedParameters.reduce((acc, c) => acc + (c.items ? c.items.length : 0), 1) : 1;
               
-              const reply = `I recommend the **${bestPkg.name}** for your health checkup. It includes ${testsCount} comprehensive tests and ${paramsCount} clinical parameters covering essential wellness markers.\n\nPrice: **₹${bestPkg.price}** (MRP: ₹${bestPkg.mrp})\n\n[ADD:${bestPkg.id}]`;
+              const reply = `I recommend the ${bestPkg.name} for your health checkup. It includes ${testsCount} comprehensive tests and ${paramsCount} clinical parameters covering essential wellness markers. Price: ₹${bestPkg.price} (MRP: ₹${bestPkg.mrp})\n\n[ADD:${bestPkg.id}]`;
               setMessages(prev => [...prev, { role: 'model', text: reply }]);
           };
 
@@ -1222,6 +1231,8 @@
               const waLink = `https://wa.me/${targetWhatsappNumber}?text=${encodeURIComponent(msg)}`;
               window.open(waLink, '_blank');
               setView('success');
+              setCart([]);
+              localStorage.removeItem('swasthya_cart_v10');
               window.scrollTo({ top: 0, behavior: 'smooth' });
           };
 
@@ -1243,7 +1254,7 @@
                       <header className="bg-white/95 backdrop-blur-md shadow-sm sticky top-0 z-50 border-b border-slate-200">
                           <div className="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
                               <div className="flex items-center cursor-pointer transition-transform hover:scale-105" onClick={() => { setView('menu'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}>
-                                  <SafeLogo src="https://cdn1.healthians.com/img/healthians-logo.svg" alt="Healthians Logo" className="h-10 md:h-12 object-contain" fallbackText="Swasthya Care" fallbackTagline="Test Today. A Healthier Tomorrow." />
+                                  <SafeLogo src="https://cdn1.healthians.com/img/healthians-logo.svg" alt="Swasthya Care Logo" className="h-10 md:h-12 object-contain" fallbackText="Swasthya Care" fallbackTagline="Test Today. A Healthier Tomorrow." />
                               </div>
                               <div className="flex items-center">
                                   <span className="text-[10px] md:text-xs font-extrabold text-slate-500 uppercase tracking-wider mr-3 hidden sm:inline-block">Accredited By</span>
@@ -1519,7 +1530,7 @@
 
                                                       <div className="mt-auto">
                                                           <div className="flex items-center space-x-3 mb-4">
-                                                              <span className="text-sm font-bold text-slate-400">₹{pricing.mrp}</span>
+                                                              <span className="text-sm font-bold text-slate-400 line-through">₹{pricing.mrp}</span>
                                                               <span className="text-2xl font-extrabold text-emerald-700">₹{pricing.price}</span>
                                                           </div>
                                                           <div className="grid grid-cols-2 gap-2">
@@ -1834,7 +1845,7 @@
                                                               <div>
                                                                   <p className="font-bold text-xs text-teal-950">{pkg.name} ({unitPrice})</p>
                                                                   <p className="text-[11px] font-extrabold text-emerald-700">₹{unitPrice} / person (Assigned: {totalAssigned})</p>
-                                                                  <div className="mt-1 flex gap-1">
+                                                                  <div className="mt-1 flex gap-1 flex-wrap">
                                                                       <button type="button" onClick={() => assignTestToPatient('primary', pkgId)} className={`text-[10px] px-2 py-0.5 rounded font-bold cursor-pointer ${(patientAssignments['primary'] || []).includes(pkgId) ? 'bg-teal-900 text-white' : 'bg-white text-slate-700 border border-slate-200'}`}>Primary</button>
                                                                       {familyMembers.map((m, mIdx) => (
                                                                           <button key={m.id} type="button" onClick={() => assignTestToPatient(m.id, pkgId)} className={`text-[10px] px-2 py-0.5 rounded font-bold cursor-pointer ${(patientAssignments[m.id] || []).includes(pkgId) ? 'bg-teal-700 text-white' : 'bg-white text-slate-700 border border-slate-200'}`}>M{mIdx+2}</button>
@@ -1968,7 +1979,7 @@
                                   </div>
                               </div>
 
-                              <button onClick={() => { setView('menu'); setCart([]); setFamilyMembers([]); }} className="bg-teal-900 text-white px-8 py-3 rounded-full font-bold hover:bg-teal-800 shadow-md cursor-pointer">
+                              <button onClick={() => { setView('menu'); setCart([]); setFamilyMembers([]); localStorage.removeItem('swasthya_cart_v10'); }} className="bg-teal-900 text-white px-8 py-3 rounded-full font-bold hover:bg-teal-800 shadow-md cursor-pointer">
                                   Return to Home
                               </button>
                           </div>
