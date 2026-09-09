@@ -679,32 +679,35 @@
 
           const getMemberCount = (pkgId) => packageMembers[pkgId] || 1;
 
-          // Wellness bundle pricing formula:
-          // a = p, b = a - 14.75%, c = b - 7.25%, d = c - 4.25%, e = d.
-          // Lab Atoms and Organ Health use n * p formula.
+          // Updated Wellness Bundle Pricing Formula & Lab Atoms / Organ Health rule:
+          // n = number of members
+          // t = total price
+          // p = test price
+          // a = per member on 1 member selection (a = p)
+          // b = per member price for 2 member selection (b = a - 14.75%)
+          // c = per member price for 3 members (c = b - 7.25%)
+          // d = per member price for 4 or 4+ members (d = c - 4.25%)
+          // total price t = n * tier price (rounded)
+          // All lab atoms and organ health tests use formula t = n * p
           const getPricingForMembers = (pkg, membersCount) => {
               const p = pkg.price;
               const baseMrp = pkg.mrp || Math.round(p * 2.5);
               if (membersCount <= 0) return { price: 0, mrp: 0, perPerson: 0 };
 
               if (pkg.dealType === 'Wellness Bundle') {
-                  let totalPrice = 0;
                   let a = p;
                   let b = Math.round(a * (1 - 0.1475));
                   let c = Math.round(b * (1 - 0.0725));
                   let d = Math.round(c * (1 - 0.0425));
-                  let e = d;
 
-                  for (let i = 1; i <= membersCount; i++) {
-                      if (i === 1) totalPrice += a;
-                      else if (i === 2) totalPrice += b;
-                      else if (i === 3) totalPrice += c;
-                      else if (i === 4) totalPrice += d;
-                      else totalPrice += e;
-                  }
+                  let unitPrice = a;
+                  if (membersCount === 2) unitPrice = b;
+                  else if (membersCount === 3) unitPrice = c;
+                  else if (membersCount >= 4) unitPrice = d;
+
+                  let totalPrice = Math.round(unitPrice * membersCount);
                   const totalMrp = baseMrp * membersCount;
-                  const unitPrice = Math.round(totalPrice / membersCount);
-                  return { price: Math.round(totalPrice), mrp: totalMrp, perPerson: unitPrice };
+                  return { price: totalPrice, mrp: totalMrp, perPerson: unitPrice };
               } else {
                   const totalPrice = p * membersCount;
                   const totalMrp = baseMrp * membersCount;
@@ -735,7 +738,7 @@
               return totalMrp;
           };
 
-          const calculateGrandTotal = () => {
+          const calculateSubtotal = () => {
               let total = 0;
               cart.forEach(pkgId => {
                   const pkg = packages.find(p => p.id === Number(pkgId));
@@ -747,6 +750,14 @@
                   }
               });
               return total;
+          };
+
+          const calculateGrandTotal = () => {
+              let sub = calculateSubtotal();
+              if (sub > 0 && sub <= 500) {
+                  return sub + 150;
+              }
+              return sub;
           };
 
           const assignTestToPatient = (patientKey, pkgId) => {
@@ -1867,8 +1878,14 @@
                                                       </div>
                                                       <div className="flex justify-between text-emerald-600 font-bold">
                                                           <span>Discount:</span>
-                                                          <span>- ₹{calculateTotalMrp() - calculateGrandTotal()}</span>
+                                                          <span>- ₹{calculateTotalMrp() - calculateSubtotal()}</span>
                                                       </div>
+                                                      {calculateSubtotal() > 0 && calculateSubtotal() <= 500 && (
+                                                          <div className="flex justify-between text-slate-700 font-bold">
+                                                              <span>Consumables and Transportation Charges:</span>
+                                                              <span>₹150</span>
+                                                          </div>
+                                                      )}
                                                       <div className="border-t pt-1 flex justify-between font-extrabold text-teal-950">
                                                           <span>Grand Total:</span>
                                                           <span>₹{calculateGrandTotal()}</span>
@@ -1945,6 +1962,13 @@
                                           </div>
                                       );
                                   })}
+
+                                  {calculateSubtotal() > 0 && calculateSubtotal() <= 500 && (
+                                      <div className="flex justify-between items-center text-xs text-slate-700 bg-slate-100 p-2 rounded-xl">
+                                          <span className="font-bold">Consumables and Transportation Charges</span>
+                                          <span className="font-extrabold text-slate-800">₹150</span>
+                                      </div>
+                                  )}
 
                                   <div className="border-t pt-3 flex justify-between items-center font-extrabold text-base text-teal-950">
                                       <span>Total Amount Payable:</span>
