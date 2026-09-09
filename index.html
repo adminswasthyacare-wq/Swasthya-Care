@@ -34,6 +34,7 @@
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         @keyframes ping { 0% { transform: scale(1); opacity: 1; } 75%, 100% { transform: scale(1.5); opacity: 0; } }
         
+        /* 3D Perspective Carousel Styles */
         .carousel-3d-scene {
             perspective: 1400px;
             width: 100%;
@@ -480,8 +481,8 @@
 
           const [selectedTestType, setSelectedTestType] = useState({});
           const [customTestNameInput, setCustomTestNameInput] = useState({});
-          const [selectedParamAtom, setSelectedParamAtom] = useState({});
-          const [customParamNameInput, setCustomParamNameInput] = useState({});
+          const [selectedParameterAtom, setSelectedParameterAtom] = useState({});
+          const [customParameterNameInput, setCustomParameterNameInput] = useState({});
 
           useEffect(() => {
               const rewardTimer = setInterval(() => {
@@ -952,7 +953,7 @@
                               }`}
                           >
                               <Icon name="cart" className="w-4 h-4 mr-1.5" />
-                              {inCart ? `Added ${pkg.name} ✓` : `Add ${pkg.name} to Cart - ₹${pkg.price} (${calculatedTests} Tests, ${calculatedParameters} Params)`}
+                              {inCart ? `Added ${pkg.name} ✓` : `Add ${pkg.name} to Cart - ₹${pkg.price} (${calculatedTests} Tests, ${calculatedParameters} Parameters)`}
                           </button>
                       );
                   }
@@ -1019,9 +1020,9 @@
               }
               const bestPkg = matched[0] || packages[0];
               const testsCount = bestPkg.detailedParameters ? bestPkg.detailedParameters.length : 1;
-              const paramsCount = bestPkg.detailedParameters ? bestPkg.detailedParameters.reduce((acc, c) => acc + (c.items ? c.items.length : 0), 1) : 1;
+              const parametersCount = bestPkg.detailedParameters ? bestPkg.detailedParameters.reduce((acc, c) => acc + (c.items ? c.items.length : 0), 1) : 1;
               
-              const reply = `I recommend the ${bestPkg.name} for your health checkup. It includes ${testsCount} comprehensive tests and ${paramsCount} clinical parameters covering essential wellness markers. Price: ₹${bestPkg.price} (MRP: ₹${bestPkg.mrp})\n\n[ADD:${bestPkg.id}]`;
+              const reply = `I recommend the ${bestPkg.name} for your health checkup. It includes ${testsCount} comprehensive tests and ${parametersCount} clinical parameters covering essential wellness markers. Price: ₹${bestPkg.price} (MRP: ₹${bestPkg.mrp})\n\n[ADD:${bestPkg.id}]`;
               setMessages(prev => [...prev, { role: 'model', text: reply }]);
           };
 
@@ -1305,7 +1306,7 @@
                                   </div>
                               </div>
 
-                              {/* Physiological Systems Map */}
+                              {/* Physiological Systems Map with Pathology Directory Mapping */}
                               <div className={`mb-16 bg-white rounded-3xl shadow-sm border border-slate-100 p-8 flex flex-col md:flex-row items-center gap-12 transition-all duration-1000 transform ${loaded ? 'translate-y-0 opacity-100' : 'translate-y-12 opacity-0'}`}>
                                   <div className="w-full md:w-5/12 flex justify-left relative">
                                       <div className="relative w-64 h-[480px] select-none bg-slate-50 rounded-2xl p-4 border border-slate-200 shadow-inner flex flex-col items-center justify-center">
@@ -1386,7 +1387,7 @@
 
                                   <div className="w-full md:w-7/12">
                                       <h2 className="text-2xl font-extrabold text-teal-950 mb-2">Physiological Systems Map</h2>
-                                      <p className="text-slate-600 mb-6 text-sm">Select organ systems below to filter packages. Unselected organs will be visually blurred.</p>
+                                      <p className="text-slate-600 mb-6 text-sm">Select organ systems below to filter packages and related pathology parameters automatically.</p>
                                       
                                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                                           {[
@@ -1451,7 +1452,23 @@
                                           if (activeCategoryTab === 'atoms' && pkg.dealType !== 'Lab Atoms') return false;
                                           if (activeCategoryTab === 'health' && pkg.dealType !== 'Organ Health') return false;
                                           if (activeCategoryTab === 'bundles' && pkg.dealType !== 'Wellness Bundle') return false;
-                                          const matchesBodyFilter = selectedBodyPartsFilter.length > 0 ? selectedBodyPartsFilter.some(part => pkg.bodyParts.includes(part)) : true;
+                                          
+                                          // Dynamic Pathology Directory & Organ System Matching
+                                          const matchesBodyFilter = selectedBodyPartsFilter.length > 0 ? selectedBodyPartsFilter.some(part => {
+                                              if (pkg.bodyParts && pkg.bodyParts.includes(part)) return true;
+                                              const textDump = (pkg.name + " " + pkg.includes + " " + JSON.stringify(pkg.detailedParameters)).toLowerCase();
+                                              if (part === 'thyroid' && (textDump.includes('thyroid') || textDump.includes('tsh') || textDump.includes('t3') || textDump.includes('t4'))) return true;
+                                              if (part === 'cardiovascular' && (textDump.includes('lipid') || textDump.includes('cholesterol') || textDump.includes('triglyceride') || textDump.includes('cardiac'))) return true;
+                                              if (part === 'kidney' && (textDump.includes('kft') || textDump.includes('kidney') || textDump.includes('bun') || textDump.includes('creatinine') || textDump.includes('urea'))) return true;
+                                              if (part === 'liver' && (textDump.includes('lft') || textDump.includes('liver') || textDump.includes('bilirubin') || textDump.includes('sgot') || textDump.includes('sgpt'))) return true;
+                                              if (part === 'bone' && (textDump.includes('bone') || textDump.includes('calcium') || textDump.includes('vitamin d') || textDump.includes('arthritis'))) return true;
+                                              if (part === 'blood' && (textDump.includes('cbc') || textDump.includes('hemoglobin') || textDump.includes('rbc') || textDump.includes('wbc') || textDump.includes('esr'))) return true;
+                                              if (part === 'immune' && (textDump.includes('crp') || textDump.includes('aso') || textDump.includes('immunoglobulin'))) return true;
+                                              if (part === 'metabolic' && (textDump.includes('glucose') || textDump.includes('hba1c') || textDump.includes('sugar') || textDump.includes('diabetes'))) return true;
+                                              if (part === 'hormone' && (textDump.includes('hormone') || textDump.includes('testosterone') || textDump.includes('fsh') || textDump.includes('lh'))) return true;
+                                              return false;
+                                          }) : true;
+
                                           const matchesSearchQuery = testSearchQuery ? pkg.name.toLowerCase().includes(testSearchQuery.toLowerCase()) : true;
                                           const isHighlighted = activeBodyPart ? pkg.bodyParts.includes(activeBodyPart) : true;
                                           return matchesBodyFilter && matchesSearchQuery && isHighlighted;
@@ -2374,19 +2391,19 @@
 
                                                   <div className="flex flex-col gap-2 pt-2 border-t border-slate-100">
                                                       <select
-                                                          value={selectedParamAtom[cIdx] || ''}
+                                                          value={selectedParameterAtom[cIdx] || ''}
                                                           onChange={e => {
                                                               const val = e.target.value;
                                                               if (!val) return;
                                                               if (val === 'OTHER_CUSTOM') {
-                                                                  setSelectedParamAtom({ ...selectedParamAtom, [cIdx]: 'OTHER_CUSTOM' });
+                                                                  setSelectedParameterAtom({ ...selectedParameterAtom, [cIdx]: 'OTHER_CUSTOM' });
                                                                   return;
                                                               }
                                                               const updatedCatItems = [...(cat.items || []), val];
                                                               const updatedDetailed = [...editingPackage.detailedParameters];
                                                               updatedDetailed[cIdx] = { ...cat, items: updatedCatItems };
                                                               setEditingPackage({ ...editingPackage, detailedParameters: updatedDetailed });
-                                                              setSelectedParamAtom({ ...selectedParamAtom, [cIdx]: '' });
+                                                              setSelectedParameterAtom({ ...selectedParameterAtom, [cIdx]: '' });
                                                           }}
                                                           className="w-full p-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs outline-none cursor-pointer"
                                                       >
@@ -2414,24 +2431,24 @@
                                                           ))}
                                                       </select>
 
-                                                      {selectedParamAtom[cIdx] === 'OTHER_CUSTOM' && (
+                                                      {selectedParameterAtom[cIdx] === 'OTHER_CUSTOM' && (
                                                           <div className="flex gap-2 mt-1">
                                                               <input 
                                                                   type="text" 
-                                                                  value={customParamNameInput[cIdx] || ''}
-                                                                  onChange={e => setCustomParamNameInput({ ...customParamNameInput, [cIdx]: e.target.value })}
+                                                                  value={customParameterNameInput[cIdx] || ''}
+                                                                  onChange={e => setCustomParameterNameInput({ ...customParameterNameInput, [cIdx]: e.target.value })}
                                                                   placeholder="Type custom parameter name..." 
                                                                   className="flex-1 p-1.5 bg-white border border-slate-200 rounded-lg text-xs outline-none font-bold"
                                                               />
                                                               <button type="button" onClick={() => {
-                                                                  const val = customParamNameInput[cIdx];
+                                                                  const val = customParameterNameInput[cIdx];
                                                                   if (!val || !val.trim()) return;
                                                                   const updatedCatItems = [...(cat.items || []), val.trim()];
                                                                   const updatedDetailed = [...editingPackage.detailedParameters];
                                                                   updatedDetailed[cIdx] = { ...cat, items: updatedCatItems };
                                                                   setEditingPackage({ ...editingPackage, detailedParameters: updatedDetailed });
-                                                                  setSelectedParamAtom({ ...selectedParamAtom, [cIdx]: '' });
-                                                                  setCustomParamNameInput({ ...customParamNameInput, [cIdx]: '' });
+                                                                  setSelectedParameterAtom({ ...selectedParameterAtom, [cIdx]: '' });
+                                                                  setCustomParameterNameInput({ ...customParameterNameInput, [cIdx]: '' });
                                                               }} className="bg-teal-900 text-yellow-400 px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer">Add Custom</button>
                                                           </div>
                                                       )}
