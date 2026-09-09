@@ -712,7 +712,7 @@
                       else if (i === 4) tierPrice = d;
                       else tierPrice = e;
 
-                      totalPrice += tierPrice;
+                      totalPrice = membersCount*tierPrice;
                   }
                   const totalMrp = baseMrp * membersCount;
                   const unitPrice = Math.round(totalPrice / membersCount);
