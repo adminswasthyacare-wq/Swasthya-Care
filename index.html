@@ -21,6 +21,16 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; }
+        /* High contrast text selection styling to prevent blending with dark/green backgrounds */
+        ::selection {
+            background-color: #facc15;
+            color: #022c22;
+        }
+        ::-moz-selection {
+            background-color: #facc15;
+            color: #022c22;
+        }
+
         @keyframes zoomIn { from { transform: scale(0.9); opacity: 0.7; } to { transform: scale(1.1); opacity: 1; } }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         @keyframes ping { 0% { transform: scale(1); opacity: 1; } 75%, 100% { transform: scale(1.5); opacity: 0; } }
@@ -62,7 +72,7 @@
         }
     </style>
 </head>
-<body class="bg-slate-50 font-sans text-slate-800 selection:bg-teal-200 flex flex-col min-h-screen">
+<body class="bg-slate-50 font-sans text-slate-800 flex flex-col min-h-screen">
     <div id="root"></div>
 
     <script type="text/babel">
@@ -669,9 +679,9 @@
 
           const getMemberCount = (pkgId) => packageMembers[pkgId] || 1;
 
-          // Pricing formula rule:
-          // Wellness Bundle uses multi-member tier discount formula (a = p, b = a-14.75%, c = b-7.25%, d = c-4.25%, e = d)
-          // Lab Atoms and Organ Health use n * p formula
+          // Wellness bundle pricing formula:
+          // a = p, b = a - 14.75%, c = b - 7.25%, d = c - 4.25%, e = d.
+          // Lab Atoms and Organ Health use n * p formula.
           const getPricingForMembers = (pkg, membersCount) => {
               const p = pkg.price;
               const baseMrp = pkg.mrp || Math.round(p * 2.5);
@@ -679,16 +689,22 @@
 
               if (pkg.dealType === 'Wellness Bundle') {
                   let totalPrice = 0;
-                  let currentPerPerson = p; // a
+                  let a = p;
+                  let b = Math.round(a * (1 - 0.1475));
+                  let c = Math.round(b * (1 - 0.0725));
+                  let d = Math.round(c * (1 - 0.0425));
+                  let e = d;
+
                   for (let i = 1; i <= membersCount; i++) {
-                      if (i === 2) currentPerPerson = Math.round(currentPerPerson * (1 - 0.1475)); // b
-                      else if (i === 3) currentPerPerson = Math.round(currentPerPerson * (1 - 0.0725)); // c
-                      else if (i >= 4) currentPerPerson = Math.round(currentPerPerson * (1 - 0.0425)); // d & e
-                      totalPrice += currentPerPerson;
+                      if (i === 1) totalPrice += a;
+                      else if (i === 2) totalPrice += b;
+                      else if (i === 3) totalPrice += c;
+                      else if (i === 4) totalPrice += d;
+                      else totalPrice += e;
                   }
                   const totalMrp = baseMrp * membersCount;
                   const unitPrice = Math.round(totalPrice / membersCount);
-                  return { price: totalPrice, mrp: totalMrp, perPerson: unitPrice };
+                  return { price: Math.round(totalPrice), mrp: totalMrp, perPerson: unitPrice };
               } else {
                   const totalPrice = p * membersCount;
                   const totalMrp = baseMrp * membersCount;
@@ -967,11 +983,9 @@
                   if (aiReply) {
                       setMessages(prev => [...prev, { role: 'model', text: aiReply }]);
                   } else {
-                      // Robust Local Fallback when API key is empty or returns no result
                       generateLocalAiResponse(text);
                   }
               } catch (error) {
-                  // Robust Local Fallback on network/API error
                   generateLocalAiResponse(text);
               } finally {
                   setIsAILoading(false);
@@ -985,7 +999,7 @@
                   if (q.includes('fever') || q.includes('infection')) matched = packages.filter(p => p.name.includes('BASIC') || p.name.includes('COMPLETE'));
                   else if (q.includes('joint') || q.includes('bone') || q.includes('arthritis')) matched = packages.filter(p => p.name.includes('Arthritis'));
                   else if (q.includes('sugar') || q.includes('diabetes') || q.includes('lipid')) matched = packages.filter(p => p.name.includes('ADVANCE') || p.name.includes('PREMIUM'));
-                  else matched = [packages[0], packages[6]]; // Default recommendations
+                  else matched = [packages[0], packages[6]];
               }
               const bestPkg = matched[0] || packages[0];
               const testsCount = bestPkg.detailedParameters ? bestPkg.detailedParameters.length : 1;
@@ -1212,7 +1226,7 @@
           };
 
           return (
-              <div className="min-h-screen bg-slate-50 font-sans text-slate-800 selection:bg-teal-200 flex flex-col">
+              <div className="min-h-screen bg-slate-50 font-sans text-slate-800 flex flex-col">
                   {/* Toast Notification Banner */}
                   {toastMessage && (
                       <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 bg-teal-900 text-yellow-400 px-6 py-3 rounded-2xl shadow-2xl border-2 border-yellow-400 font-bold text-xs animate-in slide-in-from-top-4 duration-300">
@@ -1289,7 +1303,7 @@
                                               
                                               {/* Thyroid */}
                                               {(() => {
-                                                  const isDimmed = (selectedBodyPartsFilter.length > 0 && !selectedBodyPartsFilter.includes('thyroid')) && activeBodyPart !== 'thyroid';
+                                                  const isDimmed = selectedBodyPartsFilter.length > 0 && !selectedBodyPartsFilter.includes('thyroid') && activeBodyPart !== 'thyroid';
                                                   return (
                                                       <g className={`cursor-pointer transition-all duration-300 pointer-events-auto ${isDimmed ? 'opacity-20 filter blur-[0.5px]' : 'opacity-100'}`} onMouseEnter={() => setActiveBodyPart('thyroid')} onMouseLeave={() => setActiveBodyPart(null)} onClick={() => toggleBodyPartFilter('thyroid')}>
                                                           <path d="M142 105 Q150 100 158 105 Q162 112 154 116 Q150 112 146 116 Q138 112 142 105 Z" fill="#0284c7" stroke="#0369a1" strokeWidth="1.5" />
@@ -1299,7 +1313,7 @@
 
                                               {/* Heart */}
                                               {(() => {
-                                                  const isDimmed = (selectedBodyPartsFilter.length > 0 && !selectedBodyPartsFilter.includes('cardiovascular')) && activeBodyPart !== 'cardiovascular';
+                                                  const isDimmed = selectedBodyPartsFilter.length > 0 && !selectedBodyPartsFilter.includes('cardiovascular') && activeBodyPart !== 'cardiovascular';
                                                   return (
                                                       <g className={`cursor-pointer transition-all duration-300 pointer-events-auto ${isDimmed ? 'opacity-20 filter blur-[0.5px]' : 'opacity-100'}`} onMouseEnter={() => setActiveBodyPart('cardiovascular')} onMouseLeave={() => setActiveBodyPart(null)} onClick={() => toggleBodyPartFilter('cardiovascular')}>
                                                           <path d="M150 176 C144 168 136 178 140 186 C146 196 150 204 150 204 C150 204 154 196 160 186 C164 178 156 168 150 176 Z" fill="#e11d48" stroke="#be123c" strokeWidth="1.5" />
@@ -1309,7 +1323,7 @@
 
                                               {/* Kidneys */}
                                               {(() => {
-                                                  const isDimmed = (selectedBodyPartsFilter.length > 0 && !selectedBodyPartsFilter.includes('kidney')) && activeBodyPart !== 'kidney';
+                                                  const isDimmed = selectedBodyPartsFilter.length > 0 && !selectedBodyPartsFilter.includes('kidney') && activeBodyPart !== 'kidney';
                                                   return (
                                                       <g className={`cursor-pointer transition-all duration-300 pointer-events-auto ${isDimmed ? 'opacity-20 filter blur-[0.5px]' : 'opacity-100'}`} onMouseEnter={() => setActiveBodyPart('kidney')} onMouseLeave={() => setActiveBodyPart(null)} onClick={() => toggleBodyPartFilter('kidney')}>
                                                           <path d="M124 238 C116 238 112 254 122 260 C128 260 132 248 124 238 Z" fill="#7e22ce" stroke="#581c87" strokeWidth="1.5" />
@@ -1320,7 +1334,7 @@
 
                                               {/* Liver */}
                                               {(() => {
-                                                  const isDimmed = (selectedBodyPartsFilter.length > 0 && !selectedBodyPartsFilter.includes('liver')) && activeBodyPart !== 'liver';
+                                                  const isDimmed = selectedBodyPartsFilter.length > 0 && !selectedBodyPartsFilter.includes('liver') && activeBodyPart !== 'liver';
                                                   return (
                                                       <g className={`cursor-pointer transition-all duration-300 pointer-events-auto ${isDimmed ? 'opacity-20 filter blur-[0.5px]' : 'opacity-100'}`} onMouseEnter={() => setActiveBodyPart('liver')} onMouseLeave={() => setActiveBodyPart(null)} onClick={() => toggleBodyPartFilter('liver')}>
                                                           <path d="M138 202 C164 198 178 212 172 228 C158 234 134 220 138 202 Z" fill="#b91c1c" stroke="#991b1b" strokeWidth="1.5" />
@@ -1330,7 +1344,7 @@
 
                                               {/* Bones / Joints */}
                                               {(() => {
-                                                  const isDimmed = (selectedBodyPartsFilter.length > 0 && !selectedBodyPartsFilter.includes('bone')) && activeBodyPart !== 'bone';
+                                                  const isDimmed = selectedBodyPartsFilter.length > 0 && !selectedBodyPartsFilter.includes('bone') && activeBodyPart !== 'bone';
                                                   return (
                                                       <g className={`cursor-pointer transition-all duration-300 pointer-events-auto ${isDimmed ? 'opacity-20 filter blur-[0.5px]' : 'opacity-100'}`} onMouseEnter={() => setActiveBodyPart('bone')} onMouseLeave={() => setActiveBodyPart(null)} onClick={() => toggleBodyPartFilter('bone')}>
                                                           <circle cx="88" cy="152" r="6" fill="#f59e0b" stroke="#d97706" strokeWidth="2" />
@@ -1343,7 +1357,7 @@
 
                                               {/* Reproductive / Hormones */}
                                               {(() => {
-                                                  const isDimmed = (selectedBodyPartsFilter.length > 0 && !selectedBodyPartsFilter.includes('hormone')) && activeBodyPart !== 'hormone';
+                                                  const isDimmed = selectedBodyPartsFilter.length > 0 && !selectedBodyPartsFilter.includes('hormone') && activeBodyPart !== 'hormone';
                                                   return (
                                                       <g className={`cursor-pointer transition-all duration-300 pointer-events-auto ${isDimmed ? 'opacity-20 filter blur-[0.5px]' : 'opacity-100'}`} onMouseEnter={() => setActiveBodyPart('hormone')} onMouseLeave={() => setActiveBodyPart(null)} onClick={() => toggleBodyPartFilter('hormone')}>
                                                           <ellipse cx="150" cy="302" rx="12" ry="9" fill="#ec4899" stroke="#db2777" strokeWidth="1.5" />
