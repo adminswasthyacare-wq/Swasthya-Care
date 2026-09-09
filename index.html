@@ -34,7 +34,6 @@
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
         @keyframes ping { 0% { transform: scale(1); opacity: 1; } 75%, 100% { transform: scale(1.5); opacity: 0; } }
         
-        /* 3D Perspective Carousel Styles */
         .carousel-3d-scene {
             perspective: 1400px;
             width: 100%;
@@ -425,6 +424,7 @@
           const [loaded, setLoaded] = useState(false);
           const [user, setUser] = useState(null);
           const [bookings, setBookings] = useState([]);
+          const [submittedBooking, setSubmittedBooking] = useState(null);
           
           const [cart, setCart] = useState(() => {
               const savedCart = localStorage.getItem('swasthya_cart_v10');
@@ -481,8 +481,8 @@
 
           const [selectedTestType, setSelectedTestType] = useState({});
           const [customTestNameInput, setCustomTestNameInput] = useState({});
-          const [selectedParameterAtom, setSelectedParameterAtom] = useState({});
-          const [customParameterNameInput, setCustomParameterNameInput] = useState({});
+          const [selectedParamAtom, setSelectedParamAtom] = useState({});
+          const [customParamNameInput, setCustomParamNameInput] = useState({});
 
           useEffect(() => {
               const rewardTimer = setInterval(() => {
@@ -669,7 +669,7 @@
 
           useEffect(() => {
               const timer = setTimeout(() => setLoaded(true), 100);
-              return () => clearTimeout(timer);
+              return () => clearInterval(timer);
           }, []);
 
           useEffect(() => {
@@ -688,6 +688,9 @@
 
           const getMemberCount = (pkgId) => packageMembers[pkgId] || 1;
 
+          // Wellness bundle pricing formula:
+          // a = p, b = a - 14.75%, c = b - 7.25%, d = c - 4.25%
+          // t = n * tier price
           const getPricingForMembers = (pkg, membersCount) => {
               const p = pkg.price;
               const baseMrp = pkg.mrp || Math.round(p * 2.5);
@@ -1020,9 +1023,9 @@
               }
               const bestPkg = matched[0] || packages[0];
               const testsCount = bestPkg.detailedParameters ? bestPkg.detailedParameters.length : 1;
-              const parametersCount = bestPkg.detailedParameters ? bestPkg.detailedParameters.reduce((acc, c) => acc + (c.items ? c.items.length : 0), 1) : 1;
+              const paramsCount = bestPkg.detailedParameters ? bestPkg.detailedParameters.reduce((acc, c) => acc + (c.items ? c.items.length : 0), 1) : 1;
               
-              const reply = `I recommend the ${bestPkg.name} for your health checkup. It includes ${testsCount} comprehensive tests and ${parametersCount} clinical parameters covering essential wellness markers. Price: ₹${bestPkg.price} (MRP: ₹${bestPkg.mrp})\n\n[ADD:${bestPkg.id}]`;
+              const reply = `I recommend the ${bestPkg.name} for your health checkup. It includes ${testsCount} comprehensive tests and ${paramsCount} clinical parameters covering essential wellness markers. Price: ₹${bestPkg.price} (MRP: ₹${bestPkg.mrp})\n\n[ADD:${bestPkg.id}]`;
               setMessages(prev => [...prev, { role: 'model', text: reply }]);
           };
 
@@ -1141,9 +1144,31 @@
                   }
               }
 
+              if (primaryBooking.preferredDate && primaryBooking.preferredTime) {
+                  const todayStr = new Date().toISOString().split('T')[0];
+                  if (primaryBooking.preferredDate === todayStr) {
+                      const timeParts = primaryBooking.preferredTime.split(':');
+                      let startHour = parseInt(timeParts[0], 10);
+                      if (primaryBooking.preferredTime.includes('PM') && startHour < 12) startHour += 12;
+                      if (primaryBooking.preferredTime.includes('AM') && startHour === 12) startHour = 0;
+                      
+                      const now = new Date();
+                      const nowHour = now.getHours();
+                      const nowMin = now.getMinutes();
+                      const slotStartMin = startHour * 60;
+                      const currentMin = nowHour * 60 + nowMin;
+
+                      if (slotStartMin <= currentMin + 240) {
+                          setToastMessage("⚠️ Please select a time slot at least 4 hours from current time.");
+                          setTimeout(() => setToastMessage(''), 3500);
+                          return;
+                      }
+                  }
+              }
+
               const totalAmount = calculateGrandTotal();
               const bookingData = {
-                  primaryBooking, cart, packageMembers, familyMembers, patientAssignments,
+                  primaryBooking, cart: [...cart], packageMembers: {...packageMembers}, familyMembers: [...familyMembers], patientAssignments: JSON.parse(JSON.stringify(patientAssignments)),
                   totalAmount, timestamp: Date.now(), status: 'New'
               };
 
@@ -1156,6 +1181,7 @@
               }
 
               setBookings(prev => [bookingData, ...prev]);
+              setSubmittedBooking(bookingData);
 
               try {
                   const params = new URLSearchParams();
@@ -1239,7 +1265,6 @@
 
           return (
               <div className="min-h-screen bg-slate-50 font-sans text-slate-800 flex flex-col">
-                  {/* Toast Notification Banner */}
                   {toastMessage && (
                       <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 bg-teal-900 text-yellow-400 px-6 py-3 rounded-2xl shadow-2xl border-2 border-yellow-400 font-bold text-xs animate-in slide-in-from-top-4 duration-300">
                           {toastMessage}
@@ -1297,7 +1322,7 @@
                                           type="text"
                                           value={testSearchQuery}
                                           onChange={(e) => setTestSearchQuery(e.target.value)}
-                                          placeholder="Search blood test (e.g. Lipid, Thyroid, CBC, Glucose, ESR)..."
+                                          placeholder="Search catalog by test, profile, or parameter (e.g. Lipid, Thyroid, Glucose, Bilirubin)..."
                                           className="w-full pl-11 pr-4 py-3 bg-white border border-teal-200 rounded-full shadow-sm focus:ring-2 focus:ring-teal-500 outline-none text-slate-700 font-medium"
                                       />
                                       {testSearchQuery && (
@@ -1306,7 +1331,7 @@
                                   </div>
                               </div>
 
-                              {/* Physiological Systems Map with Pathology Directory Mapping */}
+                              {/* Physiological Systems Map */}
                               <div className={`mb-16 bg-white rounded-3xl shadow-sm border border-slate-100 p-8 flex flex-col md:flex-row items-center gap-12 transition-all duration-1000 transform ${loaded ? 'translate-y-0 opacity-100' : 'translate-y-12 opacity-0'}`}>
                                   <div className="w-full md:w-5/12 flex justify-left relative">
                                       <div className="relative w-64 h-[480px] select-none bg-slate-50 rounded-2xl p-4 border border-slate-200 shadow-inner flex flex-col items-center justify-center">
@@ -1453,23 +1478,32 @@
                                           if (activeCategoryTab === 'health' && pkg.dealType !== 'Organ Health') return false;
                                           if (activeCategoryTab === 'bundles' && pkg.dealType !== 'Wellness Bundle') return false;
                                           
-                                          // Dynamic Pathology Directory & Organ System Matching
                                           const matchesBodyFilter = selectedBodyPartsFilter.length > 0 ? selectedBodyPartsFilter.some(part => {
                                               if (pkg.bodyParts && pkg.bodyParts.includes(part)) return true;
                                               const textDump = (pkg.name + " " + pkg.includes + " " + JSON.stringify(pkg.detailedParameters)).toLowerCase();
                                               if (part === 'thyroid' && (textDump.includes('thyroid') || textDump.includes('tsh') || textDump.includes('t3') || textDump.includes('t4'))) return true;
-                                              if (part === 'cardiovascular' && (textDump.includes('lipid') || textDump.includes('cholesterol') || textDump.includes('triglyceride') || textDump.includes('cardiac'))) return true;
+                                              if (part === 'cardiovascular' && (textDump.includes('lipid') || textDump.includes('cholesterol') || textDump.includes('triglyceride') || textDump.includes('cardiac') || textDump.includes('apolipoprotein'))) return true;
                                               if (part === 'kidney' && (textDump.includes('kft') || textDump.includes('kidney') || textDump.includes('bun') || textDump.includes('creatinine') || textDump.includes('urea'))) return true;
-                                              if (part === 'liver' && (textDump.includes('lft') || textDump.includes('liver') || textDump.includes('bilirubin') || textDump.includes('sgot') || textDump.includes('sgpt'))) return true;
-                                              if (part === 'bone' && (textDump.includes('bone') || textDump.includes('calcium') || textDump.includes('vitamin d') || textDump.includes('arthritis'))) return true;
-                                              if (part === 'blood' && (textDump.includes('cbc') || textDump.includes('hemoglobin') || textDump.includes('rbc') || textDump.includes('wbc') || textDump.includes('esr'))) return true;
-                                              if (part === 'immune' && (textDump.includes('crp') || textDump.includes('aso') || textDump.includes('immunoglobulin'))) return true;
-                                              if (part === 'metabolic' && (textDump.includes('glucose') || textDump.includes('hba1c') || textDump.includes('sugar') || textDump.includes('diabetes'))) return true;
-                                              if (part === 'hormone' && (textDump.includes('hormone') || textDump.includes('testosterone') || textDump.includes('fsh') || textDump.includes('lh'))) return true;
+                                              if (part === 'liver' && (textDump.includes('lft') || textDump.includes('liver') || textDump.includes('bilirubin') || textDump.includes('sgot') || textDump.includes('sgpt') || textDump.includes('alkaline phosphatase'))) return true;
+                                              if (part === 'bone' && (textDump.includes('bone') || textDump.includes('calcium') || textDump.includes('vitamin d') || textDump.includes('arthritis') || textDump.includes('uric acid') || textDump.includes('phosphorus'))) return true;
+                                              if (part === 'blood' && (textDump.includes('cbc') || textDump.includes('hemoglobin') || textDump.includes('rbc') || textDump.includes('wbc') || textDump.includes('esr') || textDump.includes('platelet'))) return true;
+                                              if (part === 'immune' && (textDump.includes('crp') || textDump.includes('aso') || textDump.includes('immunoglobulin') || textDump.includes('hiv') || textDump.includes('hepatitis'))) return true;
+                                              if (part === 'metabolic' && (textDump.includes('glucose') || textDump.includes('hba1c') || textDump.includes('sugar') || textDump.includes('diabetes') || textDump.includes('amylase'))) return true;
+                                              if (part === 'hormone' && (textDump.includes('hormone') || textDump.includes('testosterone') || textDump.includes('fsh') || textDump.includes('lh') || textDump.includes('prolactin') || textDump.includes('hpv') || textDump.includes('pap smear'))) return true;
                                               return false;
                                           }) : true;
 
-                                          const matchesSearchQuery = testSearchQuery ? pkg.name.toLowerCase().includes(testSearchQuery.toLowerCase()) : true;
+                                          const matchesSearchQuery = testSearchQuery ? (() => {
+                                              const query = testSearchQuery.toLowerCase();
+                                              const nameMatch = pkg.name.toLowerCase().includes(query);
+                                              const includesMatch = pkg.includes && pkg.includes.toLowerCase().includes(query);
+                                              const paramMatch = pkg.detailedParameters && pkg.detailedParameters.some(cat => 
+                                                  cat.category.toLowerCase().includes(query) || 
+                                                  (cat.items && cat.items.some(item => item.toLowerCase().includes(query)))
+                                              );
+                                              return nameMatch || includesMatch || paramMatch;
+                                          })() : true;
+
                                           const isHighlighted = activeBodyPart ? pkg.bodyParts.includes(activeBodyPart) : true;
                                           return matchesBodyFilter && matchesSearchQuery && isHighlighted;
                                       })
@@ -1501,7 +1535,7 @@
                                                           {calculatedTests} Tests
                                                       </div>
                                                       <button onClick={() => setSelectedPackageModal(pkg)} className="absolute bottom-3 right-3 bg-teal-900/95 hover:bg-teal-950 backdrop-blur-sm px-2.5 py-1 rounded-lg text-xs font-bold text-yellow-400 shadow transition-transform hover:scale-105 flex items-center space-x-1 cursor-pointer">
-                                                          <span>{calculatedParameters} Parameters</span>
+                                                          <span>{calculatedParameters} parameters</span>
                                                           <Icon name="info" className="w-3 h-3 ml-0.5 text-yellow-400" />
                                                       </button>
                                                   </div>
@@ -1594,7 +1628,6 @@
                                       </div>
                                   </div>
 
-                                  {/* Carousel Controls & Pagination Dots */}
                                   <div className="flex flex-col items-center mt-6 space-y-4">
                                       <div className="flex space-x-3">
                                           <button 
@@ -1928,26 +1961,32 @@
                           </div>
                       )}
 
-                      {view === 'success' && (
+                      {view === 'success' && submittedBooking && (
                           <div className="max-w-2xl mx-auto px-4 py-20 text-center animate-in zoom-in duration-500">
                               <div className="inline-flex items-center justify-center w-24 h-24 bg-teal-100 rounded-full mb-8">
                                   <Icon name="check" className="w-12 h-12 text-teal-600" />
                               </div>
                               <h2 className="text-4xl font-extrabold text-teal-950 mb-4">Booking Confirmed!</h2>
-                              <p className="text-lg text-slate-600 mb-8">Thank you, <span className="font-bold text-teal-800">{primaryBooking.name}</span>. Your home sample collection has been scheduled.</p>
+                              <p className="text-lg text-slate-600 mb-8">Thank you, <span className="font-bold text-teal-800">{submittedBooking.primaryBooking.name}</span>. Your home sample collection has been scheduled.</p>
                               
                               <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 mb-8 text-left space-y-4">
                                   <h3 className="font-extrabold text-teal-950 border-b pb-2">Patient Test & Price Breakdown</h3>
                                   
                                   {/* Primary Member Breakdown */}
                                   <div className="bg-teal-50/70 p-4 rounded-2xl border border-teal-200">
-                                      <p className="font-extrabold text-teal-950 text-sm">👤 Primary Member: {primaryBooking.name} ({primaryBooking.gender}, {primaryBooking.age} yrs)</p>
+                                      <p className="font-extrabold text-teal-950 text-sm">👤 Primary Member: {submittedBooking.primaryBooking.name} ({submittedBooking.primaryBooking.gender}, {submittedBooking.primaryBooking.age} yrs)</p>
                                       <div className="mt-2 space-y-1">
-                                          {(patientAssignments['primary'] || []).map(pkgId => {
+                                          {(submittedBooking.patientAssignments['primary'] || []).map(pkgId => {
                                               const pkg = packages.find(p => p.id === Number(pkgId));
                                               if (!pkg) return null;
-                                              const totalAssigned = getAssignedCountForPackage(pkgId);
-                                              const unitPrice = Math.round(getPricingForMembers(pkg, Math.max(1, totalAssigned)).price / Math.max(1, totalAssigned));
+                                              const assignedCount = 0;
+                                              let count = 0;
+                                              if ((submittedBooking.patientAssignments['primary'] || []).includes(pkgId)) count++;
+                                              (submittedBooking.familyMembers || []).forEach(m => {
+                                                  if ((submittedBooking.patientAssignments[m.id] || []).includes(pkgId)) count++;
+                                              });
+                                              const pricingObj = getPricingForMembers(pkg, Math.max(1, count));
+                                              const unitPrice = Math.round(pricingObj.price / Math.max(1, count));
                                               return (
                                                   <div key={pkgId} className="flex justify-between items-center text-xs text-slate-700 bg-white p-2 rounded-xl border border-teal-100">
                                                       <span className="font-bold">{pkg.name}</span>
@@ -1959,8 +1998,8 @@
                                   </div>
 
                                   {/* Family Members Breakdown */}
-                                  {familyMembers.map((m, idx) => {
-                                      const assigned = patientAssignments[m.id] || [];
+                                  {submittedBooking.familyMembers.map((m, idx) => {
+                                      const assigned = submittedBooking.patientAssignments[m.id] || [];
                                       const memberNum = idx + 2;
                                       return (
                                           <div key={m.id} className="bg-slate-50 p-4 rounded-2xl border border-slate-200">
@@ -1969,8 +2008,13 @@
                                                   {assigned.map(pkgId => {
                                                       const pkg = packages.find(p => p.id === Number(pkgId));
                                                       if (!pkg) return null;
-                                                      const totalAssigned = getAssignedCountForPackage(pkgId);
-                                                      const unitPrice = Math.round(getPricingForMembers(pkg, Math.max(1, totalAssigned)).price / Math.max(1, totalAssigned));
+                                                      let count = 0;
+                                                      if ((submittedBooking.patientAssignments['primary'] || []).includes(pkgId)) count++;
+                                                      (submittedBooking.familyMembers || []).forEach(fm => {
+                                                          if ((submittedBooking.patientAssignments[fm.id] || []).includes(pkgId)) count++;
+                                                      });
+                                                      const pricingObj = getPricingForMembers(pkg, Math.max(1, count));
+                                                      const unitPrice = Math.round(pricingObj.price / Math.max(1, count));
                                                       return (
                                                           <div key={pkgId} className="flex justify-between items-center text-xs text-slate-700 bg-white p-2 rounded-xl border border-slate-200">
                                                               <span className="font-bold">{pkg.name}</span>
@@ -1983,7 +2027,7 @@
                                       );
                                   })}
 
-                                  {calculateSubtotal() > 0 && calculateSubtotal() <= 500 && (
+                                  {submittedBooking.totalAmount <= 500 && (
                                       <div className="flex justify-between items-center text-xs text-slate-700 bg-slate-100 p-2 rounded-xl">
                                           <span className="font-bold">Consumables and Transportation Charges</span>
                                           <span className="font-extrabold text-slate-800">₹150</span>
@@ -1992,7 +2036,7 @@
 
                                   <div className="border-t pt-3 flex justify-between items-center font-extrabold text-base text-teal-950">
                                       <span>Total Amount Payable:</span>
-                                      <span className="text-teal-700 text-xl">₹{calculateGrandTotal()}</span>
+                                      <span className="text-teal-700 text-xl">₹{submittedBooking.totalAmount}</span>
                                   </div>
                               </div>
 
@@ -2133,7 +2177,7 @@
                                                           </td>
                                                           <td className="p-4 font-bold text-teal-900">
                                                               {pkg.name}
-                                                              <span className="block text-[10px] text-slate-400 font-normal">{calcTests} Tests • {calcParams} Parameters</span>
+                                                              <span className="block text-[10px] text-slate-400 font-normal">{calcTests} Tests • {calcParams} parameters</span>
                                                           </td>
                                                           <td className="p-4">
                                                               <span className="px-2.5 py-1 rounded-full text-[10px] font-extrabold border bg-teal-100 text-teal-900 border-teal-200">
@@ -2391,19 +2435,19 @@
 
                                                   <div className="flex flex-col gap-2 pt-2 border-t border-slate-100">
                                                       <select
-                                                          value={selectedParameterAtom[cIdx] || ''}
+                                                          value={selectedParamAtom[cIdx] || ''}
                                                           onChange={e => {
                                                               const val = e.target.value;
                                                               if (!val) return;
                                                               if (val === 'OTHER_CUSTOM') {
-                                                                  setSelectedParameterAtom({ ...selectedParameterAtom, [cIdx]: 'OTHER_CUSTOM' });
+                                                                  setSelectedParamAtom({ ...selectedParamAtom, [cIdx]: 'OTHER_CUSTOM' });
                                                                   return;
                                                               }
                                                               const updatedCatItems = [...(cat.items || []), val];
                                                               const updatedDetailed = [...editingPackage.detailedParameters];
                                                               updatedDetailed[cIdx] = { ...cat, items: updatedCatItems };
                                                               setEditingPackage({ ...editingPackage, detailedParameters: updatedDetailed });
-                                                              setSelectedParameterAtom({ ...selectedParameterAtom, [cIdx]: '' });
+                                                              setSelectedParamAtom({ ...selectedParamAtom, [cIdx]: '' });
                                                           }}
                                                           className="w-full p-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs outline-none cursor-pointer"
                                                       >
@@ -2431,24 +2475,24 @@
                                                           ))}
                                                       </select>
 
-                                                      {selectedParameterAtom[cIdx] === 'OTHER_CUSTOM' && (
+                                                      {selectedParamAtom[cIdx] === 'OTHER_CUSTOM' && (
                                                           <div className="flex gap-2 mt-1">
                                                               <input 
                                                                   type="text" 
-                                                                  value={customParameterNameInput[cIdx] || ''}
-                                                                  onChange={e => setCustomParameterNameInput({ ...customParameterNameInput, [cIdx]: e.target.value })}
+                                                                  value={customParamNameInput[cIdx] || ''}
+                                                                  onChange={e => setCustomParamNameInput({ ...customParamNameInput, [cIdx]: e.target.value })}
                                                                   placeholder="Type custom parameter name..." 
                                                                   className="flex-1 p-1.5 bg-white border border-slate-200 rounded-lg text-xs outline-none font-bold"
                                                               />
                                                               <button type="button" onClick={() => {
-                                                                  const val = customParameterNameInput[cIdx];
+                                                                  const val = customParamNameInput[cIdx];
                                                                   if (!val || !val.trim()) return;
                                                                   const updatedCatItems = [...(cat.items || []), val.trim()];
                                                                   const updatedDetailed = [...editingPackage.detailedParameters];
                                                                   updatedDetailed[cIdx] = { ...cat, items: updatedCatItems };
                                                                   setEditingPackage({ ...editingPackage, detailedParameters: updatedDetailed });
-                                                                  setSelectedParameterAtom({ ...selectedParameterAtom, [cIdx]: '' });
-                                                                  setCustomParameterNameInput({ ...customParameterNameInput, [cIdx]: '' });
+                                                                  setSelectedParamAtom({ ...selectedParamAtom, [cIdx]: '' });
+                                                                  setCustomParamNameInput({ ...customParamNameInput, [cIdx]: '' });
                                                               }} className="bg-teal-900 text-yellow-400 px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer">Add Custom</button>
                                                           </div>
                                                       )}
