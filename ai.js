@@ -1,590 +1,395 @@
-/**
- * PathoDiagnostic Engine - Symptom & Exposure to Clinical Parameter Engine
- * Maps user queries (slang, vulgar, medical, physical, sexual, biological)
- * directly to required clinical diagnostic PARAMETERS and ANALYTES so an AI chatbot
- * can search and match them against a custom laboratory test catalog.
- */
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pathology AI Smart Snippet Expander (Local Client-Side)</title>
+    <!-- Tailwind CSS for modern, clean UI design -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons for professional UI iconography -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans antialiased min-h-screen flex flex-col">
 
-class PathoLexiconEngine {
-    constructor() {
-        // Diagnostic Parameters & Analytes Database mapped from Symptoms and Exposures
-        this.symptomParameterMapping = {
-            // --- SEXUAL EXPOSURES & VULGAR PHRASING ---
-            "anal sex": {
-                requiredParameters: [
-                    "Rectal Chlamydia trachomatis DNA PCR",
-                    "Rectal Neisseria gonorrhoeae DNA PCR",
-                    "HIV 1/2 Ag/Ab Combo (4th Gen)",
-                    "Syphilis Treponema Antibody / RPR",
-                    "Hepatitis B Surface Antigen (HBsAg)",
-                    "Hepatitis C Antibody",
-                    "Fecal Occult Blood / FIT"
-                ],
-                specimenTypes: ["Rectal Swab", "Venous Serum (Blood)", "Stool Sample"],
-                urgency: "Medium",
-                rationale: "Receptive/insertive anal exposure requires rectal NAAT PCR for localized bacterial proctitis pathogens, serological screening for bloodborne viruses, and fecal hemoglobin check for mucosal trauma."
-            },
-            "ass fuck": {
-                requiredParameters: [
-                    "Rectal Chlamydia trachomatis DNA PCR",
-                    "Rectal Neisseria gonorrhoeae DNA PCR",
-                    "HIV 1/2 Ag/Ab Combo",
-                    "Syphilis RPR / TPHA",
-                    "Fecal Hemoglobin Immunoassay"
-                ],
-                specimenTypes: ["Rectal Swab", "Venous Serum (Blood)", "Stool Sample"],
-                urgency: "Medium",
-                rationale: "Requires rectal multiplex NAAT screening for rectal STIs, serological bloodborne virus panel, and occult blood testing if trauma or rectal bleeding occurred."
-            },
-            "butt sex": {
-                requiredParameters: [
-                    "Rectal Chlamydia trachomatis DNA PCR",
-                    "Rectal Neisseria gonorrhoeae DNA PCR",
-                    "HIV 1/2 Ag/Ab Combo",
-                    "Syphilis Treponemal Antibodies",
-                    "Fecal Occult Blood"
-                ],
-                specimenTypes: ["Rectal Swab", "Venous Serum (Blood)", "Stool Sample"],
-                urgency: "Medium",
-                rationale: "Anal mucosal exposure warrants targeted rectal mucosal swabs, bloodborne serology, and fecal hemoglobin evaluation."
-            },
+    <!-- Header -->
+    <header class="border-b border-slate-800 bg-slate-900/50 backdrop-blur sticky top-0 z-30">
+        <div class="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="p-2 bg-indigo-600/20 border border-indigo-500/30 rounded-lg text-indigo-400">
+                    <i data-lucide="cpu" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h1 class="font-semibold text-lg tracking-tight">PathoExpand AI</h1>
+                    <p class="text-xs text-slate-400">Local In-Browser Semantic Text Expander (Transformers.js)</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2">
+                <span id="system-status-badge" class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                    <span class="w-2 h-2 mr-2 rounded-full bg-amber-400 animate-pulse"></span>
+                    Initializing Engine...
+                </span>
+            </div>
+        </div>
+    </header>
 
-            "oral sex": {
-                requiredParameters: [
-                    "Pharyngeal Chlamydia trachomatis DNA PCR",
-                    "Pharyngeal Neisseria gonorrhoeae DNA PCR",
-                    "HSV-1 & HSV-2 DNA PCR"
-                ],
-                specimenTypes: ["Pharyngeal (Throat) Swab", "Oral Lesion Swab"],
-                urgency: "Low",
-                rationale: "Orogenital exposure requires throat NAAT PCR testing for pharyngeal gonorrhea/chlamydia and viral DNA PCR if oral ulcers/cold sores develop."
-            },
-            "blowjob": {
-                requiredParameters: [
-                    "Pharyngeal / Urethral Chlamydia trachomatis PCR",
-                    "Pharyngeal / Urethral Neisseria gonorrhoeae PCR",
-                    "HSV-1 & HSV-2 DNA PCR"
-                ],
-                specimenTypes: ["Pharyngeal Swab", "First-Catch Urine", "Lesion Swab"],
-                urgency: "Low",
-                rationale: "Oral-penile exposure warrants upper mucosal swab or urine NAAT and lesion viral typing if vesicular bumps are present."
-            },
-            "eating out": {
-                requiredParameters: [
-                    "Pharyngeal Chlamydia trachomatis PCR",
-                    "Pharyngeal Neisseria gonorrhoeae PCR",
-                    "HSV-1 / HSV-2 DNA PCR"
-                ],
-                specimenTypes: ["Pharyngeal Swab", "Vulvar / Mucosal Swab"],
-                urgency: "Low",
-                rationale: "Orovaginal exposure indicates checking mucosal pharyngeal NAAT and herpes viral DNA."
-            },
-            "unprotected sex": {
-                requiredParameters: [
-                    "Chlamydia trachomatis DNA PCR",
-                    "Neisseria gonorrhoeae DNA PCR",
-                    "Trichomonas vaginalis DNA PCR",
-                    "Mycoplasma genitalium DNA PCR",
-                    "Ureaplasma urealyticum PCR",
-                    "HIV 1/2 Ag/Ab Combo (4th Gen)",
-                    "Syphilis RPR / TPHA",
-                    "Hepatitis B Surface Antigen (HBsAg)",
-                    "Hepatitis C Antibody",
-                    "HPV High-Risk Genotypes (16, 18, 45, etc.)"
-                ],
-                specimenTypes: ["First-Catch Urine", "Genital Swab", "Venous Serum (Blood)"],
-                urgency: "High",
-                rationale: "Barrierless sexual exposure mandates comprehensive multiplex NAAT PCR for bacterial pathogens, high-risk oncogenic HPV, and full bloodborne serology."
-            },
+    <!-- Main Application Layout -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-6 grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- Left 2 Columns: Editor Workstation -->
+        <section class="lg:col-span-2 flex flex-col space-y-4">
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 flex-1 flex flex-col shadow-xl">
+                <div class="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
+                    <div class="flex items-center space-x-2">
+                        <i data-lucide="file-text" class="w-4 h-4 text-slate-400"></i>
+                        <span class="text-sm font-medium text-slate-300">Clinical Consultation Notes</span>
+                    </div>
+                    <div class="text-xs text-slate-400 flex items-center space-x-1">
+                        <i data-lucide="info" class="w-3.5 h-3.5 text-indigo-400"></i>
+                        <span>Type <code class="bg-slate-800 text-indigo-300 px-1.5 py-0.5 rounded">/symptoms [text]</code> + <code class="bg-slate-800 text-indigo-300 px-1.5 py-0.5 rounded">Space</code></span>
+                    </div>
+                </div>
 
-            // --- GYNECOLOGICAL, VAGINAL & ANATOMICAL SYMPTOMS ---
-            "pussy": {
-                requiredParameters: [
-                    "Wet Mount Microscopy (Clue Cells, Trichomonads, Yeast)",
-                    "Gram Stain Nugent Score (Bacterial Vaginosis)",
-                    "Candida Fungal Culture & KOH Prep",
-                    "Chlamydia / Gonorrhea NAAT PCR",
-                    "Urinalysis Leukocyte Esterase & Nitrite"
-                ],
-                specimenTypes: ["Vaginal Swab", "Clean-Catch Urine"],
-                urgency: "Low",
-                rationale: "General female genital symptoms require vaginal microflora analysis, wet mount microscopy, STI NAAT, and urinary infection screening."
-            },
-            "vagina": {
-                requiredParameters: [
-                    "Wet Mount Microscopy",
-                    "Gram Stain Nugent Score",
-                    "Candida Culture & KOH Prep",
-                    "Chlamydia / Gonorrhea NAAT PCR"
-                ],
-                specimenTypes: ["Vaginal / Cervical Swab"],
-                urgency: "Low",
-                rationale: "Vaginal discomfort indicates evaluating microflora balance, fungal yeast overgrowth, and bacterial STI screening."
-            },
-            "pussy hurting": {
-                requiredParameters: [
-                    "Wet Mount Microscopy",
-                    "Gram Stain Nugent Score",
-                    "Chlamydia / Gonorrhea NAAT PCR",
-                    "HSV-1 & HSV-2 DNA PCR",
-                    "High-Sensitivity C-Reactive Protein (hs-CRP)",
-                    "Erythrocyte Sedimentation Rate (ESR)"
-                ],
-                specimenTypes: ["Vaginal Swab", "Cutaneous Swab", "Venous Serum"],
-                urgency: "Medium",
-                rationale: "Vulvovaginal pain requires differential testing for vaginitis, acute STI ulcers, herpes viral outbreaks, and inflammatory markers (hs-CRP/ESR) for pelvic infection."
-            },
-            "vaginal pain": {
-                requiredParameters: [
-                    "Wet Mount Microscopy",
-                    "Gram Stain Nugent Score",
-                    "Chlamydia / Gonorrhea / Trichomonas NAAT",
-                    "hs-CRP",
-                    "ESR",
-                    "Creatine Kinase Total (CK / CPK)"
-                ],
-                specimenTypes: ["Vaginal Swab", "Venous Serum"],
-                urgency: "Medium",
-                rationale: "Indicates evaluating infectious vaginitis, pelvic inflammatory disease markers (hs-CRP/ESR), and muscle enzymes for pelvic floor muscle hypertonicity."
-            },
-            "vaginismus": {
-                requiredParameters: [
-                    "Creatine Kinase Total (CK / CPK)",
-                    "Lactate Dehydrogenase (LDH)",
-                    "Serum Electrolyte Panel (Calcium, Magnesium, Potassium, Sodium)",
-                    "Wet Mount Microscopy",
-                    "Gram Stain Nugent Score"
-                ],
-                specimenTypes: ["Venous Serum", "Vaginal Swab"],
-                urgency: "Medium",
-                rationale: "Involuntary pelvic muscle constriction requires assessing muscle damage/hypertonicity enzymes (CK/LDH) and serum electrolytes while ruling out mucosal vaginitis."
-            },
-            "muscle contraction": {
-                requiredParameters: [
-                    "Creatine Kinase Total (CK / CPK)",
-                    "Lactate Dehydrogenase (LDH)",
-                    "Serum Myoglobin",
-                    "Calcium (Ionized & Total)",
-                    "Magnesium",
-                    "Potassium & Sodium"
-                ],
-                specimenTypes: ["Venous Serum"],
-                urgency: "Medium",
-                rationale: "Severe muscular spasm or localized tightness requires evaluating serum muscle enzymes (CK/LDH/Myoglobin) and intracellular electrolyte balance."
-            },
-            "tight vagina": {
-                requiredParameters: [
-                    "Creatine Kinase Total (CK / CPK)",
-                    "Electrolyte Panel (Magnesium, Calcium)",
-                    "Wet Mount Microscopy"
-                ],
-                specimenTypes: ["Venous Serum", "Vaginal Swab"],
-                urgency: "Low",
-                rationale: "Pelvic tightness or spasm suggests checking muscle enzymes, serum electrolytes, and underlying vaginal mucosal inflammation."
-            },
-            "vaginal discharge": {
-                requiredParameters: [
-                    "Gram Stain Nugent Score (BV)",
-                    "Wet Mount Clue Cells & Trichomonads",
-                    "Candida Fungal Culture & KOH Prep",
-                    "Chlamydia trachomatis PCR",
-                    "Neisseria gonorrhoeae PCR",
-                    "Trichomonas vaginalis PCR"
-                ],
-                specimenTypes: ["Vaginal Swab", "Cervical Swab"],
-                urgency: "High",
-                rationale: "Abnormal discharge mandates immediate Gram stain Nugent scoring, fungal microscopy, and molecular PCR testing for bacterial and protozoal pathogens."
-            },
-            "pussy discharge": {
-                requiredParameters: [
-                    "Gram Stain Nugent Score",
-                    "Wet Mount Microscopy",
-                    "Chlamydia trachomatis PCR",
-                    "Neisseria gonorrhoeae PCR",
-                    "Mycoplasma genitalium PCR"
-                ],
-                specimenTypes: ["Vaginal / Genital Swab"],
-                urgency: "High",
-                rationale: "Genital fluid discharge requires microbiological microscopy and molecular multiplex PCR testing for Gonorrhea, Chlamydia, and BV."
-            },
-            "smelly vagina": {
-                requiredParameters: [
-                    "Gram Stain Nugent Score (BV)",
-                    "Vaginal pH",
-                    "Amine Odor Test (Whiff Test)",
-                    "Trichomonas vaginalis PCR"
-                ],
-                specimenTypes: ["Vaginal Swab"],
-                urgency: "Medium",
-                rationale: "Foul or fishy vaginal odor requires Nugent score evaluation, pH assessment, and Trichomonas PCR."
-            },
-            "fishy odor": {
-                requiredParameters: [
-                    "Gram Stain Nugent Score",
-                    "Vaginal pH",
-                    "Amine Odor Test",
-                    "Clue Cell Microscopy"
-                ],
-                specimenTypes: ["Vaginal Swab"],
-                urgency: "Medium",
-                rationale: "Fishy genital odor is pathognomonic for Bacterial Vaginosis (BV), requiring Gram stain and clue cell detection."
-            },
-            "clumpy white discharge": {
-                requiredParameters: [
-                    "Candida Fungal Culture",
-                    "KOH Microscopic Prep (Pseudohyphae & Budding Yeast)",
-                    "Vaginal pH"
-                ],
-                specimenTypes: ["Vaginal Swab"],
-                urgency: "Low",
-                rationale: "Cottage cheese-like discharge indicates fungal Candida microscopic prep and fungal culture."
-            },
+                <!-- Textarea Workspace -->
+                <div class="relative flex-1 flex flex-col">
+                    <textarea 
+                        id="clinical-editor" 
+                        class="w-full flex-1 bg-slate-950 border border-slate-800 rounded-lg p-4 text-slate-200 placeholder-slate-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 resize-none font-mono text-sm leading-relaxed"
+                        placeholder="Start typing your clinical notes here... 
+Example: Patient presents with /symptoms extreme fatigue, pale skin, cold hands and feels dizzy when standing up..."></textarea>
+                    
+                    <!-- Floating Processing Overlay / Indicator inside textarea area -->
+                    <div id="processing-overlay" class="absolute bottom-4 right-4 bg-indigo-600/90 text-white text-xs px-3 py-1.5 rounded-lg shadow-lg backdrop-blur flex items-center space-x-2 hidden">
+                        <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span>Computing Semantic Embeddings...</span>
+                    </div>
+                </div>
 
-            // --- MALE ANATOMY & UROLOGY SYMPTOMS ---
-            "dick": {
-                requiredParameters: [
-                    "Chlamydia trachomatis PCR",
-                    "Neisseria gonorrhoeae PCR",
-                    "Trichomonas vaginalis PCR",
-                    "Mycoplasma genitalium PCR",
-                    "Urinalysis Leukocyte Esterase & Nitrite",
-                    "HSV-1 / HSV-2 DNA PCR"
-                ],
-                specimenTypes: ["First-Catch Urine", "Urethral Swab", "Lesion Swab"],
-                urgency: "Low",
-                rationale: "Penile symptoms require first-catch urine NAAT PCR for urethritis pathogens, urinalysis, and swab testing if lesions exist."
-            },
-            "penis": {
-                requiredParameters: [
-                    "Chlamydia / Gonorrhea NAAT PCR",
-                    "Urinalysis with Microscopic Examination",
-                    "HSV-1 / HSV-2 DNA PCR"
-                ],
-                specimenTypes: ["First-Catch Urine", "Urethral Swab"],
-                urgency: "Low",
-                rationale: "Penile discomfort or discharge warrants urethral STI PCR screening and urine culture."
-            },
-            "penile discharge": {
-                requiredParameters: [
-                    "Neisseria gonorrhoeae PCR",
-                    "Chlamydia trachomatis PCR",
-                    "Mycoplasma genitalium PCR",
-                    "Urethral Gram Stain (Intracellular Diplococci)",
-                    "Urinalysis Leukocyte Esterase"
-                ],
-                specimenTypes: ["First-Catch Urine", "Urethral Swab"],
-                urgency: "High",
-                rationale: "Clear, white, or purulent urethral discharge is a classic indicator of Gonococcal or Non-Gonococcal Urethritis (NGU)."
-            },
-            "cum hurting": {
-                requiredParameters: [
-                    "Prostate-Specific Antigen Total (Total PSA)",
-                    "Free PSA",
-                    "Chlamydia / Gonorrhea NAAT PCR",
-                    "Post-Massage Urine / Prostatic Secretion Culture",
-                    "Urine Microscopic Examination"
-                ],
-                specimenTypes: ["Venous Serum", "Post-Massage Urine", "First-Catch Urine"],
-                urgency: "Medium",
-                rationale: "Painful ejaculation (dysorgasmia) suggests prostatic inflammation (prostatitis), urethritis, or seminal vesiculitis requiring PSA and prostatic culture."
-            },
-            "ball pain": {
-                requiredParameters: [
-                    "Chlamydia trachomatis PCR",
-                    "Neisseria gonorrhoeae PCR",
-                    "Urine Bacterial Culture & AST",
-                    "CBC with Differential (WBC Count)"
-                ],
-                specimenTypes: ["First-Catch Urine", "Clean-Catch Urine", "Venous Whole Blood"],
-                urgency: "High",
-                rationale: "Testicular or scrotal ache/swelling requires evaluating for acute bacterial epididymitis (Chlamydia/Gonorrhea) or urinary tract pathogen spread."
-            },
-            "testicle pain": {
-                requiredParameters: [
-                    "Chlamydia / Gonorrhea NAAT PCR",
-                    "Urine Culture & Antibiotic Susceptibility Testing (AST)",
-                    "Leukocyte Esterase"
-                ],
-                specimenTypes: ["First-Catch Urine", "Midstream Urine"],
-                urgency: "High",
-                rationale: "Scrotal pain warrants urine culture and STI NAAT to rule out bacterial epididymo-orchitis."
-            },
-            "prostate pain": {
-                requiredParameters: [
-                    "Total PSA",
-                    "Free PSA",
-                    "Post-Massage Urine Culture",
-                    "Urine Microscopic RBC/WBC Count"
-                ],
-                specimenTypes: ["Venous Serum", "Post-Massage Urine"],
-                urgency: "Medium",
-                rationale: "Perineal ache, urinary hesitancy, and rectal pressure indicate serum PSA evaluation and prostatic fluid/urine culture."
-            },
+                <!-- Footer Tip -->
+                <div class="mt-4 pt-3 border-t border-slate-800/60 flex items-center justify-between text-xs text-slate-500">
+                    <span>100% Client-Side Execution (Zero Cloud Telemetry)</span>
+                    <button id="clear-btn" class="hover:text-slate-300 transition-colors flex items-center space-x-1">
+                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                        <span>Clear Notes</span>
+                    </button>
+                </div>
+            </div>
+        </section>
 
-            // --- URINARY & DYSSURIA SYMPTOMS ---
-            "burning urination": {
-                requiredParameters: [
-                    "Urinalysis Leukocyte Esterase & Nitrite",
-                    "Urine Sediment Microscopic RBC/WBC Count",
-                    "Quantitative Bacterial Urine Culture & AST",
-                    "Chlamydia / Gonorrhea NAAT PCR"
-                ],
-                specimenTypes: ["Clean-Catch Midstream Urine", "First-Catch Urine"],
-                urgency: "High",
-                rationale: "Pain or burning when peeing (dysuria) requires urinalysis with microscopic leukocyte/nitrite evaluation, quantitative urine culture, and STI urethritis screening."
-            },
-            "peeing hurts": {
-                requiredParameters: [
-                    "Urinalysis Leukocyte Esterase & Nitrite",
-                    "Urine Sediment Microscopic RBC/WBC",
-                    "Quantitative Bacterial Urine Culture",
-                    "Chlamydia / Gonorrhea PCR"
-                ],
-                specimenTypes: ["Clean-Catch Midstream Urine", "First-Catch Urine"],
-                urgency: "High",
-                rationale: "Dysuria indicates urinalysis, urine culture, and STI testing."
-            },
-            "pussy burning when peeing": {
-                requiredParameters: [
-                    "Urinalysis Leukocyte Esterase & Nitrite",
-                    "Urine Culture & AST",
-                    "Wet Mount Microscopy (Clue cells, Yeast)",
-                    "Chlamydia / Gonorrhea NAAT PCR"
-                ],
-                specimenTypes: ["Clean-Catch Midstream Urine", "Vaginal Swab"],
-                urgency: "High",
-                rationale: "Stinging during micturition requires differentiating urinary tract infection (UTI) from vaginitis or STI urethritis."
-            },
+        <!-- Right Column: Sidebar (Status & Live Suggestions) -->
+        <aside class="flex flex-col space-y-6">
+            
+            <!-- AI Engine Status Box -->
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-xl">
+                <h2 class="text-sm font-semibold text-slate-200 mb-4 flex items-center justify-between">
+                    <span>Local AI Engine Status</span>
+                    <i data-lucide="shield-check" class="w-4 h-4 text-emerald-400"></i>
+                </h2>
+                
+                <div class="space-y-3 text-sm">
+                    <div class="flex justify-between items-center py-1.5 border-b border-slate-800/60">
+                        <span class="text-slate-400">Model Architecture</span>
+                        <span class="font-mono text-xs text-indigo-300 bg-indigo-950/50 px-2 py-0.5 rounded border border-indigo-800/40">MiniLM-L6-v2</span>
+                    </div>
+                    <div class="flex justify-between items-center py-1.5 border-b border-slate-800/60">
+                        <span class="text-slate-400">Runtime Environment</span>
+                        <span class="text-slate-200 font-medium">WebAssembly (ONNX)</span>
+                    </div>
+                    <div class="flex justify-between items-center py-1.5">
+                        <span class="text-slate-400">Catalog Database</span>
+                        <span id="db-status" class="text-amber-400 font-medium">Loading JSON...</span>
+                    </div>
+                </div>
 
-            // --- RECTAL, ANAL & STOOL SYMPTOMS ---
-            "anal pain": {
-                requiredParameters: [
-                    "Rectal Chlamydia trachomatis PCR",
-                    "Rectal Neisseria gonorrhoeae PCR",
-                    "Rectal HSV-1 / HSV-2 DNA PCR",
-                    "Fecal Occult Blood / FIT",
-                    "Fecal Calprotectin"
-                ],
-                specimenTypes: ["Rectal Swab", "Stool Sample"],
-                urgency: "Medium",
-                rationale: "Rectal pain requires testing for infectious proctitis pathogens, herpes simplex, fecal occult bleeding, and intestinal inflammation."
-            },
-            "butt hurting": {
-                requiredParameters: [
-                    "Rectal Chlamydia / Gonorrhea PCR",
-                    "Fecal Occult Blood / FIT"
-                ],
-                specimenTypes: ["Rectal Swab", "Stool Sample"],
-                urgency: "Medium",
-                rationale: "Anal/perianal aching indicates checking for infectious proctitis or perianal mucosal bleeding."
-            },
-            "bleeding from ass": {
-                requiredParameters: [
-                    "Fecal Hemoglobin Immunoassay (FIT)",
-                    "Fecal Calprotectin",
-                    "Stool Enteric Pathogen PCR Panel",
-                    "Rectal Chlamydia / Gonorrhea PCR"
-                ],
-                specimenTypes: ["Stool Sample", "Rectal Swab"],
-                urgency: "High",
-                rationale: "Rectal bleeding requires quantitative fecal hemoglobin (FIT), inflammatory calprotectin, stool culture, and proctitis swabs."
-            },
-            "rectal discharge": {
-                requiredParameters: [
-                    "Rectal Chlamydia trachomatis PCR (including LGV strains)",
-                    "Rectal Neisseria gonorrhoeae PCR",
-                    "Stool Culture / Enteric Pathogen PCR"
-                ],
-                specimenTypes: ["Rectal Swab", "Fresh Stool"],
-                urgency: "High",
-                rationale: "Mucous or purulent rectal discharge indicates proctitis PCR testing for Gonorrhea and Chlamydia Lymphogranuloma Venereum (LGV)."
-            },
+                <div id="progress-container" class="mt-4 hidden">
+                    <div class="flex justify-between text-xs text-slate-400 mb-1">
+                        <span id="progress-label">Downloading Model Weights...</span>
+                        <span id="progress-percent">0%</span>
+                    </div>
+                    <div class="w-full bg-slate-950 rounded-full h-2 overflow-hidden border border-slate-800">
+                        <div id="progress-bar" class="bg-indigo-500 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
 
-            // --- CUTANEOUS, SORES & DERMATOLOGY SYMPTOMS ---
-            "sores": {
-                requiredParameters: [
-                    "HSV-1 DNA PCR",
-                    "HSV-2 DNA PCR",
-                    "Syphilis Treponemal Antibody / RPR Serology",
-                    "Darkfield Microscopy / Treponema PCR"
-                ],
-                specimenTypes: ["Lesion Swab / Fluid Aspirate", "Venous Serum"],
-                urgency: "High",
-                rationale: "Ulcerative sores or blisters on mucosal/skin surfaces require viral HSV DNA PCR swab and Syphilis serology (RPR/TPHA)."
-            },
-            "blisters": {
-                requiredParameters: [
-                    "HSV-1 DNA PCR",
-                    "HSV-2 DNA PCR",
-                    "Varicella-Zoster Virus (VZV) DNA PCR"
-                ],
-                specimenTypes: ["Cutaneous Lesion Swab"],
-                urgency: "High",
-                rationale: "Fluid-filled cutaneous or genital vesicles indicate immediate viral DNA PCR typing swab."
-            },
-            "syphilis sore": {
-                requiredParameters: [
-                    "Syphilis Treponema Antibody (TPHA / TP-PA)",
-                    "Rapid Plasma Reagin (RPR) with Reflex Titer",
-                    "HSV-1 / HSV-2 DNA PCR"
-                ],
-                specimenTypes: ["Venous Serum", "Lesion Swab"],
-                urgency: "High",
-                rationale: "Painless chancre ulceration requires non-treponemal (RPR) and treponemal antibody serology."
-            },
-            "herpes bump": {
-                requiredParameters: [
-                    "HSV-1 DNA PCR",
-                    "HSV-2 DNA PCR"
-                ],
-                specimenTypes: ["Vesicle Swab / Lesion Swab"],
-                urgency: "High",
-                rationale: "Painful clustered bumps or open vesicular sores mandate HSV-1 and HSV-2 DNA PCR typing."
-            },
+            <!-- Live Semantic Suggestions / Match Inspector Panel -->
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-xl flex-1 flex flex-col">
+                <h2 class="text-sm font-semibold text-slate-200 mb-3 flex items-center space-x-2">
+                    <i data-lucide="sparkles" class="w-4 h-4 text-indigo-400"></i>
+                    <span>Live Match Inspector</span>
+                </h2>
+                
+                <div id="suggestions-panel" class="flex-1 flex flex-col justify-center items-center text-center p-6 border border-dashed border-slate-800 rounded-lg bg-slate-950/40">
+                    <div class="p-3 bg-slate-900 rounded-full text-slate-500 mb-3">
+                        <i data-lucide="search" class="w-6 h-6"></i>
+                    </div>
+                    <p class="text-sm text-slate-400 font-medium">No trigger command processed yet</p>
+                    <p class="text-xs text-slate-600 mt-1 max-w-xs">Type a <code class="text-indigo-400">/symptoms</code> command in the editor to activate semantic matching against the pathology catalog.</p>
+                </div>
+            </div>
 
-            // --- SYSTEMIC & GENERAL SYMPTOMS ---
-            "fever": {
-                requiredParameters: [
-                    "Complete Blood Count (CBC) with Differential",
-                    "High-Sensitivity C-Reactive Protein (hs-CRP)",
-                    "Erythrocyte Sedimentation Rate (ESR)",
-                    "Comprehensive Metabolic Panel (CMP)"
-                ],
-                specimenTypes: ["Venous Whole Blood & Serum"],
-                urgency: "High",
-                rationale: "Elevated body temperature indicates checking total WBC, neutrophil/lymphocyte counts, and systemic inflammatory markers."
-            },
-            "fatigue": {
-                requiredParameters: [
-                    "Thyroid Stimulating Hormone (TSH)",
-                    "Free T4 & Free T3",
-                    "Fasting Blood Glucose",
-                    "Serum Creatinine & BUN",
-                    "CBC with Differential"
-                ],
-                specimenTypes: ["Venous Serum & Whole Blood"],
-                urgency: "Low",
-                rationale: "Chronic tiredness or low energy warrants endocrine thyroid screening, metabolic organ checkup, and anemia evaluation."
+        </aside>
+
+    </main>
+
+    <!-- Transformers.js Script from CDN -->
+    <script type="module">
+        import { pipeline, env } from 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.16.0';
+
+        // Configure environment for browser execution
+        env.allowLocalModels = false;
+        env.useBrowserCache = true;
+
+        let embedder = null;
+        let symptomsDatabase = [];
+        let embeddedCatalog = [];
+
+        const systemStatusBadge = document.getElementById('system-status-badge');
+        const dbStatus = document.getElementById('db-status');
+        const progressContainer = document.getElementById('progress-container');
+        const progressBar = document.getElementById('progress-bar');
+        const progressPercent = document.getElementById('progress-percent');
+        const progressLabel = document.getElementById('progress-label');
+        const processingOverlay = document.getElementById('processing-overlay');
+        const editor = document.getElementById('clinical-editor');
+        const suggestionsPanel = document.getElementById('suggestions-panel');
+        const clearBtn = document.getElementById('clear-btn');
+
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        // 1. Asynchronously fetch external symptoms database JSON
+        async function loadSymptomsDatabase() {
+            try {
+                dbStatus.textContent = "Fetching JSON...";
+                const response = await handleError(fetch('symptoms_database.json'));
+                symptomsDatabase = await response.json();
+                dbStatus.textContent = `${symptomsDatabase.length} Catalog Items Loaded`;
+                dbStatus.className = "text-emerald-400 font-medium";
+            } catch (err) {
+                console.error("Failed to load symptoms_database.json:", err);
+                dbStatus.textContent = "Failed to load JSON";
+                dbStatus.className = "text-rose-400 font-medium";
+                // Fallback default catalog if external file is missing/blocked locally
+                symptomsDatabase = [
+                    {
+                        "id": "anemia_panel",
+                        "keywords": "extreme fatigue, pale skin, cold hands, dizziness, weakness, low hemoglobin",
+                        "snippet": "Recommended Lab panel: Complete Blood Count (CBC), Serum Iron, Ferritin, Total Iron-Binding Capacity (TIBC) [Targeting Anemia Panel]"
+                    },
+                    {
+                        "id": "lipid_panel",
+                        "keywords": "chest discomfort, high blood pressure, history of heart disease, obesity, shortness of breath",
+                        "snippet": "Recommended Lab panel: Comprehensive Lipid Panel (Total Cholesterol, Triglycerides, HDL, LDL), Fasting Blood Glucose [Targeting Cardiovascular Risk]"
+                    },
+                    {
+                        "id": "thyroid_panel",
+                        "keywords": "weight gain, sluggishness, cold intolerance, hair loss, dry skin, fatigue",
+                        "snippet": "Recommended Lab panel: Thyroid Stimulating Hormone (TSH), Free T3, Free T4 [Targeting Hypothyroidism Workup]"
+                    },
+                    {
+                        "id": "diabetes_panel",
+                        "keywords": "excessive thirst, frequent urination, unexplained weight loss, blurred vision, constant hunger",
+                        "snippet": "Recommended Lab panel: HbA1c, Fasting Plasma Glucose, Random Urine Albumin-to-Creatinine Ratio [Targeting Glycemic / Diabetes Screening]"
+                    }
+                ];
+                dbStatus.textContent = `${symptomsDatabase.length} Items (Fallback Catalog)`;
+                dbStatus.className = "text-amber-400 font-medium";
             }
-        };
-    }
-
-    /**
-     * Parses raw conversational customer messages and identifies matched symptoms,
-     * required diagnostic parameters, analytes, specimen types, and triage urgency.
-     * @param {string} userInput - The raw message sent by the customer in chat
-     * @returns {object} Diagnostic parameters tailored for AI catalog matching
-     */
-    analyzeSymptoms(userInput) {
-        if (!userInput || typeof userInput !== 'string') {
-            return {
-                matchedSymptoms: [],
-                extractedParameters: [],
-                requiredSpecimens: [],
-                urgencyLevel: "Low",
-                aiPromptContext: "No input provided."
-            };
         }
 
-        const normalizedInput = userInput.toLowerCase();
-        const matchedSymptomsList = [];
-        const parameterSet = new Set();
-        const specimenSet = new Set();
-        
-        const urgencyOrder = { "Low": 1, "Medium": 2, "High": 3, "Urgent": 4 };
-        let highestUrgency = "Low";
+        // Helper wrapper for fetch error handling
+        async function handleError(promise) {
+            const res = await promise;
+            if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+            return res;
+        }
 
-        // Scan symptomParameterMapping keys against user query
-        for (const [symptomKey, data] of Object.entries(this.symptomParameterMapping)) {
-            if (normalizedInput.includes(symptomKey)) {
-                matchedSymptomsList.push({
-                    symptomMatched: symptomKey,
-                    urgency: data.urgency,
-                    rationale: data.rationale
+        // 2. Initialize Local AI Embedding Engine (Transformers.js)
+        async function initializeAIEngine() {
+            try {
+                progressContainer.classList.remove('hidden');
+                
+                // Load Xenova feature extraction model with progress callback
+                embedder = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2', {
+                    progress_callback: (data) => {
+                        if (data.status === 'progress' && data.total) {
+                            const pct = Math.round((data.loaded / data.total) * 100);
+                            progressBar.style.width = `${pct}%`;
+                            progressPercent.textContent = `${pct}%`;
+                            progressLabel.textContent = `Downloading ${data.file || 'Model'}`;
+                        }
+                    }
                 });
 
-                // Calculate max urgency
-                if (urgencyOrder[data.urgency] > urgencyOrder[highestUrgency]) {
-                    highestUrgency = data.urgency;
-                }
+                progressContainer.classList.add('hidden');
+                systemStatusBadge.className = "inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20";
+                systemStatusBadge.innerHTML = `<span class="w-2 h-2 mr-2 rounded-full bg-emerald-400"></span> AI Engine Ready`;
 
-                // Collect required parameters and specimens
-                if (data.requiredParameters) {
-                    data.requiredParameters.forEach(param => parameterSet.add(param));
-                }
-                if (data.specimenTypes) {
-                    data.specimenTypes.forEach(spec => specimenSet.add(spec));
-                }
+                // Precompute embeddings for all items in the symptoms database
+                await precomputeCatalogEmbeddings();
+
+            } catch (err) {
+                console.error("AI Engine initialization failed:", err);
+                progressContainer.classList.add('hidden');
+                systemStatusBadge.className = "inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-rose-500/10 text-rose-400 border border-rose-500/20";
+                systemStatusBadge.innerHTML = `<span class="w-2 h-2 mr-2 rounded-full bg-rose-400"></span> Engine Error`;
             }
         }
 
-        const extractedParametersArray = Array.from(parameterSet);
-        const requiredSpecimensArray = Array.from(specimenSet);
-
-        // Fallback default parameters if no specific symptom was matched
-        if (extractedParametersArray.length === 0) {
-            extractedParametersArray.push(
-                "Complete Blood Count (CBC) with Differential",
-                "Comprehensive Metabolic Panel (CMP)",
-                "Urinalysis with Microscopic Examination"
-            );
-            requiredSpecimensArray.push("Venous Whole Blood & Serum", "Clean-Catch Urine");
+        // Precompute database embeddings for fast cosine similarity evaluation
+        async function precomputeCatalogEmbeddings() {
+            embeddedCatalog = [];
+            for (const item of symptomsDatabase) {
+                const output = await embedder(item.keywords, { pooling: 'mean', normalize: true });
+                embeddedCatalog.push({
+                    ...item,
+                    embedding: Array.from(output.data)
+                });
+            }
         }
 
-        // Build prompt context instructing the AI how to search and match user's custom lab catalog
-        let promptContext = `[PATHOLOGY SYMPTOM-TO-TEST PARAMETER MATCHING CONTEXT]\n`;
-        promptContext += `Customer Query: "${userInput}"\n`;
-        promptContext += `Triage Urgency Level: ${highestUrgency}\n\n`;
-
-        if (matchedSymptomsList.length > 0) {
-            promptContext += `DETECTED SYMPTOMS / EXPOSURES:\n`;
-            matchedSymptomsList.forEach(s => {
-                promptContext += `- Symptom / Key Phrase: "${s.symptomMatched}" (Urgency: ${s.urgency})\n`;
-                promptContext += `  Clinical Rationale: ${s.rationale}\n`;
-            });
-            promptContext += `\n`;
+        // Mathematical Cosine Similarity Calculator between two vectors
+        function cosineSimilarity(vecA, vecB) {
+            let dotProduct = 0.0;
+            let normA = 0.0;
+            let normB = 0.0;
+            for (let i = 0; i < vecA.length; i++) {
+                dotProduct += vecA[i] * vecB[i];
+                normA += vecA[i] * vecA[i];
+                normB += vecB[i] * vecB[i];
+            }
+            if (normA === 0 || normB === 0) return 0;
+            return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
         }
 
-        promptContext += `DIAGNOSTIC PARAMETERS & ANALYTES NEEDED:\n`;
-        promptContext += `Search your laboratory test catalog for test panels that measure or include the following parameters:\n`;
-        extractedParametersArray.forEach((param, idx) => {
-            promptContext += `${idx + 1}. Parameter / Biomarker: ${param}\n`;
+        // 3. Process semantic matching against the database
+        async function processSemanticMatch(queryText) {
+            if (!embedder || embeddedCatalog.length === 0) return null;
+
+            processingOverlay.classList.remove('hidden');
+            try {
+                // Generate embedding for user's inputted symptom string
+                const output = await embedder(queryText, { pooling: 'mean', normalize: true });
+                const queryEmbedding = Array.from(output.data);
+
+                let bestMatch = null;
+                let highestScore = -1;
+
+                // Compute cosine similarity across all catalog items
+                for (const catalogItem of embeddedCatalog) {
+                    const score = cosineSimilarity(queryEmbedding, catalogItem.embedding);
+                    if (score > highestScore) {
+                        highestScore = score;
+                        bestMatch = catalogItem;
+                    }
+                }
+
+                processingOverlay.classList.add('hidden');
+                return { match: bestMatch, confidence: highestScore };
+
+            } catch (err) {
+                console.error("Error computing embeddings:", err);
+                processingOverlay.classList.add('hidden');
+                return null;
+            }
+        }
+
+        // Update the Live Suggestions Panel UI
+        function updateSuggestionsPanel(result, queryText) {
+            if (!result) return;
+            const { match, confidence } = result;
+            const confidencePercent = Math.round(confidence * 100);
+            
+            // Choose badge color based on confidence score
+            let badgeColor = "bg-emerald-500/10 text-emerald-400 border-emerald-500/20";
+            if (confidencePercent < 60) badgeColor = "bg-amber-500/10 text-amber-400 border-amber-500/20";
+
+            suggestionsPanel.className = "bg-slate-950 border border-slate-800 rounded-lg p-4 flex flex-col justify-between text-left";
+            suggestionsPanel.innerHTML = `
+                <div>
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-xs font-semibold text-indigo-400 uppercase tracking-wider">Top Semantic Match</span>
+                        <span class="px-2 py-0.5 rounded text-xs font-mono border ${badgeColor}">${confidencePercent}% Match</span>
+                    </div>
+                    <p class="text-xs text-slate-400 mb-1 font-mono">Query: "${escapeHtml(queryText)}"</p>
+                    <div class="bg-slate-900 border border-slate-800/80 rounded-lg p-3 my-2">
+                        <p class="text-xs font-medium text-slate-300 mb-1">Matched Catalog ID: <span class="text-indigo-300 font-mono">${escapeHtml(match.id)}</span></p>
+                        <p class="text-xs text-slate-400 italic">Catalog Keywords: "${escapeHtml(match.keywords)}"</p>
+                    </div>
+                </div>
+                <div class="mt-3 pt-3 border-t border-slate-800/60">
+                    <p class="text-xs font-semibold text-slate-300 mb-1">Expanded Snippet Result:</p>
+                    <p class="text-xs font-mono text-emerald-300 bg-emerald-950/30 p-2.5 rounded border border-emerald-900/40">${escapeHtml(match.snippet)}</p>
+                </div>
+            `;
+        }
+
+        // Helper to prevent HTML injection in previews
+        function escapeHtml(str) {
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+        }
+
+        // Keystroke Interceptor Listener (/symptoms command followed by Space)
+        editor.addEventListener('keydown', async (e) => {
+            if (e.key === ' ') {
+                const cursorPosition = editor.selectionStart;
+                const textBeforeCursor = editor.value.substring(0, cursorPosition);
+                
+                // Regex pattern matching: /symptoms [keywords...]
+                const regex = /\/symptoms\s+([^\n]+)$/i;
+                const match = textBeforeCursor.match(regex);
+
+                if (match) {
+                    e.preventDefault(); // Prevent spacebar insertion temporarily
+                    const searchKeywords = match[1].trim();
+                    const fullTriggerString = match[0];
+
+                    if (!searchKeywords) return;
+
+                    // Execute local semantic AI match
+                    const result = await processSemanticMatch(searchKeywords);
+
+                    if (result && result.match) {
+                        // Replace the typed /symptoms trigger with the expanded clinical snippet
+                        const textAfterCursor = editor.value.substring(cursorPosition);
+                        const newTextBefore = textBeforeCursor.substring(0, textBeforeCursor.length - fullTriggerString.length);
+                        
+                        editor.value = newTextBefore + result.match.snippet + " " + textAfterCursor;
+                        
+                        // Move cursor position right after the inserted snippet
+                        const newCursorPos = newTextBefore.length + result.match.snippet.length + 1;
+                        editor.setSelectionRange(newCursorPos, newCursorPos);
+
+                        // Update sidebar inspector panel
+                        updateSuggestionsPanel(result, searchKeywords);
+                    }
+                }
+            }
         });
-        promptContext += `\n`;
 
-        promptContext += `REQUIRED SPECIMEN TYPES:\n`;
-        promptContext += `${requiredSpecimensArray.join(", ")}\n\n`;
+        // Clear notes button handler
+        clearBtn.addEventListener('click', () => {
+            editor.value = "";
+            editor.focus();
+            suggestionsPanel.className = "flex-1 flex flex-col justify-center items-center text-center p-6 border border-dashed border-slate-800 rounded-lg bg-slate-950/40";
+            suggestionsPanel.innerHTML = `
+                <div class="p-3 bg-slate-900 rounded-full text-slate-500 mb-3">
+                    <i data-lucide="search" class="w-6 h-6"></i>
+                </div>
+                <p class="text-sm text-slate-400 font-medium">No trigger command processed yet</p>
+                <p class="text-xs text-slate-600 mt-1 max-w-xs">Type a <code class="text-indigo-400">/symptoms</code> command in the editor to activate semantic matching against the pathology catalog.</p>
+            `;
+            lucide.createIcons();
+        });
 
-        promptContext += `INSTRUCTIONS FOR YOUR AI CHATBOT:\n`;
-        promptContext += `1. Match the parameters listed above against your inventory/catalog to select the best corresponding tests.\n`;
-        promptContext += `2. DO NOT output dictionary definitions, etymologies, or word meanings.\n`;
-        promptContext += `3. Address the customer empathetically, regardless of vulgar, informal, or slang language used.\n`;
-        promptContext += `4. Recommend the matched tests from your catalog, explaining what specimen is required (${requiredSpecimensArray.join(", ")}) and WHY these parameters are clinically indicated based on their symptoms.\n`;
-        promptContext += `5. Advise the customer on the urgency level (${highestUrgency}) and encourage consulting a qualified doctor.`;
-
-        return {
-            userInput,
-            matchedSymptoms: matchedSymptomsList,
-            extractedParameters: extractedParametersArray,
-            requiredSpecimens: requiredSpecimensArray,
-            urgencyLevel: highestUrgency,
-            aiPromptContext: promptContext
-        };
-    }
-
-    /**
-     * Helper to retrieve clean prompt text directly for your AI API payload
-     */
-    generateAiPrompt(userInput) {
-        const analysis = this.analyzeSymptoms(userInput);
-        return analysis.aiPromptContext;
-    }
-}
-
-// Universal Export Binding
-if (typeof window !== 'undefined') {
-    window.PathoLexiconEngine = PathoLexiconEngine;
-}
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = PathoLexiconEngine;
-}
+        // Run initialization sequence on window load
+        window.addEventListener('DOMContentLoaded', async () => {
+            await loadSymptomsDatabase();
+            await initializeAIEngine();
+        });
+    </script>
+</body>
+</html>
