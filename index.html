@@ -1079,12 +1079,7 @@
               return null;
           };
 
-          const isPrimaryMemberValid = () => {
-                  if (assigned.length === 0) return false;
-              }
-              return true;
-          };
-            const areAllFamilyMembersAssigned = () => {
+          const areAllFamilyMembersAssigned = () => {
               for (const m of familyMembers) {
                   const assigned = patientAssignments[m.id] || [];
                   if (assigned.length === 0) return false;
