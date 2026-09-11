@@ -1945,7 +1945,9 @@
                                               <button 
                                                   type="button" 
                                                   onClick={submitBooking}
-                                                  disabled={cart.length === 0 || !isPrimaryMemberValid() || !areAllFamilyMembersAssigned()}
+                                                  disabled={cart.length === 0 || 
+                                                  !isPrimaryMemberValid() ||
+                                                  !areAllFamilyMembersAssigned()}
                                                   className="w-full mt-6 bg-yellow-400 hover:bg-yellow-500 disabled:opacity-50 disabled:bg-slate-300 text-teal-950 font-extrabold py-3.5 px-6 rounded-2xl shadow-lg transition-transform hover:scale-[1.02] cursor-pointer"
                                               >
                                                   Confirm Booking
