@@ -8,6 +8,8 @@
     <link rel="icon" type="image/svg+xml" href="https://raw.githubusercontent.com/swasthyacare/Swasthya-Care/refs/heads/main/Swasthya%20Care%20Fevicon.svg">
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Add Transformers.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@xenova/transformers@2.16.0"></script>
     <!-- React & ReactDOM -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
@@ -997,33 +999,121 @@
                   if (aiReply) {
                       setMessages(prev => [...prev, { role: 'model', text: aiReply }]);
                   } else {
-                      generateLocalAiResponse(text);
+                      // Local client-side AI states
+          const [localAISystemReady, setLocalAISystemReady] = useState(false);
+          const localEmbedderRef = useRef(null);
+          const symptomsDbRef = useRef([]);
+
+          // Initialize Transformers.js and fetch GitHub symptoms JSON on startup
+          useEffect(() => {
+              async function initLocalClientAI() {
+                  try {
+                      if (!window.transformers) return;
+                      const { pipeline, env } = window.transformers;
+                      env.allowLocalModels = false;
+                      env.useBrowserCache = true;
+
+                      // Load lightweight model 100% client-side
+                      localEmbedderRef.current = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2');
+
+                      // Fetch your GitHub symptoms database
+                      const res = await fetch("https://raw.githubusercontent.com/swasthyacare/Swasthya-Care/refs/heads/main/symptoms_database.json");
+                      const rawData = await res.json();
+
+                      // Precompute embeddings for fast vector comparison
+                      const compiled = [];
+                      for (const item of rawData) {
+                          const output = await localEmbedderRef.current(item.keywords, { pooling: 'mean', normalize: true });
+                          compiled.push({
+                              ...item,
+                              embedding: Array.from(output.data)
+                          });
+                      }
+                      symptomsDbRef.current = compiled;
+                      setLocalAISystemReady(true);
+                      console.log("Local Client AI Symptoms Engine Initialized Successfully.");
+                  } catch (err) {
+                      console.warn("Local AI initialization fallback notice:", err);
                   }
+              }
+              initLocalClientAI();
+          }, []);
+
+          // Cosine Similarity Calculator for true semantic vector matching
+          const computeCosineSimilarity = (vecA, vecB) => {
+              let dot = 0, normA = 0, normB = 0;
+              for (let i = 0; i < vecA.length; i++) {
+                  dot += vecA[i] * vecB[i];
+                  normA += vecA[i] * vecA[i];
+                  normB += vecB[i] * vecB[i];
+              }
+              return (normA === 0 || normB === 0) ? 0 : dot / (Math.sqrt(normA) * Math.sqrt(normB));
+          };
+
+          const handleSendMessage = async (text, isSystem = false) => {
+              if (!text.trim()) return;
+              const newUserMessage = { role: 'user', text };
+              setMessages(prev => [...prev, newUserMessage]);
+              if (!isSystem) setInputValue('');
+              setIsAILoading(true);
+
+              try {
+                  let matchedPkgId = null;
+
+                  // Execute local semantic embedding match if engine is ready
+                  if (localEmbedderRef.current && symptomsDbRef.current.length > 0) {
+                      const queryOutput = await localEmbedderRef.current(text, { pooling: 'mean', normalize: true });
+                      const queryEmbedding = Array.from(queryOutput.data);
+
+                      let bestScore = -1;
+                      let bestMatch = null;
+
+                      for (const entry of symptomsDbRef.current) {
+                          const score = computeCosineSimilarity(queryEmbedding, entry.embedding);
+                          if (score > bestScore) {
+                              bestScore = score;
+                              bestMatch = entry;
+                          }
+                      }
+
+                      // Map matched catalog ID back to your website packages
+                      if (bestMatch && bestScore > 0.22) {
+                          const keywordKey = bestMatch.id.split('_')[0];
+                          const foundPkg = packages.find(p => p.name.toLowerCase().includes(keywordKey));
+                          if (foundPkg) matchedPkgId = foundPkg.id;
+                      }
+                  }
+
+                  // Fallback intelligent keyword routing if semantic score is low
+                  let matched = [];
+                  if (matchedPkgId) {
+                      matched = packages.filter(p => p.id === matchedPkgId);
+                  }
+
+                  if (matched.length === 0) {
+                      const q = text.toLowerCase();
+                      if (q.includes('fever') || q.includes('infection') || q.includes('basic')) matched = packages.filter(p => p.name.includes('BASIC'));
+                      else if (q.includes('joint') || q.includes('bone') || q.includes('arthritis')) matched = packages.filter(p => p.name.includes('Arthritis'));
+                      else if (q.includes('sugar') || q.includes('diabetes') || q.includes('lipid') || q.includes('advance')) matched = packages.filter(p => p.name.includes('ADVANCE'));
+                      else if (q.includes('premium') || q.includes('super') || q.includes('complete')) matched = packages.filter(p => p.name.includes('PREMIUM') || p.name.includes('Super') || p.name.includes('COMPLETE'));
+                      else if (q.includes('female') || q.includes('women') || q.includes('cervical') || q.includes('discharge') || q.includes('period') || q.includes('vagina')) matched = packages.filter(p => p.gender === 'Female' || p.name.includes('Cervical') || p.name.includes('Vaginal'));
+                      else if (q.includes('male') || q.includes('gym') || q.includes('erectile')) matched = packages.filter(p => p.gender === 'Male' || p.name.includes('Gym') || p.name.includes('Male'));
+                      else matched = [packages[0], packages[packages.length > 6 ? 6 : 0]].filter(Boolean);
+                  }
+
+                  const bestPkg = matched[0] || packages[0];
+                  const testsCount = bestPkg.detailedParameters ? bestPkg.detailedParameters.length : 1;
+                  const parametersCount = bestPkg.detailedParameters ? bestPkg.detailedParameters.reduce((acc, c) => acc + (c.items ? c.items.length : 0), 1) : 1;
+
+                  const aiReply = `I recommend the **${bestPkg.name}** for your health checkup based on your symptoms analysis. It includes ${testsCount} comprehensive tests and ${parametersCount} clinical parameters covering essential wellness markers.\n\nPrice: **₹${bestPkg.price}** (MRP: ₹${bestPkg.mrp})\n\n[ADD:${bestPkg.id}]`;
+
+                  setMessages(prev => [...prev, { role: 'model', text: aiReply }]);
               } catch (error) {
-                  generateLocalAiResponse(text);
+                  console.error("Local AI Execution Error:", error);
+                  setMessages(prev => [...prev, { role: 'model', text: "I'm sorry, I couldn't process your symptoms right now. Please browse our health packages directly from the catalog." }]);
               } finally {
                   setIsAILoading(false);
               }
-          };
-
-          const generateLocalAiResponse = (userQuery) => {
-              const q = userQuery.toLowerCase();
-              let matched = packages.filter(p => p.name.toLowerCase().includes(q) || (p.includes && p.includes.toLowerCase().includes(q)));
-              if (matched.length === 0) {
-                  if (q.includes('fever') || q.includes('infection') || q.includes('basic')) matched = packages.filter(p => p.name.includes('BASIC'));
-                  else if (q.includes('joint') || q.includes('bone') || q.includes('arthritis')) matched = packages.filter(p => p.name.includes('Arthritis'));
-                  else if (q.includes('sugar') || q.includes('diabetes') || q.includes('lipid') || q.includes('advance')) matched = packages.filter(p => p.name.includes('ADVANCE'));
-                  else if (q.includes('premium') || q.includes('super') || q.includes('complete')) matched = packages.filter(p => p.name.includes('PREMIUM') || p.name.includes('Super') || p.name.includes('COMPLETE'));
-                  else if (q.includes('female') || q.includes('women') || q.includes('cervical')) matched = packages.filter(p => p.gender === 'Female' || p.name.includes('Cervical'));
-                  else if (q.includes('male') || q.includes('gym')) matched = packages.filter(p => p.gender === 'Male' || p.name.includes('Gym'));
-                  else matched = [packages[0], packages[6]];
-              }
-              const bestPkg = matched[0] || packages[0];
-              const testsCount = bestPkg.detailedParameters ? bestPkg.detailedParameters.length : 1;
-              const parametersCount = bestPkg.detailedParameters ? bestPkg.detailedParameters.reduce((acc, c) => acc + (c.items ? c.items.length : 0), 1) : 1;
-              
-              const reply = `I recommend the **${bestPkg.name}** for your health checkup. It includes ${testsCount} comprehensive tests and ${parametersCount} clinical parameters covering essential wellness markers.\n\nPrice: **₹${bestPkg.price}** (MRP: ₹${bestPkg.mrp})\n\n[ADD:${bestPkg.id}]`;
-              setMessages(prev => [...prev, { role: 'model', text: reply }]);
           };
 
           const toggleCart = (pkgId) => {
