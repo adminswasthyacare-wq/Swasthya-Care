@@ -1,0 +1,107 @@
+[
+    {
+        "id": "anemia_panel",
+        "keywords": "extreme fatigue, pale skin, cold hands, dizziness, weakness, low hemoglobin, shortness of breath on exertion, brittle nails, restless legs, spoon nails, pica, lightheadedness",
+        "snippet": "Recommended Lab panel: Complete Blood Count (CBC), Serum Iron, Ferritin, Total Iron-Binding Capacity (TIBC), Transferrin Saturation, Reticulocyte Count [Targeting Anemia & Iron Deficiency Workup]"
+    },
+    {
+        "id": "lipid_cardiovascular_panel",
+        "keywords": "chest discomfort, high blood pressure, hypertension, history of heart disease, obesity, shortness of breath, xanthomas, sedentary lifestyle, family history of CAD, heart palpitations, carotid bruit",
+        "snippet": "Recommended Lab panel: Comprehensive Lipid Panel (Total Cholesterol, Triglycerides, HDL, LDL), Fasting Blood Glucose, High-Sensitivity CRP, Lipoprotein(a) [Targeting Cardiovascular Risk Assessment]"
+    },
+    {
+        "id": "thyroid_panel_hypo",
+        "keywords": "weight gain, sluggishness, cold intolerance, hair loss, dry skin, fatigue, constipation, brain fog, slow heart rate, puffy face, heavy periods, depression",
+        "snippet": "Recommended Lab panel: Thyroid Stimulating Hormone (TSH), Free T3, Free T4, Anti-TPO Antibodies, Anti-Thyroglobulin Antibodies [Targeting Hypothyroidism & Hashimoto Workup]"
+    },
+    {
+        "id": "thyroid_panel_hyper",
+        "keywords": "weight loss, rapid heartbeat, palpitations, heat intolerance, anxiety, tremors, insomnia, frequent bowel movements, bulging eyes, exophthalmos, excessive sweating, muscle weakness",
+        "snippet": "Recommended Lab panel: Thyroid Stimulating Hormone (TSH), Free T3, Free T4, Thyroid-Stimulating Immunoglobulins (TSI), TSH Receptor Antibodies [Targeting Hyperthyroidism & Graves Disease Workup]"
+    },
+    {
+        "id": "diabetes_glycemic_panel",
+        "keywords": "excessive thirst, polydipsia, frequent urination, polyuria, unexplained weight loss, blurred vision, constant hunger, polyphagia, slow-healing sores, frequent infections, numbness in hands or feet, tingling",
+        "snippet": "Recommended Lab panel: HbA1c, Fasting Plasma Glucose, Random Urine Albumin-to-Creatinine Ratio, C-Peptide, Fasting Insulin [Targeting Glycemic Control & Diabetes Screening]"
+    },
+    {
+        "id": "hepatic_liver_panel",
+        "keywords": "yellow skin, jaundice, yellow eyes, dark urine, pale stools, abdominal pain, nausea, right upper quadrant tenderness, chronic fatigue, pruritus, itching, easy bruising, swelling in abdomen, ascites",
+        "snippet": "Recommended Lab panel: Comprehensive Metabolic Panel (ALT, AST, ALP, Total Bilirubin, Direct Bilirubin, Albumin, Total Protein), GGT, Prothrombin Time/INR, Hepatitis Panel [Targeting Hepatic Function Workup]"
+    },
+    {
+        "id": "renal_kidney_panel",
+        "keywords": "foamy urine, swelling in legs and ankles, edema, puffiness around eyes, frequent nighttime urination, nocturia, high blood pressure, fatigue, metallic taste, nausea, decreased urine output",
+        "snippet": "Recommended Lab panel: Serum Creatinine, Blood Urea Nitrogen (BUN), Estimated GFR, Serum Electrolytes (Sodium, Potassium, Chloride, Bicarbonate), Urinalysis, 24-Hour Urine Protein [Targeting Renal Function Panel]"
+    },
+    {
+        "id": "inflammatory_rheumatoid_panel",
+        "keywords": "joint pain, arthralgia, morning stiffness lasting hours, symmetrical joint swelling, fatigue, low-grade fever, rheumatoid nodules, hand deformation, joint warmth, chronic body aches",
+        "snippet": "Recommended Lab panel: Erythrocyte Sedimentation Rate (ESR), C-Reactive Protein (CRP), Rheumatoid Factor (RF), Anti-CCP Antibodies, Antinuclear Antibodies (ANA) [Targeting Autoimmune & Inflammatory Arthritis Workup]"
+    },
+    {
+        "id": "coagulation_bleeding_panel",
+        "keywords": "frequent bruising, hematomas, prolonged bleeding from cuts, heavy menstrual periods, menorrhagia, nosebleeds, epistaxis, bleeding gums, blood in stool, petechiae, purpura",
+        "snippet": "Recommended Lab panel: Prothrombin Time (PT/INR), Partial Thromboplastin Time (PTT), Complete Blood Count with Platelet Count, Fibrinogen, Von Willebrand Factor screen [Targeting Coagulation & Bleeding Disorders Panel]"
+    },
+    {
+        "id": "uti_urinalysis_panel",
+        "keywords": "painful urination, dysuria, burning sensation, frequent urge to urinate, urgency, cloudy urine, foul-smelling urine, lower abdominal pain, suprapubic tenderness, blood in urine, hematuria, fever",
+        "snippet": "Recommended Lab panel: Urinalysis (Microscopic & Dipstick), Urine Culture and Sensitivity (C&S), Complete Blood Count [Targeting Urinary Tract Infection Workup]"
+    },
+    {
+        "id": "electrolyte_hydration_panel",
+        "keywords": "muscle cramps, severe dehydration, extreme thirst, confusion, lethargy, muscle weakness, irregular heartbeat, arrhythmias, excessive vomiting, chronic diarrhea, dizziness upon standing",
+        "snippet": "Recommended Lab panel: Basic Metabolic Panel (Sodium, Potassium, Chloride, Carbon Dioxide, BUN, Creatinine, Glucose), Serum Osmolality, Magnesium [Targeting Electrolyte & Hydration Balance]"
+    },
+    {
+        "id": "gout_uric_acid_panel",
+        "keywords": "sudden severe joint pain, intense pain, swelling in big toe, podagra, redness and warmth in joint, tenderness, limited range of motion, flare-ups after rich food or alcohol",
+        "snippet": "Recommended Lab panel: Serum Uric Acid, Complete Blood Count, Renal Function Panel, Erythrocyte Sedimentation Rate (ESR), Synovial Fluid Analysis [Targeting Hyperuricemia & Gout Workup]"
+    },
+    {
+        "id": "bone_vitamin_d_panel",
+        "keywords": "bone pain, muscle weakness, frequent fractures, fragile bones, fatigue, diffuse body aches, low sun exposure, mood changes, bone tenderness",
+        "snippet": "Recommended Lab panel: Vitamin D 25-Hydroxy, Serum Calcium, Serum Phosphorus, Parathyroid Hormone (PTH), Alkaline Phosphatase [Targeting Bone Health & Vitamin D Deficiency]"
+    },
+    {
+        "id": "celiac_malabsorption_panel",
+        "keywords": "chronic diarrhea, chronic bloating, gas, abdominal pain, unexplained weight loss, fatigue, iron-deficiency anemia, skin rash, dermatitis herpetiformis, foul-smelling stools, nutrient deficiency",
+        "snippet": "Recommended Lab panel: Tissue Transglutaminase IgA (tTG-IgA), Total Serum IgA, Deamidated Gliadin Peptide (DGP) Antibodies, Complete Metabolic Panel [Targeting Celiac Disease & Malabsorption Screening]"
+    },
+    {
+        "id": "acute_cardiac_enzyme_panel",
+        "keywords": "acute crushing chest pain, severe chest pressure, radiating pain to left arm or jaw, sudden shortness of breath, cold sweats, diaphoresis, nausea, lightheadedness, impending doom",
+        "snippet": "Recommended Lab panel: High-Sensitivity Troponin I or T, Creatine Kinase-MB (CK-MB), Electrocardiogram (ECG) correlation, Myoglobin [Targeting Acute Coronary Syndrome & Myocardial Infarction Rule-Out]"
+    },
+    {
+        "id": "vaginal_discharge_infection_panel",
+        "keywords": "white water discharge, vaginal discharge, vaginal pain, itching, burning sensation, fishy odor, cottage cheese discharge, irritation, pelvic discomfort, abnormal odor, dyspareunia, vulvar redness",
+        "snippet": "Recommended Lab panel: Vaginal Wet Prep Microscopy, Yeast Culture, Nucleic Acid Amplification Test (NAAT) for Trichomonas, Bacterial Vaginosis (BV) Whiff Test & pH [Targeting Vaginitis & Urogynecological Infection Panel]"
+    },
+    {
+        "id": "sti_reproductive_panel",
+        "keywords": "pelvic pain, lower abdominal pain, painful intercourse, dyspareunia, abnormal bleeding, intermenstrual bleeding, painful urination, burning during sex, urethral discharge, genital sores, genital warts, painful lumps",
+        "snippet": "Recommended Lab panel: Chlamydia and Gonorrhea NAAT, Syphilis Serology (RPR/TPPA), HIV 1/2 Ag/Ab, Herpes Simplex Virus PCR, Hepatitis B & C Screen [Targeting Comprehensive STI & Pelvic Infection Workup]"
+    },
+    {
+        "id": "female_endocrine_pcos_panel",
+        "keywords": "irregular periods, oligomenorrhea, missed periods, amenorrhea, excessive facial hair, hirsutism, adult acne, hair thinning, scalp alopecia, pelvic pain, painful periods, dysmenorrhea, difficulty conceiving, infertility, hot flashes, mood swings",
+        "snippet": "Recommended Lab panel: Luteinizing Hormone (LH), Follicle-Stimulating Hormone (FSH), Total and Free Testosterone, DHEA-S, Prolactin, Estradiol, 17-Hydroxyprogesterone [Targeting Female Endocrine & Reproductive Health Panel]"
+    },
+    {
+        "id": "male_andrological_ed_panel",
+        "keywords": "erectile dysfunction, impotence, low libido, decreased sexual drive, fatigue, muscle loss, difficulty achieving erection, testicle pain, scrotal ache, reduced morning erections, breast enlargement, gynecomastia",
+        "snippet": "Recommended Lab panel: Total Testosterone, Free Testosterone, Sex Hormone-Binding Globulin (SHBG), Prolactin, Luteinizing Hormone (LH), Fasting Lipid & Glucose Panel [Targeting Male Andrological & Hypogonadism Workup]"
+    },
+    {
+        "id": "respiratory_infection_panel",
+        "keywords": "persistent cough, green phlegm, yellow sputum, blood-tinged sputum, chest tightness, shortness of breath, wheezing, high fever, chills, body aches, sore throat, sinus pressure, loss of taste or smell",
+        "snippet": "Recommended Lab panel: Complete Blood Count with Differential, Inflammatory Markers (ESR/CRP), Sputum Culture and Gram Stain, Respiratory Pathogen Multiplex PCR Panel [Targeting Respiratory & Pulmonary Infection Workup]"
+    },
+    {
+        "id": "neurological_headache_stroke_panel",
+        "keywords": "severe sudden headache, worst headache of life, thunderclap headache, facial drooping, sudden weakness on one side, slurred speech, confusion, dizziness, loss of balance, vision changes, fainting, blackout",
+        "snippet": "Recommended Lab panel: Complete Blood Count, Comprehensive Metabolic Panel, Coagulation Profile (PT/INR, PTT), Toxicology Screen, Urgent Neuroimaging (CT/MRI) [Targeting Acute Neurological & Stroke Rule-Out Panel]"
+    }
+]
