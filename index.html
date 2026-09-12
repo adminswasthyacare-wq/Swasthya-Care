@@ -970,195 +970,62 @@
                       role: msg.role === 'model' ? 'model' : 'user',
                       parts: [{ text: msg.text }]
                   }));
-                 import React, { useState, useEffect, useRef } from 'react';
+                  chatHistory.push({ role: 'user', parts: [{ text: text }] });
+                  const systemPrompt = `You are Swasthya AI Assistant, a friendly and expert health assistant for a diagnostic lab called 'Swasthya Care'.
+                  Your primary job is to help users select the best health checkup plans based on their symptoms, age, gender, or specific test requirements.
+                  Here is the strict catalog of available packages in JSON format:
+                  ${JSON.stringify(packages)}
+                  Guidelines:
+                  1. ONLY recommend packages from the provided catalog. Do not invent packages or tests.
+                  2. ALWAYS mention the price (₹), total tests, and parameter count when recommending a package.
+                  3. Format your recommendations clearly with pricing and tests.
+                  4. CRITICAL: Whenever you recommend a package, you MUST append the exact tag [ADD:id] (where id is package id) on a new line immediately after describing that package. Example: [ADD:1]`;
 
-export default function SwasthyaChatAssistant({ packages = [] }) {
-    const [messages, setMessages] = useState([]);
-    const [isAILoading, setIsAILoading] = useState(false);
-    const [inputQuery, setInputQuery] = useState('');
+                  const payload = {
+                      contents: chatHistory,
+                      systemInstruction: { parts: [{ text: systemPrompt }] }
+                  };
+                  const apiKey = ""; 
+                  const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+                  const response = await fetch(apiUrl, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify(payload)
+                  });
+                  const result = await response.json();
+                  const aiReply = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+                  if (aiReply) {
+                      setMessages(prev => [...prev, { role: 'model', text: aiReply }]);
+                  } else {
+                      generateLocalAiResponse(text);
+                  }
+              } catch (error) {
+                  generateLocalAiResponse(text);
+              } finally {
+                  setIsAILoading(false);
+              }
+          };
 
-    // Refs for holding local AI models and compiled symptoms catalog across renders
-    const embeddedSymptomsCatalogRef = useRef([]);
-    const localEmbedderInstanceRef = useRef(null);
+          const generateLocalAiResponse = (userQuery) => {
+              const q = userQuery.toLowerCase();
+              let matched = packages.filter(p => p.name.toLowerCase().includes(q) || (p.includes && p.includes.toLowerCase().includes(q)));
+              if (matched.length === 0) {
+                  if (q.includes('fever') || q.includes('infection') || q.includes('basic')) matched = packages.filter(p => p.name.includes('BASIC'));
+                  else if (q.includes('joint') || q.includes('bone') || q.includes('arthritis')) matched = packages.filter(p => p.name.includes('Arthritis'));
+                  else if (q.includes('sugar') || q.includes('diabetes') || q.includes('lipid') || q.includes('advance')) matched = packages.filter(p => p.name.includes('ADVANCE'));
+                  else if (q.includes('premium') || q.includes('super') || q.includes('complete')) matched = packages.filter(p => p.name.includes('PREMIUM') || p.name.includes('Super') || p.name.includes('COMPLETE'));
+                  else if (q.includes('female') || q.includes('women') || q.includes('cervical')) matched = packages.filter(p => p.gender === 'Female' || p.name.includes('Cervical'));
+                  else if (q.includes('male') || q.includes('gym')) matched = packages.filter(p => p.gender === 'Male' || p.name.includes('Gym'));
+                  else matched = [packages[0], packages[6]];
+              }
+              const bestPkg = matched[0] || packages[0];
+              const testsCount = bestPkg.detailedParameters ? bestPkg.detailedParameters.length : 1;
+              const parametersCount = bestPkg.detailedParameters ? bestPkg.detailedParameters.reduce((acc, c) => acc + (c.items ? c.items.length : 0), 1) : 1;
+              
+              const reply = `I recommend the **${bestPkg.name}** for your health checkup. It includes ${testsCount} comprehensive tests and ${parametersCount} clinical parameters covering essential wellness markers.\n\nPrice: **₹${bestPkg.price}** (MRP: ₹${bestPkg.mrp})\n\n[ADD:${bestPkg.id}]`;
+              setMessages(prev => [...prev, { role: 'model', text: reply }]);
+          };
 
-    // 1. Initialize Transformers.js and fetch your GitHub symptoms database on mount
-    useEffect(() => {
-        async function initializeClientSideAI() {
-            try {
-                if (!window.transformers) {
-                    await import('https://cdn.jsdelivr.net/npm/@xenova/transformers@2.16.0');
-                }
-                
-                const { pipeline, env } = window.transformers || globalThis.transformers || await import('https://cdn.jsdelivr.net/npm/@xenova/transformers@2.16.0');
-                env.allowLocalModels = false;
-                env.useBrowserCache = true;
-
-                // Load lightweight embedding model 100% client-side
-                localEmbedderInstanceRef.current = await pipeline('feature-extraction', 'Xenova/all-MiniLM-L6-v2');
-
-                // Fetch your GitHub symptoms database
-                const res = await fetch("https://raw.githubusercontent.com/swasthyacare/Swasthya-Care/refs/heads/main/symptoms_database.json");
-                const rawSymptomsData = await res.json();
-
-                // Precompute vector embeddings for your catalog symptoms items
-                const compiledCatalog = [];
-                for (const item of rawSymptomsData) {
-                    const output = await localEmbedderInstanceRef.current(item.keywords, { pooling: 'mean', normalize: true });
-                    compiledCatalog.push({
-                        ...item,
-                        embedding: Array.from(output.data)
-                    });
-                }
-                embeddedSymptomsCatalogRef.current = compiledCatalog;
-                console.log("Local AI Symptoms Engine Initialized successfully.");
-            } catch (err) {
-                console.error("Failed to initialize local embedding AI engine:", err);
-            }
-        }
-        initializeClientSideAI();
-    }, []);
-
-    // Helper: Mathematical Cosine Similarity Calculator
-    const calculateCosineSimilarity = (vecA, vecB) => {
-        let dotProduct = 0.0;
-        let normA = 0.0;
-        let normB = 0.0;
-        for (let i = 0; i < vecA.length; i++) {
-            dotProduct += vecA[i] * vecB[i];
-            normA += vecA[i] * vecA[i];
-            normB += vecB[i] * vecB[i];
-        }
-        if (normA === 0 || normB === 0) return 0;
-        return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
-    };
-
-    // Advanced Semantic Local Generator leveraging GitHub symptoms JSON & Transformers.js
-    const generateLocalAiResponse = async (userQuery) => {
-        let matchedPkgId = null;
-
-        if (localEmbedderInstanceRef.current && embeddedSymptomsCatalogRef.current.length > 0) {
-            try {
-                const queryOutput = await localEmbedderInstanceRef.current(userQuery, { pooling: 'mean', normalize: true });
-                const queryEmbedding = Array.from(queryOutput.data);
-
-                let bestScore = -1;
-                let bestSymptomMatch = null;
-
-                for (const item of embeddedSymptomsCatalogRef.current) {
-                    const score = calculateCosineSimilarity(queryEmbedding, item.embedding);
-                    if (score > bestScore) {
-                        bestScore = score;
-                        bestSymptomMatch = item;
-                    }
-                }
-
-                if (bestSymptomMatch && bestScore > 0.22) {
-                    const targetNameKeyword = bestSymptomMatch.id.split('_')[0];
-                    let pkgMatch = packages.find(p => p.name && p.name.toLowerCase().includes(targetNameKeyword));
-                    if (pkgMatch) matchedPkgId = pkgMatch.id;
-                }
-            } catch (e) {
-                console.error("Semantic embedding inference error:", e);
-            }
-        }
-
-        // Fallback keyword routing if semantic matching didn't resolve an explicit package
-        let matched = [];
-        if (matchedPkgId) {
-            matched = packages.filter(p => p.id === matchedPkgId);
-        }
-        
-        if (matched.length === 0 && packages.length > 0) {
-            const q = userQuery.toLowerCase();
-            if (q.includes('fever') || q.includes('infection') || q.includes('basic')) matched = packages.filter(p => p.name?.includes('BASIC'));
-            else if (q.includes('joint') || q.includes('bone') || q.includes('arthritis')) matched = packages.filter(p => p.name?.includes('Arthritis'));
-            else if (q.includes('sugar') || q.includes('diabetes') || q.includes('lipid') || q.includes('advance')) matched = packages.filter(p => p.name?.includes('ADVANCE'));
-            else if (q.includes('premium') || q.includes('super') || q.includes('complete')) matched = packages.filter(p => p.name?.includes('PREMIUM') || p.name?.includes('Super') || p.name?.includes('COMPLETE'));
-            else if (q.includes('female') || q.includes('women') || q.includes('cervical') || q.includes('discharge') || q.includes('period')) matched = packages.filter(p => p.gender === 'Female' || p.name?.includes('Cervical'));
-            else if (q.includes('male') || q.includes('gym') || q.includes('erectile')) matched = packages.filter(p => p.gender === 'Male' || p.name?.includes('Gym'));
-            else matched = [packages[0], packages[packages.length > 6 ? 6 : 0]].filter(Boolean);
-        }
-
-        const bestPkg = matched[0] || packages[0];
-        if (!bestPkg) {
-            setMessages(prev => [...prev, { role: 'model', text: "I'm sorry, I couldn't find a matching package in our catalog." }]);
-            return;
-        }
-
-        const testsCount = bestPkg.detailedParameters ? bestPkg.detailedParameters.length : 1;
-        const parametersCount = bestPkg.detailedParameters ? bestPkg.detailedParameters.reduce((acc, c) => acc + (c.items ? c.items.length : 0), 1) : 1;
-        
-        const reply = `I recommend the **${bestPkg.name}** for your health checkup based on your symptoms analysis. It includes ${testsCount} comprehensive tests and ${parametersCount} clinical parameters covering essential wellness markers.\n\nPrice: **₹${bestPkg.price}** (MRP: ₹${bestPkg.mrp})\n\n[ADD:${bestPkg.id}]`;
-        setMessages(prev => [...prev, { role: 'model', text: reply }]);
-    };
-
-    // Main user submission execution flow (Fully Local, No Google API)
-    const handleSendMessage = async () => {
-        const text = inputQuery.trim();
-        if (!text) return;
-
-        setIsAILoading(true);
-        setInputQuery('');
-        
-        // Append User Message to Chat History
-        setMessages(prev => [...prev, { role: 'user', text: text }]);
-
-        try {
-            // Run Local Semantic AI Vector Search
-            await generateLocalAiResponse(text);
-        } catch (error) {
-            console.error("Local AI Execution Error:", error);
-            setMessages(prev => [...prev, { role: 'model', text: "An error occurred while analyzing your symptoms locally." }]);
-        } finally {
-            setIsAILoading(false);
-        }
-    };
-
-    return (
-        <div className="flex flex-col h-full bg-slate-900 text-slate-100 p-4 rounded-xl border border-slate-800 shadow-xl max-w-2xl mx-auto">
-            <div className="border-b border-slate-800 pb-3 mb-3">
-                <h2 className="font-semibold text-base">Swasthya Care AI Assistant</h2>
-                <p className="text-xs text-slate-400">100% Client-Side Semantic Symptom Matcher</p>
-            </div>
-
-            {/* Chat Messages Container */}
-            <div className="flex-1 overflow-y-auto space-y-3 mb-4 max-h-[400px] p-2">
-                {messages.length === 0 && (
-                    <div className="text-center text-slate-500 text-sm py-8">
-                        Type your symptoms below (e.g., "extreme fatigue, dizziness, pale skin") to get a package recommendation.
-                    </div>
-                )}
-                {messages.map((m, idx) => (
-                    <div key={idx} className={`p-3 rounded-xl text-sm whitespace-pre-line ${m.role === 'user' ? 'bg-indigo-600 text-white ml-12' : 'bg-slate-800 text-slate-200 mr-12 border border-slate-700/50'}`}>
-                        {m.text}
-                    </div>
-                ))}
-                {isAILoading && (
-                    <div className="text-xs text-indigo-400 animate-pulse flex items-center space-x-2 p-2">
-                        <span>Computing local semantic embeddings against catalog...</span>
-                    </div>
-                )}
-            </div>
-
-            {/* Input Bar */}
-            <div className="flex items-center space-x-2 pt-2 border-t border-slate-800">
-                <input 
-                    type="text" 
-                    value={inputQuery}
-                    onChange={(e) => setInputQuery(e.target.value)}
-                    onKeyDown={(e) => { if (e.key === 'Enter') handleSendMessage(); }}
-                    placeholder="Describe your symptoms..." 
-                    className="flex-1 bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-slate-200 placeholder-slate-600 focus:outline-none focus:border-indigo-500"
-                />
-                <button 
-                    onClick={handleSendMessage}
-                    className="bg-indigo-600 hover:bg-indigo-500 text-white px-5 py-3 rounded-xl text-sm font-medium transition-colors">
-                    Send
-                </button>
-            </div>
-        </div>
-    );
-}
           const toggleCart = (pkgId) => {
               const isAdding = !cart.includes(pkgId);
               if (isAdding) {
