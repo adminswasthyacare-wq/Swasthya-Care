@@ -970,61 +970,98 @@
                       role: msg.role === 'model' ? 'model' : 'user',
                       parts: [{ text: msg.text }]
                   }));
-                  chatHistory.push({ role: 'user', parts: [{ text: text }] });
-                  const systemPrompt = `You are Swasthya AI Assistant, a friendly and expert health assistant for a diagnostic lab called 'Swasthya Care'.
-                  Your primary job is to help users select the best health checkup plans based on their symptoms, age, gender, or specific test requirements.
-                  Here is the strict catalog of available packages in JSON format:
-                  ${JSON.stringify(packages)}
-                  Guidelines:
-                  1. ONLY recommend packages from the provided catalog. Do not invent packages or tests.
-                  2. ALWAYS mention the price (₹), total tests, and parameter count when recommending a package.
-                  3. Format your recommendations clearly with pricing and tests.
-                  4. CRITICAL: Whenever you recommend a package, you MUST append the exact tag [ADD:id] (where id is package id) on a new line immediately after describing that package. Example: [ADD:1]`;
+                  import React, { useState, useEffect } from 'react';
 
-                  const payload = {
-                      contents: chatHistory,
-                      systemInstruction: { parts: [{ text: systemPrompt }] }
-                  };
-                  const apiKey = ""; 
-                  const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
-                  const response = await fetch(apiUrl, {
-                      method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
-                      body: JSON.stringify(payload)
-                  });
-                  const result = await response.json();
-                  const aiReply = result?.candidates?.[0]?.content?.parts?.[0]?.text;
-                  if (aiReply) {
-                      setMessages(prev => [...prev, { role: 'model', text: aiReply }]);
-                  } else {
-                      generateLocalAiResponse(text);
-                  }
-              } catch (error) {
-                  generateLocalAiResponse(text);
-              } finally {
-                  setIsAILoading(false);
-              }
-          };
+export default function SwasthyaChatAssistant({ chatHistory, setMessages, setIsAILoading, text, packages }) {
+    const [symptomsDatabase, setSymptomsDatabase] = useState([]);
 
-          const generateLocalAiResponse = (userQuery) => {
-              const q = userQuery.toLowerCase();
-              let matched = packages.filter(p => p.name.toLowerCase().includes(q) || (p.includes && p.includes.toLowerCase().includes(q)));
-              if (matched.length === 0) {
-                  if (q.includes('fever') || q.includes('infection') || q.includes('basic')) matched = packages.filter(p => p.name.includes('BASIC'));
-                  else if (q.includes('joint') || q.includes('bone') || q.includes('arthritis')) matched = packages.filter(p => p.name.includes('Arthritis'));
-                  else if (q.includes('sugar') || q.includes('diabetes') || q.includes('lipid') || q.includes('advance')) matched = packages.filter(p => p.name.includes('ADVANCE'));
-                  else if (q.includes('premium') || q.includes('super') || q.includes('complete')) matched = packages.filter(p => p.name.includes('PREMIUM') || p.name.includes('Super') || p.name.includes('COMPLETE'));
-                  else if (q.includes('female') || q.includes('women') || q.includes('cervical')) matched = packages.filter(p => p.gender === 'Female' || p.name.includes('Cervical'));
-                  else if (q.includes('male') || q.includes('gym')) matched = packages.filter(p => p.gender === 'Male' || p.name.includes('Gym'));
-                  else matched = [packages[0], packages[6]];
-              }
-              const bestPkg = matched[0] || packages[0];
-              const testsCount = bestPkg.detailedParameters ? bestPkg.detailedParameters.length : 1;
-              const parametersCount = bestPkg.detailedParameters ? bestPkg.detailedParameters.reduce((acc, c) => acc + (c.items ? c.items.length : 0), 1) : 1;
-              
-              const reply = `I recommend the **${bestPkg.name}** for your health checkup. It includes ${testsCount} comprehensive tests and ${parametersCount} clinical parameters covering essential wellness markers.\n\nPrice: **₹${bestPkg.price}** (MRP: ₹${bestPkg.mrp})\n\n[ADD:${bestPkg.id}]`;
-              setMessages(prev => [...prev, { role: 'model', text: reply }]);
-          };
+    // Fetch GitHub symptoms database on component mount
+    useEffect(() => {
+        async function fetchGithubSymptoms() {
+            try {
+                const res = await fetch("https://raw.githubusercontent.com/swasthyacare/Swasthya-Care/refs/heads/main/symptoms_database.json");
+                const data = await res.json();
+                setSymptomsDatabase(data);
+            } catch (err) {
+                console.error("Failed to fetch GitHub symptoms database:", err);
+            }
+        }
+        fetchGithubSymptoms();
+    }, []);
+
+    // Main execution function matching your existing architecture
+    useEffect(() => {
+        if (!text) return;
+
+        const processLocalSearch = async () => {
+            setIsAILoading(true);
+            chatHistory.push({ role: 'user', parts: [{ text: text }] });
+
+            try {
+                let matchedPkgId = null;
+                const queryLower = text.toLowerCase();
+
+                if (symptomsDatabase.length > 0) {
+                    let bestScore = 0;
+                    let bestMatchItem = null;
+
+                    // Match keywords from your GitHub JSON against user query
+                    for (const item of symptomsDatabase) {
+                        const keywords = item.keywords.toLowerCase().split(',').map(k => k.trim());
+                        let score = 0;
+                        for (const kw of keywords) {
+                            if (kw && queryLower.includes(kw)) {
+                                score += kw.length;
+                            }
+                        }
+                        if (score > bestScore) {
+                            bestScore = score;
+                            bestMatchItem = item;
+                        }
+                    }
+
+                    if (bestMatchItem && bestScore > 0) {
+                        const targetKey = bestMatchItem.id.split('_')[0];
+                        const foundPkg = packages.find(p => p.name && p.name.toLowerCase().includes(targetKey));
+                        if (foundPkg) matchedPkgId = foundPkg.id;
+                    }
+                }
+
+                // Fallback keyword routing
+                let matched = [];
+                if (matchedPkgId) {
+                    matched = packages.filter(p => p.id === matchedPkgId);
+                }
+
+                if (matched.length === 0 && packages.length > 0) {
+                    if (queryLower.includes('fever') || queryLower.includes('infection') || queryLower.includes('basic')) matched = packages.filter(p => p.name?.includes('BASIC'));
+                    else if (queryLower.includes('joint') || queryLower.includes('bone') || queryLower.includes('arthritis')) matched = packages.filter(p => p.name?.includes('Arthritis'));
+                    else if (queryLower.includes('sugar') || queryLower.includes('diabetes') || queryLower.includes('lipid') || queryLower.includes('advance')) matched = packages.filter(p => p.name?.includes('ADVANCE'));
+                    else if (queryLower.includes('premium') || queryLower.includes('super') || queryLower.includes('complete')) matched = packages.filter(p => p.name?.includes('PREMIUM') || p.name?.includes('Super') || p.name?.includes('COMPLETE'));
+                    else if (queryLower.includes('female') || queryLower.includes('women') || queryLower.includes('discharge') || queryLower.includes('period') || queryLower.includes('vagina')) matched = packages.filter(p => p.gender === 'Female' || p.name?.includes('Cervical') || p.name?.includes('Vaginal') || p.name?.includes('Female'));
+                    else if (queryLower.includes('male') || queryLower.includes('erectile') || queryLower.includes('gym')) matched = packages.filter(p => p.gender === 'Male' || p.name?.includes('Gym') || p.name?.includes('Male'));
+                    else matched = [packages[0]];
+                }
+
+                const bestPkg = matched[0] || packages[0];
+                const testsCount = bestPkg.detailedParameters ? bestPkg.detailedParameters.length : 1;
+                const parametersCount = bestPkg.detailedParameters ? bestPkg.detailedParameters.reduce((acc, c) => acc + (c.items ? c.items.length : 0), 1) : 1;
+
+                const aiReply = `I recommend the **${bestPkg.name}** for your health checkup based on your symptoms analysis. It includes ${testsCount} comprehensive tests and ${parametersCount} clinical parameters covering essential wellness markers.\n\nPrice: **₹${bestPkg.price}** (MRP: ₹${bestPkg.mrp})\n\n[ADD:${bestPkg.id}]`;
+
+                setMessages(prev => [...prev, { role: 'model', text: aiReply }]);
+            } catch (error) {
+                console.error("Local Error:", error);
+            } finally {
+                setIsAILoading(false);
+            }
+        };
+
+        processLocalSearch();
+    }, [text]);
+
+    return null;
+}
 
           const toggleCart = (pkgId) => {
               const isAdding = !cart.includes(pkgId);
