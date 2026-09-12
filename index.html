@@ -970,160 +970,61 @@
                       role: msg.role === 'model' ? 'model' : 'user',
                       parts: [{ text: msg.text }]
                   }));
-                  const generateLocalAiResponse = (userQuery) => {
-    const q = userQuery.toLowerCase().trim();
+                  chatHistory.push({ role: 'user', parts: [{ text: text }] });
+                  const systemPrompt = `You are Swasthya AI Assistant, a friendly and expert health assistant for a diagnostic lab called 'Swasthya Care'.
+                  Your primary job is to help users select the best health checkup plans based on their symptoms, age, gender, or specific test requirements.
+                  Here is the strict catalog of available packages in JSON format:
+                  ${JSON.stringify(packages)}
+                  Guidelines:
+                  1. ONLY recommend packages from the provided catalog. Do not invent packages or tests.
+                  2. ALWAYS mention the price (₹), total tests, and parameter count when recommending a package.
+                  3. Format your recommendations clearly with pricing and tests.
+                  4. CRITICAL: Whenever you recommend a package, you MUST append the exact tag [ADD:id] (where id is package id) on a new line immediately after describing that package. Example: [ADD:1]`;
 
-    // 1. Instant Conversational Greetings
-    const greetings = ['hi', 'hello', 'hey', 'greetings', 'hola', 'good morning', 'good afternoon'];
-    if (greetings.some(g => q === g || q.startsWith(g + ' '))) {
-        const greetingReply = "Hello! I am your Swasthya Care health assistant. 🩺\n\n" + 
-                              "Tell me what symptoms you are experiencing, how you are feeling (e.g., 'I hit my leg', 'feeling tired', 'sugar check'), and I will find the right plan for you!";
-        setMessages(prev => [...prev, { role: 'model', text: greetingReply }]);
-        return;
-    }
+                  const payload = {
+                      contents: chatHistory,
+                      systemInstruction: { parts: [{ text: systemPrompt }] }
+                  };
+                  const apiKey = ""; 
+                  const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+                  const response = await fetch(apiUrl, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify(payload)
+                  });
+                  const result = await response.json();
+                  const aiReply = result?.candidates?.[0]?.content?.parts?.[0]?.text;
+                  if (aiReply) {
+                      setMessages(prev => [...prev, { role: 'model', text: aiReply }]);
+                  } else {
+                      generateLocalAiResponse(text);
+                  }
+              } catch (error) {
+                  generateLocalAiResponse(text);
+              } finally {
+                  setIsAILoading(false);
+              }
+          };
 
-    // 2. Broad-Minded Symptom Mapping Dictionary
-    // This connects common conversational words directly to your package profiles
-    const symptomMap = [
-        const generateLocalAiResponse = (userQuery) => {
-    const q = userQuery.toLowerCase().trim();
-
-    // 1. Instant Conversational Greetings
-    const greetings = ['hi', 'hello', 'hey', 'greetings', 'hola', 'good morning', 'good afternoon'];
-    if (greetings.some(g => q === g || q.startsWith(g + ' '))) {
-        const greetingReply = "Hello! I am your Swasthya Care health assistant. 🩺\n\n" + 
-                              "Tell me what symptoms you are experiencing, how you are feeling (e.g., 'I hit my leg', 'feeling tired', 'sugar check'), and I will find the right plan for you!";
-        setMessages(prev => [...prev, { role: 'model', text: greetingReply }]);
-        return;
-    }
-
-    // 2. Broad-Minded Symptom Mapping Dictionary
-    // This connects common conversational words directly to your package profiles
-    const symptomMap = [
-        {
-            keywords: ['hit', 'leg', 'bone', 'joint', 'fall', 'pain', 'knee', 'swelling', 'fracture', 'injury', 'arthritis', 'backache', 'walk'],
-            searchTerm: 'ARTHRITIS'
-        },
-        {
-            keywords: ['sugar', 'diabetes', 'diabetic', 'hba1c', 'sweet', 'urine', 'thirst', 'insulin', 'glucose'],
-            searchTerm: 'DIABETES'
-        },
-        {
-            keywords: ['fever', 'infection', 'cold', 'cough', 'sick', 'chills', 'weakness', 'typhoid', 'malaria', 'viral', 'basic'],
-            searchTerm: 'BASIC'
-        },
-        {
-            keywords: ['heart', 'chest', 'bp', 'blood pressure', 'cholesterol', 'lipid', 'cardiac', 'stroke', 'heavy breathing'],
-            searchTerm: 'HEART'
-        },
-        {
-            keywords: ['tired', 'fatigue', 'energy', 'dizzy', 'premium', 'super', 'complete', 'full body', 'whole body', 'yearly'],
-            searchTerm: 'PREMIUM'
-        },
-        {
-            keywords: ['female', 'women', 'lady', 'periods', 'pcos', 'pregnancy', 'cervical', 'mother'],
-            searchTerm: 'FEMALE'
-        },
-        {
-            keywords: ['male', 'men', 'boy', 'gym', 'workout', 'fitness', 'protein', 'father'],
-            searchTerm: 'MALE'
-        }
-    ];
-
-    // 3. Find if any of the user's conversational words match our mapping dictionary
-    let targetSearchTerm = "";
-    for (const group of symptomMap) {
-        if (group.keywords.some(keyword => q.includes(keyword))) {
-            targetSearchTerm = group.searchTerm;
-            break; // Stop at first strong match group
-        }
-    }
-
-    // 4. Filter Packages based on our smart map OR direct naming fallback
-    let matched = [];
-    
-    if (targetSearchTerm) {
-        // Find using the mapped clinical group term
-        matched = packages.filter(p => 
-            p.name.toUpperCase().includes(targetSearchTerm) || 
-            (p.gender && p.gender === targetSearchTerm)
-        );
-    }
-
-    // Fallback: If map missed, search product catalog directly using regular filter logic
-    if (matched.length === 0) {
-        matched = packages.filter(p => 
-            p.name.toLowerCase().includes(q) || 
-            (p.includes && p.includes.toLowerCase().includes(q))
-        );
-    }
-
-    // 5. Smart Default Fallback if nothing matched the query at all
-    if (!matched || matched.length === 0) {
-        const defaultPkg = packages[0] || { name: "Full Body Checkup", price: "999", mrp: "1999", id: "1" };
-        const fallBackReply = `I couldn't find an exact medical package for that concern. However, for a comprehensive overview, I highly recommend our **${defaultPkg.name}** which screens vital wellness markers.\n\n` +
-                              `Price: **₹${defaultPkg.price}** (MRP: ₹${defaultPkg.mrp})\n\n[ADD:${defaultPkg.id}]`;
-        setMessages(prev => [...prev, { role: 'model', text: fallBackReply }]);
-        return;
-    }
-    
-    // 6. Calculate details and generate response format for your UI
-    const bestPkg = matched[0];
-    const testsCount = bestPkg.detailedParameters ? bestPkg.detailedParameters.length : 1;
-    const parametersCount = bestPkg.detailedParameters ? bestPkg.detailedParameters.reduce((acc, c) => acc + (c.items ? c.items.length : 0), 1) : 1;
-    
-    const reply = `Based on your concern, I recommend our **${bestPkg.name}**.\n\nIt includes ${testsCount} comprehensive profiles and ${parametersCount} specific clinical parameters covering essential health markers.\n\nPrice: **₹${bestPkg.price}** (MRP: ₹${bestPkg.mrp})\n\n[ADD:${bestPkg.id}]`;
-    
-    setMessages(prev => [...prev, { role: 'model', text: reply }]);
-};
-
-    // 3. Find if any of the user's conversational words match our mapping dictionary
-    let targetSearchTerm = "";
-    for (const group of symptomMap) {
-        if (group.keywords.some(keyword => q.includes(keyword))) {
-            targetSearchTerm = group.searchTerm;
-            break; // Stop at first strong match group
-        }
-    }
-
-    // 4. Filter Packages based on our smart map OR direct naming fallback
-    let matched = [];
-    
-    if (targetSearchTerm) {
-        // Find using the mapped clinical group term
-        matched = packages.filter(p => 
-            p.name.toUpperCase().includes(targetSearchTerm) || 
-            (p.gender && p.gender === targetSearchTerm)
-        );
-    }
-
-    // Fallback: If map missed, search product catalog directly using regular filter logic
-    if (matched.length === 0) {
-        matched = packages.filter(p => 
-            p.name.toLowerCase().includes(q) || 
-            (p.includes && p.includes.toLowerCase().includes(q))
-        );
-    }
-
-    // 5. Smart Default Fallback if nothing matched the query at all
-    if (!matched || matched.length === 0) {
-        const defaultPkg = packages[0] || { name: "Full Body Checkup", price: "999", mrp: "1999", id: "1" };
-        const fallBackReply = `I couldn't find an exact medical package for that concern. However, for a comprehensive overview, I highly recommend our **${defaultPkg.name}** which screens vital wellness markers.\n\n` +
-                              `Price: **₹${defaultPkg.price}** (MRP: ₹${defaultPkg.mrp})\n\n[ADD:${defaultPkg.id}]`;
-        setMessages(prev => [...prev, { role: 'model', text: fallBackReply }]);
-        return;
-    }
-    
-    // 6. Calculate details and generate response format for your UI
-    const bestPkg = matched[0];
-    const testsCount = bestPkg.detailedParameters ? bestPkg.detailedParameters.length : 1;
-    const parametersCount = bestPkg.detailedParameters ? bestPkg.detailedParameters.reduce((acc, c) => acc + (c.items ? c.items.length : 0), 1) : 1;
-    
-    const reply = `Based on your concern, I recommend our **${bestPkg.name}**.\n\nIt includes ${testsCount} comprehensive profiles and ${parametersCount} specific clinical parameters covering essential health markers.\n\nPrice: **₹${bestPkg.price}** (MRP: ₹${bestPkg.mrp})\n\n[ADD:${bestPkg.id}]`;
-    
-    setMessages(prev => [...prev, { role: 'model', text: reply }]);
-};
-
+          const generateLocalAiResponse = (userQuery) => {
+              const q = userQuery.toLowerCase();
+              let matched = packages.filter(p => p.name.toLowerCase().includes(q) || (p.includes && p.includes.toLowerCase().includes(q)));
+              if (matched.length === 0) {
+                  if (q.includes('fever') || q.includes('infection') || q.includes('basic')) matched = packages.filter(p => p.name.includes('BASIC'));
+                  else if (q.includes('joint') || q.includes('bone') || q.includes('arthritis')) matched = packages.filter(p => p.name.includes('Arthritis'));
+                  else if (q.includes('sugar') || q.includes('diabetes') || q.includes('lipid') || q.includes('advance')) matched = packages.filter(p => p.name.includes('ADVANCE'));
+                  else if (q.includes('premium') || q.includes('super') || q.includes('complete')) matched = packages.filter(p => p.name.includes('PREMIUM') || p.name.includes('Super') || p.name.includes('COMPLETE'));
+                  else if (q.includes('female') || q.includes('women') || q.includes('cervical')) matched = packages.filter(p => p.gender === 'Female' || p.name.includes('Cervical'));
+                  else if (q.includes('male') || q.includes('gym')) matched = packages.filter(p => p.gender === 'Male' || p.name.includes('Gym'));
+                  else matched = [packages[0], packages[6]];
+              }
+              const bestPkg = matched[0] || packages[0];
+              const testsCount = bestPkg.detailedParameters ? bestPkg.detailedParameters.length : 1;
+              const parametersCount = bestPkg.detailedParameters ? bestPkg.detailedParameters.reduce((acc, c) => acc + (c.items ? c.items.length : 0), 1) : 1;
+              
+              const reply = `I recommend the **${bestPkg.name}** for your health checkup. It includes ${testsCount} comprehensive tests and ${parametersCount} clinical parameters covering essential wellness markers.\n\nPrice: **₹${bestPkg.price}** (MRP: ₹${bestPkg.mrp})\n\n[ADD:${bestPkg.id}]`;
+              setMessages(prev => [...prev, { role: 'model', text: reply }]);
+          };
 
           const toggleCart = (pkgId) => {
               const isAdding = !cart.includes(pkgId);
